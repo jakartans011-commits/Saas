@@ -48,7 +48,7 @@ jobs:
       TRAILSEAL_TEST_POSTGRES_URL: postgres://trailseal:trailseal@localhost:5432/trailseal_test?sslmode=disable
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 1.25 mengandung 5 kerentanan pustaka standar yang diputus oleh job
       # govulncheck di bawah (net/http dan crypto/x509, semuanya sudah
@@ -90,7 +90,7 @@ jobs:
     name: govulncheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v5
         with:
