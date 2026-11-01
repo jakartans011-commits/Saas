@@ -572,8 +572,25 @@ func (s *PostgresStore) VerifyRange(
 		evts,
 		expectedPrevHash,
 	)
+	if err != nil || !valid {
+		// Rantai yang putus di tengah lebih spesifik daripada ekor yang
+		// hilang: laporkan itu dulu, lengkap dengan event mana.
+		return valid, brokenAtEventID, len(evts), err
+	}
 
-	return valid, brokenAtEventID, len(evts), err
+	// Sambungannya utuh. Tapi "utuh" tidak berarti "lengkap" — lihat
+	// chainTailTruncated di chain_tail.go.
+	truncated, truncErr := s.chainTailTruncated(ctx, projectID, evts)
+	if truncErr != nil {
+		return false, "", len(evts), truncErr
+	}
+	if truncated {
+		// brokenAtEventID kosong: tidak ada event yang bisa ditunjuk,
+		// justru karena event itulah yang hilang.
+		return false, "", len(evts), nil
+	}
+
+	return true, "", len(evts), nil
 }
 
 // ============================================================
