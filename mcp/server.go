@@ -693,7 +693,7 @@ func (s *Server) handlePromptsGet(
 		)
 	}
 
-		// Kuota dikonsumsi SETELAH validasi berhasil, bukan sebelumnya.
+	// Kuota dikonsumsi SETELAH validasi berhasil, bukan sebelumnya.
 	// usage_handlers.go mendefinisikan prompts/get sebagai billable hanya
 	// kalau sukses; memotong kuota di awal membuat laporan pemakaian dan
 	// penghitung kuota tidak pernah cocok. Rate limiter per menit yang
@@ -1104,7 +1104,7 @@ func jsonRPCResponseFromMCPError(
 			nil,
 		)
 
-		case MCPErrorQuotaExceeded:
+	case MCPErrorQuotaExceeded:
 		// Kuota bulanan habis BUKAN kerusakan server. Sebelum ini ia
 		// jatuh ke default dan client menerima -32603 "internal error",
 		// dengan pesan aslinya dibuang. Akibatnya agen mencoba lagi
@@ -1124,7 +1124,7 @@ func jsonRPCResponseFromMCPError(
 			err.Error(),
 			nil,
 		)
-		
+
 	default:
 		return newJSONRPCError(
 			id,
