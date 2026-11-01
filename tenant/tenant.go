@@ -191,7 +191,7 @@ func (s *InMemoryTenantStore) TryConsumeQuota(tenantID string, amount int64) (bo
 	now := time.Now()
 	if t.PeriodResetAt == nil || now.After(*t.PeriodResetAt) {
 		t.CurrentEventCount = 0
-		next := now.Add(QuotaPeriod)
+		next := nextQuotaReset(now)
 		t.PeriodResetAt = &next
 	}
 
