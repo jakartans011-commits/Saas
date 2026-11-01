@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"sync"
-	"time"
 	"testing"
-	"net/http"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"

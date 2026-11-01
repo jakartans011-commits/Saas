@@ -310,15 +310,15 @@ func NewRateLimiter(config *RateLimiterConfig) fiber.Handler {
 
 		allowed, remaining, resetAt, err := counter.Allow()
 
-					if err != nil {
-				// Fail-open:
-				// jika storage rate limiter gagal, jangan membuat
-				// seluruh API unavailable.
-				//
-				// TAPI jangan diam. Lihat rate_limit_failopen.go.
-				notifyRateLimiterStorageFailure(err)
-				return c.Next()
-			}
+		if err != nil {
+			// Fail-open:
+			// jika storage rate limiter gagal, jangan membuat
+			// seluruh API unavailable.
+			//
+			// TAPI jangan diam. Lihat rate_limit_failopen.go.
+			notifyRateLimiterStorageFailure(err)
+			return c.Next()
+		}
 
 		c.Set(
 			"X-RateLimit-Limit",

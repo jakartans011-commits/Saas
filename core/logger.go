@@ -28,13 +28,13 @@ type Logger interface {
 // ============================================================================
 
 type LogConfig struct {
-	Level      string `json:"level"`        // debug, info, warn, error
-	LogFile    string `json:"log_file"`     // Path file log
-	MaxSize    int    `json:"max_size"`     // MB
-	MaxBackups int    `json:"max_backups"`  // Jumlah file backup
-	MaxAge     int    `json:"max_age"`      // Hari
-	Compress   bool   `json:"compress"`     // Gzip compress
-	Console    bool   `json:"console"`      // Output ke console juga
+	Level      string `json:"level"`       // debug, info, warn, error
+	LogFile    string `json:"log_file"`    // Path file log
+	MaxSize    int    `json:"max_size"`    // MB
+	MaxBackups int    `json:"max_backups"` // Jumlah file backup
+	MaxAge     int    `json:"max_age"`     // Hari
+	Compress   bool   `json:"compress"`    // Gzip compress
+	Console    bool   `json:"console"`     // Output ke console juga
 }
 
 // DefaultLogConfig - konfigurasi default

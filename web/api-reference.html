@@ -146,11 +146,13 @@
         <div class="docs-nav-title">Reference</div>
         <a href="#auth" class="active">Authentication</a>
         <a href="#events">Events API</a>
+        <a href="#limits">Rate limits &amp; quotas</a>
         <a href="#mcp">MCP gateway</a>
         <a href="#dashboard">Dashboard API</a>
         <a href="#billing">Billing</a>
         <a href="#account">Account &amp; auth</a>
         <a href="#compliance">Retention &amp; GDPR</a>
+        <a href="#ops">Health &amp; operations</a>
         <a href="#errors">Error reference</a>
       </div>
     </aside>
@@ -201,6 +203,7 @@
 <span class="cm">// 201 response</span>
 { <span class="ck">"event"</span>: { <span class="ck">"id"</span>, <span class="ck">"sequence"</span>, <span class="ck">"hash"</span>, <span class="ck">"prev_hash"</span>, ... } }</pre></div>
       <p>Optional <code>Idempotency-Key</code> header prevents duplicate ingestion on retry. <code>occurred_at</code> is accepted but the server-assigned <code>sequence</code> is what orders the chain — a client's clock can never reorder it.</p>
+      <p>All <code>/v1/events*</code> endpoints are rate-limited. A rejected request returns <code>429</code> with a <code>Retry-After</code> header — see <a href="#limits">Rate limits &amp; quotas</a>, and note that <code>429</code> has two distinct causes.</p>
 
       <div class="endpoint"><span class="method post">POST</span><span class="path">/v1/events/batch</span><span class="auth-badge">API key · ingest/admin</span></div>
       <p>Body: <code>{"events": [IngestRequest, ...]}</code>, max 500 per batch. Each event is appended individually — a failure partway through does <strong>not</strong> roll back the ones that already succeeded.</p>
@@ -225,6 +228,59 @@
 
       <div class="endpoint"><span class="method get">GET</span><span class="path">/v1/events/export</span><span class="auth-badge">API key · read/admin</span></div>
       <p>Params: <code>format</code> (<code>json</code> default or <code>csv</code>), same filters as the query endpoint, plus <code>max</code> (default 10,000, hard cap 100,000). Returns a file download (<code>Content-Disposition: attachment</code>). On the Free plan the export is limited to the latest 100 events; capped responses include <code>X-Export-Capped: true</code> and <code>X-Export-Plan-Cap</code> headers. Pro and Business export in full.</p>
+
+      <h2 id="limits">Rate limits &amp; quotas</h2>
+      <p>Two independent mechanisms protect the API, and they fail in different ways for different reasons. Confusing them is the most common integration mistake, because <strong>both return HTTP <code>429</code></strong>.</p>
+
+      <table class="ref-table">
+        <tr><th></th><th>Rate limit</th><th>Monthly quota</th></tr>
+        <tr><td>Measured over</td><td>A fixed one-minute window</td><td>Your billing month</td></tr>
+        <tr><td>Error body</td><td class="mono">{"error": "rate_limit_exceeded", "limit": 1000, "priority": "normal"}</td><td class="mono">{"error": "quota_exceeded"}</td></tr>
+        <tr><td><code>Retry-After</code></td><td>Sent — seconds until the window resets</td><td>Not sent</td></tr>
+        <tr><td>How to recover</td><td>Back off and retry; it clears on its own within the minute</td><td>Upgrade your plan, or wait for the next billing month</td></tr>
+        <tr><td>Scales with plan</td><td>MCP gateway: yes. Events API: no — it is a flat safety ceiling.</td><td>Yes</td></tr>
+      </table>
+
+      <div class="callout warn">
+        <strong>Always branch on the <code>error</code> field, not on the status code.</strong>
+        Retrying a <code>quota_exceeded</code> response will never succeed, and treating a
+        <code>rate_limit_exceeded</code> response as a hard failure will drop events you were
+        entitled to send. Honour <code>Retry-After</code> when it is present.
+      </div>
+
+      <div class="code-block"><pre><span class="cm">// 429 — rate limit</span>
+<span class="cm">// Retry-After: 23</span>
+{ <span class="ck">"error"</span>: <span class="cs">"rate_limit_exceeded"</span>,
+  <span class="ck">"limit"</span>: 1000,
+  <span class="ck">"priority"</span>: <span class="cs">"normal"</span> }
+
+<span class="cm">// 429 — monthly quota (no Retry-After)</span>
+{ <span class="ck">"error"</span>: <span class="cs">"quota_exceeded"</span> }</pre></div>
+      <p><code>priority</code> tells you which limiter rejected the call: <code>mcp</code> for gateway traffic, <code>normal</code> for everything else. <code>limit</code> is the ceiling that was applied, so a Business tenant seeing <code>"limit": 60</code> on MCP traffic is a bug worth reporting.</p>
+
+      <h3>MCP gateway — per minute, by plan</h3>
+      <p>Applies to <code>/mcp/v1/rpc</code> and <code>/api/tenants/:id/mcp/*</code>. The window is fixed, not sliding: it is aligned to the clock minute, so the counter resets on the minute rather than exactly 60 seconds after your first call.</p>
+      <table class="ref-table">
+        <tr><th>Plan</th><th>Requests / minute</th></tr>
+        <tr><td>Free</td><td class="mono">60</td></tr>
+        <tr><td>Pro</td><td class="mono">300</td></tr>
+        <tr><td>Business</td><td class="mono">1,000</td></tr>
+      </table>
+
+      <h3>Events API — per minute, flat</h3>
+      <p><code>/v1/events</code>, <code>/v1/events/batch</code>, <code>/v1/events/verify</code> and <code>/v1/events/export</code> share one limit of <strong>1,000 requests per minute per API key</strong> on every plan. This is an abuse and runaway-loop ceiling, not a billing lever — your paid volume is governed by the monthly quota below, not by this number. Use <code>/v1/events/batch</code> (up to 500 events per call) to stay well under it: 1,000 batched calls per minute carries up to 500,000 events.</p>
+
+      <h3>Monthly event quota and retention, by plan</h3>
+      <table class="ref-table">
+        <tr><th>Plan</th><th>Events / month</th><th>Retention</th><th>Audit export</th><th>Active API keys</th></tr>
+        <tr><td>Free</td><td class="mono">5,000</td><td class="mono">14 days</td><td>Latest 100 events</td><td class="mono">1</td></tr>
+        <tr><td>Pro</td><td class="mono">250,000</td><td class="mono">180 days</td><td>Full</td><td>Unlimited</td></tr>
+        <tr><td>Business</td><td class="mono">1,000,000</td><td class="mono">365 days</td><td>Full</td><td>Unlimited</td></tr>
+      </table>
+      <p>Events already written stay intact and verifiable when you hit the quota — ingestion stops, the chain is never truncated. Upgrades apply immediately rather than at the next billing cycle. See <a href="/pricing.html">Plans &amp; quotas</a> for the full comparison.</p>
+
+      <h3>Authentication limits</h3>
+      <p>Login has its own limiter, separate from everything above: 12 failures per minute per IP + email, and 30 attempts per minute per IP. An account locks for 15 minutes after 10 failures within 10 minutes.</p>
 
       <h2 id="mcp">MCP Gateway <span class="text-dim" style="font-size:14px;font-weight:400;">— JSON-RPC 2.0</span></h2>
       <table class="ref-table">
@@ -269,7 +325,8 @@
         <code>prompts/create</code>/<code>update</code>/<code>delete</code> check the caller's role and plan tier via internal headers set by the dashboard session — an API key has no concept of "role," so those three methods always reject calls made through <code>/mcp/v1/rpc</code>, regardless of the key's scope or the tenant's plan.
       </div>
 
-      <h3>Limits</h3>
+      <h3>Payload limits</h3>
+      <p>Size ceilings on a single MCP call. For requests-per-minute see <a href="#limits">Rate limits &amp; quotas</a>.</p>
       <table class="ref-table">
         <tr><td>Max query size</td><td class="mono">8 KB</td></tr>
         <tr><td>Max tool name</td><td class="mono">256 bytes</td></tr>
@@ -308,9 +365,12 @@
       <h3>Usage &amp; audit</h3>
       <table class="ref-table">
         <tr><th>Endpoint</th><th>Notes</th></tr>
-        <tr><td class="mono">GET /usage</td><td>Quota, events billed this month, plan tier.</td></tr>
+        <tr><td class="mono">GET /usage</td><td>Quota, events billed this month, plan tier, and a <code>quota_warning_tier</code> the dashboard uses to colour the usage meter.</td></tr>
+        <tr><td class="mono">GET /usage/history</td><td>Per-month usage series for the usage chart.</td></tr>
         <tr><td class="mono">GET /audit</td><td>General activity log (logins, user changes, API requests) — not the hash-chained event log.</td></tr>
-        <tr><td class="mono">GET /users · POST /users · GET /roles</td><td>Team management.</td></tr>
+        <tr><td class="mono">GET /security-events</td><td>Security-relevant subset: failed logins, lockouts, key revocations.</td></tr>
+        <tr><td class="mono">GET /users · POST /users · GET /roles</td><td>Team management. <code>GET /roles</code> returns the roles available on the tenant's plan.</td></tr>
+        <tr><td class="mono">GET · POST · PUT · DELETE /custom-roles</td><td>Business-only, Owner-only. Define roles with explicit permission sets beyond Owner / Admin / Member.</td></tr>
       </table>
 
       <h2 id="billing">Billing</h2>
@@ -363,6 +423,27 @@
         <tr><td class="mono">GET /data/status</td><td>Current deletion state.</td></tr>
       </table>
 
+      <h2 id="ops">Health &amp; operations</h2>
+      <p>Two separate probes, deliberately. Mixing them up is how a healthy process gets killed in a restart loop.</p>
+
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/healthz</span><span class="auth-badge">public</span></div>
+      <p><strong>Liveness.</strong> Answers <code>200</code> as long as the process is running and able to serve HTTP. It touches no database, so a database outage will never make it fail. This is the endpoint an orchestrator should use to decide whether to restart the container — if it used a database-backed check instead, a brief database blip would restart a process that was working fine, and the restart would not fix anything.</p>
+
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/readyz</span><span class="auth-badge">public</span></div>
+      <p><strong>Readiness.</strong> Checks each dependency and returns <code>200</code> when the instance can serve real traffic, <code>503</code> when it cannot. Use this one as the load-balancer and deploy health check.</p>
+      <div class="code-block"><pre><span class="cm">// 200</span>
+{ <span class="ck">"status"</span>: <span class="cs">"ready"</span>,
+  <span class="ck">"checks"</span>: { <span class="ck">"bolt"</span>: <span class="cs">"ok"</span>, <span class="ck">"postgres"</span>: <span class="cs">"ok"</span> } }
+
+<span class="cm">// 503</span>
+{ <span class="ck">"status"</span>: <span class="cs">"not_ready"</span>,
+  <span class="ck">"checks"</span>: { <span class="ck">"bolt"</span>: <span class="cs">"error: timeout"</span>, <span class="ck">"postgres"</span>: <span class="cs">"ok"</span> } }</pre></div>
+      <p>Each check has a 2-second timeout, so <code>/readyz</code> cannot hang behind a stuck dependency. A component reported as <code>not_configured</code> is optional and does not make the instance unready.</p>
+
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/api/admin/backup/bolt</span><span class="auth-badge">root API key</span></div>
+      <p>Returns a consistent snapshot of the embedded key-value store as a file download, taken inside a read transaction so it is safe to call while the service is handling writes. Requires the <code>X-Root-API-Key</code> header; it is an operator endpoint, not a tenant one.</p>
+      <p>The response carries <code>X-TrailSeal-Bolt-Size</code>, the exact byte count of the snapshot. <strong>Compare it against the file you received</strong> — that header is how you tell a complete backup from a truncated one. The snapshot is assembled in full before the first byte is sent, so a failure mid-snapshot surfaces as a <code>500</code> rather than as a <code>200</code> carrying a half-written file.</p>
+
       <h2 id="errors">Error reference</h2>
       <p>REST endpoints return <code>{"error": "code"}</code> (sometimes with extra fields, e.g. <code>valid_scopes</code>). MCP errors use a separate taxonomy, mapped to JSON-RPC error codes:</p>
       <table class="ref-table">
@@ -371,7 +452,8 @@
         <tr><td class="mono">tool_not_found</td><td class="mono">-32602</td><td>No tool matches the given name/ID for this tenant.</td></tr>
         <tr><td class="mono">resource_not_found</td><td class="mono">-32602</td><td>Unknown resource URI.</td></tr>
         <tr><td class="mono">prompt_not_found</td><td class="mono">-32602</td><td>Unknown prompt name.</td></tr>
-        <tr><td class="mono">quota_exceeded</td><td class="mono">—</td><td>Monthly event quota hit; also returned as REST <code>429</code> on <code>/v1/events</code>.</td></tr>
+        <tr><td class="mono">quota_exceeded</td><td class="mono">—</td><td>Monthly event quota hit. Also returned as REST <code>429</code> on <code>/v1/events*</code> — <strong>retrying will not help</strong>, no <code>Retry-After</code> is sent.</td></tr>
+        <tr><td class="mono">rate_limit_exceeded</td><td class="mono">—</td><td>Too many requests this minute. REST <code>429</code> with a <code>Retry-After</code> header; clears on its own. The body also carries <code>limit</code> and <code>priority</code>. See <a href="#limits">Rate limits &amp; quotas</a>.</td></tr>
         <tr><td class="mono">forbidden</td><td class="mono">-32600</td><td>Caller isn't allowed to do this (e.g. non-Owner calling <code>prompts/create</code>).</td></tr>
         <tr><td class="mono">internal_error</td><td class="mono">-32603</td><td>Unhandled server error — details are never leaked to the response.</td></tr>
       </table>
@@ -389,7 +471,7 @@
         <a href="/pricing.html">Pricing</a>
         <a href="/docs.html">Docs</a>
         <a href="mailto:support@trailseal.dev">Support</a>
-        <a href="https://github.com/shadowharvest/saas-agent" target="_blank" rel="noopener">GitHub</a>
+        <a href="/security.html">Security</a>
       </nav>
       <div class="text-dim footer-copyright">© 2026 TrailSeal. All rights reserved.</div>
     </div>

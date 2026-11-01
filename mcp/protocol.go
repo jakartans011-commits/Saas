@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	
+
 	"trailseal/audit"
 )
 
@@ -301,10 +301,10 @@ func (t *MCPToolCall) Validate() error {
 // request (lihat tracing.go), diberikan agar execution layer bisa
 // menyertakan ID yang sama pada log/trace tanpa membuat ID baru.
 type MCPExecutionContext struct {
-	TenantID  string
-	UserID    string
-	Context   map[string]string
-	RequestID string
+	TenantID   string
+	UserID     string
+	Context    map[string]string
+	RequestID  string
 	AuditStore audit.Store
 }
 

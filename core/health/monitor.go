@@ -14,25 +14,25 @@ import (
 
 // Monitor adalah implementasi HealthMonitor
 type Monitor struct {
-	mu              sync.RWMutex
-	pluginManager   *plugin.Manager
-	scheduler       *scheduler.Scheduler
-	permEngine      *permission.Engine
-	eventBus        sdk.EventBus
-	registry        sdk.Registry
-	logger          sdk.Logger
+	mu               sync.RWMutex
+	pluginManager    *plugin.Manager
+	scheduler        *scheduler.Scheduler
+	permEngine       *permission.Engine
+	eventBus         sdk.EventBus
+	registry         sdk.Registry
+	logger           sdk.Logger
 	metricsCollector *MetricsCollector
-	alertEngine     *AlertEngine
-	interval        time.Duration
-	ctx             context.Context
-	cancel          context.CancelFunc
-	isRunning       bool
-	lastCheck       time.Time
-	status          sdk.HealthStatus
-	reports         []sdk.HealthReport
-	checkCounter    int
-	failCounter     int
-	heartbeat       *Heartbeat
+	alertEngine      *AlertEngine
+	interval         time.Duration
+	ctx              context.Context
+	cancel           context.CancelFunc
+	isRunning        bool
+	lastCheck        time.Time
+	status           sdk.HealthStatus
+	reports          []sdk.HealthReport
+	checkCounter     int
+	failCounter      int
+	heartbeat        *Heartbeat
 }
 
 // NewMonitor membuat health monitor baru

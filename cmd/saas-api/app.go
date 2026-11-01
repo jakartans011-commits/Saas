@@ -531,7 +531,7 @@ func BuildApp(
 	// HEALTH
 	// ============================================================
 
-		// /health lama dipertahankan apa adanya — sudah dipakai agent_test.go
+	// /health lama dipertahankan apa adanya — sudah dipakai agent_test.go
 	// dan konfigurasi lain. Menghapusnya bukan bagian pekerjaan ini.
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
@@ -551,7 +551,7 @@ func BuildApp(
 	// POST /api/admin/tenants
 	// ============================================================
 
-		// Snapshot bbolt. requireRoot, BUKAN JWT tenant: endpoint ini
+	// Snapshot bbolt. requireRoot, BUKAN JWT tenant: endpoint ini
 	// mengeluarkan SELURUH database — semua tenant, user, hash password,
 	// hash API key, refresh token. Siapa pun yang bisa memanggilnya
 	// memiliki seluruh produk.
@@ -1611,6 +1611,10 @@ func BuildApp(
 	app.Post(
 		"/v1/events/batch",
 		requireAPIKey,
+		// 500 event per panggilan. Tanpa limiter di sini, limiter pada
+		// POST /v1/events tidak ada artinya — pemanggil tinggal pindah
+		// ke endpoint ini.
+		rateLimiter,
 		middleware.RequireScope(events.ScopeCanIngest),
 		events.BatchIngestHandler(eventsStore, eventStore, auditStore, tenantStore),
 	)
@@ -1618,6 +1622,7 @@ func BuildApp(
 	app.Get(
 		"/v1/events",
 		requireAPIKey,
+		rateLimiter,
 		middleware.RequireScope(events.ScopeCanRead),
 		events.QueryHandler(eventsStore),
 	)
@@ -1625,6 +1630,10 @@ func BuildApp(
 	app.Post(
 		"/v1/events/verify",
 		requireAPIKey,
+		// VerifyRange memuat seluruh event project ke memori:
+		// 1 juta event = 74,7 detik dan +582 MB (lihat pengukuran di
+		// verify_incremental.go). Endpoint termahal di jalur API key.
+		rateLimiter,
 		middleware.RequireScope(events.ScopeCanRead),
 		events.VerifyHandler(eventsStore),
 	)
@@ -1634,6 +1643,8 @@ func BuildApp(
 	app.Get(
 		"/v1/events/export",
 		requireAPIKey,
+		// Sampai 100.000 event dimuat ke memori per panggilan.
+		rateLimiter,
 		middleware.RequireScope(events.ScopeCanRead),
 		events.ExportHandler(eventsStore, exportCapResolver),
 	)
@@ -1661,7 +1672,9 @@ func BuildApp(
 	app.Post(
 		"/api/tenants/:id/data/delete",
 		requireAuth,
+		middleware.AuditLogger(auditStore),
 		middleware.RequireTenantScope("id"),
+		rateLimiter,
 		middleware.RequireCapability(
 			capEngine,
 			roleResolver,
@@ -1693,7 +1706,12 @@ func BuildApp(
 			userStore,
 			revocationStore,
 		),
+		// Hard delete permanen. Kalau satu route di seluruh produk ini
+		// harus tercatat, route inilah. AuditLogger menulis SETELAH
+		// c.Next(), jadi catatannya tidak ikut terhapus.
+		middleware.AuditLogger(auditStore),
 		middleware.RequireTenantScope("id"),
+		rateLimiter,
 		middleware.RequireCapability(
 			capEngine,
 			roleResolver,
@@ -1777,6 +1795,9 @@ func BuildApp(
 	app.Put(
 		"/api/tenants/:id/audit/retention",
 		requireAuth,
+		// Mempersempit retensi = memperkecil jendela bukti. Justru
+		// tindakan inilah yang paling perlu tercatat.
+		middleware.AuditLogger(auditStore),
 		middleware.RequireTenantScope("id"),
 		rateLimiter,
 		middleware.RequireCapability(
@@ -1790,6 +1811,7 @@ func BuildApp(
 	app.Post(
 		"/api/tenants/:id/audit/retention/cleanup",
 		requireAuth,
+		middleware.AuditLogger(auditStore),
 		middleware.RequireTenantScope("id"),
 		rateLimiter,
 		middleware.RequireCapability(

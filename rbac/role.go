@@ -15,10 +15,10 @@ import (
 // ============================================================
 
 type Role struct {
-	ID                string
-	TenantID          string
-	Name              string
-	CapabilityGrants  []string // pattern, mis. "tenant.tenant-a.*"
+	ID               string
+	TenantID         string
+	Name             string
+	CapabilityGrants []string // pattern, mis. "tenant.tenant-a.*"
 }
 
 // ============================================================

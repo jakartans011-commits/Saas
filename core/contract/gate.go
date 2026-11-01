@@ -7,8 +7,8 @@ import (
 
 // ContractGate adalah gerbang contract test
 type ContractGate struct {
-	verifier       *Verifier
-	highAssurance  *HighAssuranceManager
+	verifier      *Verifier
+	highAssurance *HighAssuranceManager
 }
 
 // NewContractGate membuat contract gate baru

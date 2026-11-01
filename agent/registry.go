@@ -99,7 +99,7 @@ func RegisterTool(
 
 	// Validate tool type
 	switch toolType {
-		case ToolTypeHealthCheck, ToolTypeMetadataLookup, ToolTypeEcho, ToolTypeAuditLookup:
+	case ToolTypeHealthCheck, ToolTypeMetadataLookup, ToolTypeEcho, ToolTypeAuditLookup:
 		// valid
 	default:
 		return nil, fmt.Errorf("invalid tool type: %s", toolType)

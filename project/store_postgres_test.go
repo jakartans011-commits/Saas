@@ -219,12 +219,12 @@ func TestPostgresStore_ApplyPlanToTenant(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mock.ExpectExec(regexp.QuoteMeta("INSERT INTO tenant_quotas")).
-    WithArgs("tenant-1", int64(250000)).
-    WillReturnResult(pgxmock.NewResult("INSERT", 1))
+			WithArgs("tenant-1", int64(250000)).
+			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-        mock.ExpectExec(regexp.QuoteMeta("UPDATE projects")).
-    WithArgs("tenant-1", int64(250000), 180).
-    WillReturnResult(pgxmock.NewResult("UPDATE", 3))
+		mock.ExpectExec(regexp.QuoteMeta("UPDATE projects")).
+			WithArgs("tenant-1", int64(250000), 180).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 3))
 
 		if err := store.ApplyPlanToTenant(context.Background(), "tenant-1", 250000, 180); err != nil {
 			t.Fatalf("ApplyPlanToTenant failed: %v", err)

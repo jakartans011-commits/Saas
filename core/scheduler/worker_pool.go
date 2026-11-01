@@ -10,13 +10,13 @@ import (
 
 // WorkerPool adalah pool worker untuk mengeksekusi executable
 type WorkerPool struct {
-	mu          sync.RWMutex
-	workers     int
-	taskQueue   chan *executionRequest
-	stopCh      chan struct{}
-	wg          sync.WaitGroup
-	isRunning   bool
-	executor    *Executor
+	mu        sync.RWMutex
+	workers   int
+	taskQueue chan *executionRequest
+	stopCh    chan struct{}
+	wg        sync.WaitGroup
+	isRunning bool
+	executor  *Executor
 }
 
 // executionRequest adalah request untuk mengeksekusi executable

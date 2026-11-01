@@ -31,7 +31,7 @@ type Container interface {
 	// ============================================================
 	// BASIC OPERATIONS
 	// ============================================================
-	
+
 	// Get mengambil service dari container
 	Get(name string) interface{}
 
@@ -91,12 +91,12 @@ type Container interface {
 
 // ContainerStats adalah statistik container
 type ContainerStats struct {
-	TotalServices   int                        `json:"total_services"`
-	SingletonCount  int                        `json:"singleton_count"`
-	ModuleCount     int                        `json:"module_count"`
-	RequestCount    int                        `json:"request_count"`
-	TenantCount     int                        `json:"tenant_count"`
-	Ready           bool                       `json:"ready"`
-	ServiceNames    []string                   `json:"service_names"`
-	ServiceTypes    map[string]string          `json:"service_types"`
+	TotalServices  int               `json:"total_services"`
+	SingletonCount int               `json:"singleton_count"`
+	ModuleCount    int               `json:"module_count"`
+	RequestCount   int               `json:"request_count"`
+	TenantCount    int               `json:"tenant_count"`
+	Ready          bool              `json:"ready"`
+	ServiceNames   []string          `json:"service_names"`
+	ServiceTypes   map[string]string `json:"service_types"`
 }

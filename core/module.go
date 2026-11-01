@@ -16,14 +16,14 @@ import (
 type ModuleState string
 
 const (
-	ModuleStateRegistered ModuleState = "registered"
+	ModuleStateRegistered  ModuleState = "registered"
 	ModuleStateInitialized ModuleState = "initialized"
-	ModuleStateStarting   ModuleState = "starting"
-	ModuleStateRunning    ModuleState = "running"
-	ModuleStateStopping   ModuleState = "stopping"
-	ModuleStateStopped    ModuleState = "stopped"
-	ModuleStateError      ModuleState = "error"
-	ModuleStateReloading  ModuleState = "reloading"
+	ModuleStateStarting    ModuleState = "starting"
+	ModuleStateRunning     ModuleState = "running"
+	ModuleStateStopping    ModuleState = "stopping"
+	ModuleStateStopped     ModuleState = "stopped"
+	ModuleStateError       ModuleState = "error"
+	ModuleStateReloading   ModuleState = "reloading"
 )
 
 func (s ModuleState) String() string { return string(s) }
@@ -53,18 +53,18 @@ func (v ModuleVersion) String() string {
 // ============================================================================
 
 type ModuleMetadata struct {
-	Name         string         `json:"name"`
-	Version      ModuleVersion  `json:"version"`
-	Description  string         `json:"description"`
-	Author       string         `json:"author"`
-	Website      string         `json:"website,omitempty"`
-	License      string         `json:"license,omitempty"`
-	Priority     int            `json:"priority"`
-	Permissions  []string       `json:"permissions"`
-	Dependencies []string       `json:"dependencies"`
-	Tags         []string       `json:"tags,omitempty"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
+	Name         string        `json:"name"`
+	Version      ModuleVersion `json:"version"`
+	Description  string        `json:"description"`
+	Author       string        `json:"author"`
+	Website      string        `json:"website,omitempty"`
+	License      string        `json:"license,omitempty"`
+	Priority     int           `json:"priority"`
+	Permissions  []string      `json:"permissions"`
+	Dependencies []string      `json:"dependencies"`
+	Tags         []string      `json:"tags,omitempty"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
 }
 
 // ============================================================================
@@ -109,13 +109,13 @@ type Module interface {
 // ============================================================================
 
 type BaseModule struct {
-	name       string
-	version    ModuleVersion
-	metadata   ModuleMetadata
-	state      ModuleState
-	mu         sync.RWMutex
-	startedAt  time.Time
-	health     ModuleHealth
+	name      string
+	version   ModuleVersion
+	metadata  ModuleMetadata
+	state     ModuleState
+	mu        sync.RWMutex
+	startedAt time.Time
+	health    ModuleHealth
 }
 
 func NewBaseModule(name string, version ModuleVersion, metadata ModuleMetadata) *BaseModule {
@@ -132,10 +132,10 @@ func NewBaseModule(name string, version ModuleVersion, metadata ModuleMetadata) 
 	}
 }
 
-func (m *BaseModule) Name() string                    { return m.name }
-func (m *BaseModule) Version() ModuleVersion          { return m.version }
-func (m *BaseModule) Metadata() ModuleMetadata        { return m.metadata }
-func (m *BaseModule) Priority() int                   { return m.metadata.Priority }
+func (m *BaseModule) Name() string             { return m.name }
+func (m *BaseModule) Version() ModuleVersion   { return m.version }
+func (m *BaseModule) Metadata() ModuleMetadata { return m.metadata }
+func (m *BaseModule) Priority() int            { return m.metadata.Priority }
 
 func (m *BaseModule) Dependencies() []string {
 	return m.metadata.Dependencies

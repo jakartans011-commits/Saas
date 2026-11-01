@@ -26,7 +26,7 @@ type PlanConfig struct {
 	AuditExportMaxEvents int  // 0 = export penuh
 	MaxActiveAPIKeys     int  // 0 = tanpa batas
 	CustomRoles          bool // hanya Business
- }
+}
 
 var baseDefinitions = map[PlanTier]PlanConfig{
 	PlanFree: {
@@ -40,7 +40,7 @@ var baseDefinitions = map[PlanTier]PlanConfig{
 	PlanBusiness: {
 		Tier: PlanBusiness, MonthlyEventLimit: 1_000_000, RetentionDays: 365,
 		MCPRequestsPerMinute: 1000, AuditExportMaxEvents: 0, MaxActiveAPIKeys: 0, CustomRoles: true,
-   },
+	},
 }
 
 type Registry struct {

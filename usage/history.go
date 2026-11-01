@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	bolt "go.etcd.io/bbolt"
 	"encoding/json"
+	bolt "go.etcd.io/bbolt"
 )
 
 type HistoryPoint struct {

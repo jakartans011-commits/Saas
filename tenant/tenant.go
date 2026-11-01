@@ -46,7 +46,7 @@ type Tenant struct {
 	StripeSubscriptionID string `json:"stripe_subscription_id,omitempty"`
 	PlanTier             string `json:"plan_tier,omitempty"`
 	SubscriptionStatus   string `json:"subscription_status,omitempty"`
-	NotificationEmail string `json:"notification_email,omitempty"` // tujuan notifikasi customer (Chain Integrity, quota) — kosong = fallback ke email Owner
+	NotificationEmail    string `json:"notification_email,omitempty"` // tujuan notifikasi customer (Chain Integrity, quota) — kosong = fallback ke email Owner
 
 	PaymentFailureCount  int        `json:"payment_failure_count,omitempty"`
 	LastPaymentFailureAt *time.Time `json:"last_payment_failure_at,omitempty"`

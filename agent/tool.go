@@ -12,7 +12,7 @@ const (
 	ToolTypeHealthCheck    ToolType = "health_check"
 	ToolTypeMetadataLookup ToolType = "metadata_lookup"
 	ToolTypeEcho           ToolType = "echo"
-	ToolTypeAuditLookup    ToolType = "audit_lookup" 
+	ToolTypeAuditLookup    ToolType = "audit_lookup"
 )
 
 type Tool struct {

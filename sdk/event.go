@@ -44,8 +44,8 @@ type Event struct {
 
 // EventBusStats adalah statistik event bus
 type EventBusStats struct {
-	TotalEvents      int            `json:"total_events"`
-	TotalSubscribers int            `json:"total_subscribers"`
+	TotalEvents       int            `json:"total_events"`
+	TotalSubscribers  int            `json:"total_subscribers"`
 	SubscribersByType map[string]int `json:"subscribers_by_type"`
-	EventsByType     map[string]int `json:"events_by_type"`
+	EventsByType      map[string]int `json:"events_by_type"`
 }

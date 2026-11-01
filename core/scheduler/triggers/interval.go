@@ -10,10 +10,10 @@ import (
 
 // IntervalTrigger adalah trigger berdasarkan interval
 type IntervalTrigger struct {
-	name      string
-	interval  time.Duration
-	enabled   bool
-	lastRun   time.Time
+	name     string
+	interval time.Duration
+	enabled  bool
+	lastRun  time.Time
 }
 
 // NewIntervalTrigger membuat interval trigger baru
@@ -39,10 +39,10 @@ func NewIntervalTrigger(config map[string]interface{}) (sdk.Trigger, error) {
 	}
 
 	return &IntervalTrigger{
-		name:      name,
-		interval:  interval,
-		enabled:   enabled,
-		lastRun:   time.Time{},
+		name:     name,
+		interval: interval,
+		enabled:  enabled,
+		lastRun:  time.Time{},
 	}, nil
 }
 

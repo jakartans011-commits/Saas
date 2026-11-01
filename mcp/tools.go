@@ -1,7 +1,7 @@
 package mcp
 
 import (
-	"fmt" 
+	"fmt"
 	"trailseal/agent"
 )
 
@@ -68,9 +68,9 @@ func buildMCPToolDefinition(
 	switch tool.Type {
 	case agent.ToolTypeEcho:
 		definition.Description = "Echo back any message provided by the user. " +
-        "This tool is useful for testing connectivity, validating the MCP gateway, " +
-        "and simple response generation. Returns the exact message with prefix 'Echo: '. " +
-        "Supports messages up to 16KB in size."
+			"This tool is useful for testing connectivity, validating the MCP gateway, " +
+			"and simple response generation. Returns the exact message with prefix 'Echo: '. " +
+			"Supports messages up to 16KB in size."
 
 		definition.InputSchema = map[string]interface{}{
 			"type": "object",
@@ -92,8 +92,8 @@ func buildMCPToolDefinition(
 
 	case agent.ToolTypeHealthCheck:
 		definition.Description = "Check the health status of all systems. " +
-        "Returns current system status including database connectivity, " +
-        "service availability, and response times. No parameters required."
+			"Returns current system status including database connectivity, " +
+			"service availability, and response times. No parameters required."
 
 		definition.InputSchema = map[string]interface{}{
 			"type":       "object",
@@ -102,8 +102,8 @@ func buildMCPToolDefinition(
 
 	case agent.ToolTypeMetadataLookup:
 		definition.Description = "Look up metadata and configuration details for this tool. " +
-        "Returns tool metadata including creation time, configuration parameters, " +
-        "and operational status. No parameters required."
+			"Returns tool metadata including creation time, configuration parameters, " +
+			"and operational status. No parameters required."
 
 		definition.InputSchema = map[string]interface{}{
 			"type":       "object",
@@ -112,7 +112,7 @@ func buildMCPToolDefinition(
 
 	default:
 		definition.Description = fmt.Sprintf("Execute the '%s' tool with provided parameters. "+
-        "This tool is of type '%s' and accepts the specified input schema.", tool.Name, tool.Type)
+			"This tool is of type '%s' and accepts the specified input schema.", tool.Name, tool.Type)
 
 		definition.InputSchema = map[string]interface{}{
 			"type":       "object",

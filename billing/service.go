@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"sync"	
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,8 +16,8 @@ import (
 	"github.com/stripe/stripe-go/v78/webhook"
 
 	"trailseal/audit"
-	"trailseal/tenant"
 	"trailseal/rbac"
+	"trailseal/tenant"
 )
 
 // ProjectPlanApplier is the subset of project.PostgresStore that the
@@ -43,6 +43,7 @@ type WebhookEventClaimer interface {
 	// masih bisa memproses event yang sama. Lihat webhook_event_release.go.
 	Release(ctx context.Context, eventID string) error
 }
+
 // AuditLogger is the subset of audit.Store the billing service needs
 // to record billing lifecycle events (checkout, subscription change,
 // cancellation, payment failure). Defined as an interface for the
@@ -184,10 +185,10 @@ func newAuditEventID() string {
 // lockTenant returns the mutex for a given tenant ID, creating it on
 // first use. Callers must call the returned unlock func when done.
 func (s *Service) lockTenant(tenantID string) func() {
-muIface, _ := s.tenantLocks.LoadOrStore(tenantID, &sync.Mutex{})
-mu := muIface.(*sync.Mutex)
-mu.Lock()
-return mu.Unlock
+	muIface, _ := s.tenantLocks.LoadOrStore(tenantID, &sync.Mutex{})
+	mu := muIface.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
 }
 
 type Service struct {
@@ -199,7 +200,7 @@ type Service struct {
 	successURL        string
 	cancelURL         string
 	portalReturnURL   string
-	auditLogger       AuditLogger // opsional, nil-safe
+	auditLogger       AuditLogger     // opsional, nil-safe
 	roleStore         RoleProvisioner // opsional, nil-safe — sama pola seperti auditLogger
 
 	// subscriptionFetcher — opsional, nil-safe. Dipakai rekonsiliasi harian
@@ -207,18 +208,18 @@ type Service struct {
 	// mengembalikan error alih-alih laporan bersih palsu.
 	subscriptionFetcher SubscriptionFetcher
 
-// tenantLocks — serializes webhook read-modify-write cycles per
-// tenant. Stripe can deliver multiple events for the same tenant
-// within the same second (e.g. checkout.session.completed +
-// customer.subscription.updated), each handled on its own Fiber
-// goroutine. Without this, two handlers can both Get() the tenant
-// before either Put()s, and whichever writes last silently
-// clobbers fields the other one set (observed: StripeCustomerID
-// reverting to "" after a subscription.updated event overwrote a
-// checkout.session.completed write). sync.Map avoids needing to
-// pre-register every tenant ID up front.
-tenantLocks sync.Map // map[string]*sync.Mutex
- }
+	// tenantLocks — serializes webhook read-modify-write cycles per
+	// tenant. Stripe can deliver multiple events for the same tenant
+	// within the same second (e.g. checkout.session.completed +
+	// customer.subscription.updated), each handled on its own Fiber
+	// goroutine. Without this, two handlers can both Get() the tenant
+	// before either Put()s, and whichever writes last silently
+	// clobbers fields the other one set (observed: StripeCustomerID
+	// reverting to "" after a subscription.updated event overwrote a
+	// checkout.session.completed write). sync.Map avoids needing to
+	// pre-register every tenant ID up front.
+	tenantLocks sync.Map // map[string]*sync.Mutex
+}
 
 func NewService(
 	tenantStore tenant.TenantStore,
@@ -373,7 +374,7 @@ func (s *Service) CreateCheckoutHandler() fiber.Handler {
 
 		var req struct {
 			Plan     string `json:"plan"`
-            Interval string `json:"interval"`
+			Interval string `json:"interval"`
 		}
 		if err := c.BodyParser(&req); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid_body"})
@@ -390,8 +391,8 @@ func (s *Service) CreateCheckoutHandler() fiber.Handler {
 		checkoutURL, err := s.CreateCheckoutSessionInterval(tenantID, PlanTier(req.Plan), interval)
 		if err != nil {
 			switch err {
-				case errIntervalNotAvailable:
-                   return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "interval_not_available"})
+			case errIntervalNotAvailable:
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "interval_not_available"})
 			case errInvalidPlan:
 				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 					"error":       "invalid_plan",
@@ -578,7 +579,7 @@ func (s *Service) WebhookHandler() fiber.Handler {
 			// Event lain sengaja diabaikan.
 		}
 
-			if handleErr != nil {
+		if handleErr != nil {
 			// Kita membalas 5xx supaya Stripe retry. Klaim harus dilepas
 			// lebih dulu, kalau tidak retry berikutnya dianggap duplikat
 			// dan dibalas 200 — pelanggan sudah dibayar tapi plannya tidak
@@ -596,7 +597,7 @@ func (s *Service) handleCheckoutCompleted(ctx context.Context, sess checkoutSess
 		return fmt.Errorf("checkout session missing client_reference_id")
 	}
 	unlock := s.lockTenant(tenantID)
-    defer unlock()
+	defer unlock()
 
 	t, err := s.tenantStore.Get(tenantID)
 	if err != nil {
@@ -694,7 +695,7 @@ func (s *Service) handleSubscriptionDeleted(ctx context.Context, sub subscriptio
 		return fmt.Errorf("subscription missing tenant_id metadata")
 	}
 	unlock := s.lockTenant(tenantID)
-    defer unlock()
+	defer unlock()
 
 	t, err := s.tenantStore.Get(tenantID)
 	if err != nil {
@@ -714,7 +715,7 @@ func (s *Service) handleSubscriptionDeleted(ctx context.Context, sub subscriptio
 	}
 
 	s.revokePaidRoles(tenantID)
-	
+
 	s.logBillingEvent(tenantID, "billing.subscription_canceled", "subscription:"+sub.ID, audit.OutcomeSuccess, nil)
 	return nil
 }
@@ -735,8 +736,8 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, inv invoicePay
 	}
 
 	unlock := s.lockTenant(t.ID)
-    defer unlock()
-	
+	defer unlock()
+
 	reason := "unknown"
 	if inv.LastFinalizationError != nil && inv.LastFinalizationError.Code != "" {
 		reason = inv.LastFinalizationError.Code

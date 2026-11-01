@@ -48,7 +48,7 @@ func validClaims(userID, tenantID, roleID string) auth.Claims {
 // mockRevocationStore lets tests force IsRevoked to fail (simulating
 // a store outage), which the InMemory store can never do.
 type mockRevocationStore struct {
-	inner       *auth.InMemoryAccessTokenRevocationStore
+	inner        *auth.InMemoryAccessTokenRevocationStore
 	isRevokedErr error
 }
 

@@ -14,7 +14,7 @@ type AlertRule struct {
 	MetricName  string
 	Severity    string // "warning", "critical"
 	Threshold   float64
-	Operator    string // "gt", "lt", "gte", "lte", "eq"
+	Operator    string        // "gt", "lt", "gte", "lte", "eq"
 	Duration    time.Duration // Durasi kondisi harus terpenuhi
 	Cooldown    time.Duration // Cooldown setelah alert
 	Description string

@@ -15,7 +15,7 @@ import (
 // rest of the codebase's minimal-dependency style.
 type ResendSender struct {
 	APIKey    string
-	From      string                              // e.g. "TrailSeal <alerts@yourdomain.com>"
+	From      string                                // e.g. "TrailSeal <alerts@yourdomain.com>"
 	Resolve   func(tenantID string) (string, error) // resolves recipient email for a tenant
 	Templates map[Template]func(job *EmailJob) (subject, html string)
 	client    *http.Client

@@ -13,16 +13,16 @@ import (
 
 // MetricsCollector mengumpulkan metrics dari semua komponen
 type MetricsCollector struct {
-	mu             sync.RWMutex
-	pluginManager  sdk.PluginManager
-	scheduler      *scheduler.Scheduler
-	permEngine     *permission.Engine
-	eventBus       sdk.EventBus
-	registry       sdk.Registry
-	logger         sdk.Logger
-	metrics        []sdk.HealthMetric
-	history        map[string][]sdk.HealthMetric
-	historyLimit   int
+	mu            sync.RWMutex
+	pluginManager sdk.PluginManager
+	scheduler     *scheduler.Scheduler
+	permEngine    *permission.Engine
+	eventBus      sdk.EventBus
+	registry      sdk.Registry
+	logger        sdk.Logger
+	metrics       []sdk.HealthMetric
+	history       map[string][]sdk.HealthMetric
+	historyLimit  int
 }
 
 // NewMetricsCollector membuat metrics collector baru
@@ -93,25 +93,25 @@ func (c *MetricsCollector) collectPluginMetrics() []sdk.HealthMetric {
 
 	// Total plugins
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "plugin.total",
-		Value: float64(len(plugins)),
-		Unit:  "count",
+		Name:      "plugin.total",
+		Value:     float64(len(plugins)),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
 	// Running plugins
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "plugin.running",
-		Value: float64(len(running)),
-		Unit:  "count",
+		Name:      "plugin.running",
+		Value:     float64(len(running)),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
 	// Load order count
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "plugin.load_order_count",
-		Value: float64(len(loadOrder)),
-		Unit:  "count",
+		Name:      "plugin.load_order_count",
+		Value:     float64(len(loadOrder)),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
@@ -171,23 +171,23 @@ func (c *MetricsCollector) collectSchedulerMetrics() []sdk.HealthMetric {
 	stats := c.scheduler.Stats()
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "scheduler.total_executables",
-		Value: float64(stats.TotalExecutables),
-		Unit:  "count",
+		Name:      "scheduler.total_executables",
+		Value:     float64(stats.TotalExecutables),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "scheduler.running",
-		Value: float64(stats.RunningCount),
-		Unit:  "count",
+		Name:      "scheduler.running",
+		Value:     float64(stats.RunningCount),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "scheduler.pending",
-		Value: float64(stats.PendingCount),
-		Unit:  "count",
+		Name:      "scheduler.pending",
+		Value:     float64(stats.PendingCount),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
@@ -200,17 +200,17 @@ func (c *MetricsCollector) collectSchedulerMetrics() []sdk.HealthMetric {
 		if total > 0 {
 			// Success rate
 			metrics = append(metrics, sdk.HealthMetric{
-				Name:  "scheduler.job_success_rate",
-				Value: (completed / total) * 100,
-				Unit:  "percent",
+				Name:      "scheduler.job_success_rate",
+				Value:     (completed / total) * 100,
+				Unit:      "percent",
 				Timestamp: time.Now(),
 			})
 
 			// Failure rate
 			metrics = append(metrics, sdk.HealthMetric{
-				Name:  "scheduler.job_failure_rate",
-				Value: (failed / total) * 100,
-				Unit:  "percent",
+				Name:      "scheduler.job_failure_rate",
+				Value:     (failed / total) * 100,
+				Unit:      "percent",
 				Timestamp: time.Now(),
 			})
 		}
@@ -225,16 +225,16 @@ func (c *MetricsCollector) collectEventBusMetrics() []sdk.HealthMetric {
 	stats := c.eventBus.GetStats()
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "eventbus.total_events",
-		Value: float64(stats.TotalEvents),
-		Unit:  "count",
+		Name:      "eventbus.total_events",
+		Value:     float64(stats.TotalEvents),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "eventbus.total_subscribers",
-		Value: float64(stats.TotalSubscribers),
-		Unit:  "count",
+		Name:      "eventbus.total_subscribers",
+		Value:     float64(stats.TotalSubscribers),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
@@ -260,16 +260,16 @@ func (c *MetricsCollector) collectRegistryMetrics() []sdk.HealthMetric {
 	stats := c.registry.Stats()
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "registry.total_plugins",
-		Value: float64(stats.TotalPlugins),
-		Unit:  "count",
+		Name:      "registry.total_plugins",
+		Value:     float64(stats.TotalPlugins),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 
 	metrics = append(metrics, sdk.HealthMetric{
-		Name:  "registry.total_manifests",
-		Value: float64(stats.TotalManifests),
-		Unit:  "count",
+		Name:      "registry.total_manifests",
+		Value:     float64(stats.TotalManifests),
+		Unit:      "count",
 		Timestamp: time.Now(),
 	})
 

@@ -96,15 +96,15 @@ func TestHandleSubscriptionUpdated_ActiveStatusClearsPriorFailureState(t *testin
 	pastDue := time.Now().Add(-2 * time.Hour)
 	deadline := time.Now().Add(2 * time.Hour)
 	if err := ts.Put(&tenant.Tenant{
-		ID:                    "jekosurabaya",
-		StripeCustomerID:      "cus_real123",
-		PlanTier:              "pro",
-		SubscriptionStatus:    "past_due",
-		PaymentFailureCount:   2,
-		LastPaymentFailureAt:  &pastFailure,
-		PaymentFailureReason:  "card_declined",
-		PastDueSince:          &pastDue,
-		GracePeriodDeadline:   &deadline,
+		ID:                   "jekosurabaya",
+		StripeCustomerID:     "cus_real123",
+		PlanTier:             "pro",
+		SubscriptionStatus:   "past_due",
+		PaymentFailureCount:  2,
+		LastPaymentFailureAt: &pastFailure,
+		PaymentFailureReason: "card_declined",
+		PastDueSince:         &pastDue,
+		GracePeriodDeadline:  &deadline,
 	}); err != nil {
 		t.Fatalf("seed tenant: %v", err)
 	}

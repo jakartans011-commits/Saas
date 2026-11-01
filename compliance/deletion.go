@@ -271,7 +271,7 @@ func PurgeTenant(
 		return fmt.Errorf("failed to hard delete tools: %w", err)
 	}
 
-		if err := apiKeyStore.DeleteAllForTenant(ctx, tenantID); err != nil {
+	if err := apiKeyStore.DeleteAllForTenant(ctx, tenantID); err != nil {
 		return fmt.Errorf("failed to hard delete api keys: %w", err)
 	}
 

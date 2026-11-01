@@ -34,8 +34,8 @@ import (
 type Template string
 
 const (
-	TemplateQuota80  Template = "quota_80_percent"
-	TemplateQuota100 Template = "quota_100_percent"
+	TemplateQuota80     Template = "quota_80_percent"
+	TemplateQuota100    Template = "quota_100_percent"
 	TemplateChainBroken Template = "chain_integrity_broken"
 )
 
@@ -184,6 +184,7 @@ func EnqueueChainBroken(tenantID, eventID string) {
 		log.Printf("WARN: notify: failed to enqueue chain_broken for tenant %s: %v", tenantID, err)
 	}
 }
+
 // Pending mengembalikan sampai `limit` job yang belum terkirim,
 // urutan insertion order (bbolt cursor iterates keys in byte order —
 // job.ID adalah UUID sehingga urutan TIDAK kronologis; cukup untuk

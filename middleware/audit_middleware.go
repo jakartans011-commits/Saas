@@ -56,9 +56,19 @@ func AuditLogger(auditStore audit.Store) fiber.Handler {
 		}
 
 		// ============================================================
-		// STEP 2: Hanya audit tenant-scoped endpoints
+		// STEP 2: Audit endpoint tenant-scoped DAN MCP native
+		//
+		// /mcp/v1/rpc diautentikasi API key, bukan JWT, jadi path-nya
+		// tidak berawalan /api/tenants/. Sebelum ini ia lolos dari
+		// STEP 2 dan tidak pernah menghasilkan satu baris audit pun —
+		// padahal itu jalur yang dipakai Claude Desktop dan Cursor,
+		// dan jejak tool call di situ adalah produk yang kita jual.
+		// Identitas untuk jalur ini sudah disiapkan di atas
+		// ("apikey:"+key.ID).
 		// ============================================================
-		if len(path) < 13 || path[:13] != "/api/tenants/" {
+		isTenantScoped := len(path) >= 13 && path[:13] == "/api/tenants/"
+		isMCPNative := len(path) >= 5 && path[:5] == "/mcp/"
+		if !isTenantScoped && !isMCPNative {
 			return c.Next()
 		}
 

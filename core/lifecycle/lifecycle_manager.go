@@ -7,8 +7,8 @@ import (
 
 // LifecycleManager mengelola lifecycle semua plugin
 type LifecycleManager struct {
-	logger    sdk.Logger
-	eventBus  sdk.EventBus
+	logger   sdk.Logger
+	eventBus sdk.EventBus
 }
 
 // NewLifecycleManager membuat lifecycle manager baru

@@ -40,17 +40,17 @@ func InjectMCPIdentityFromAPIKey() fiber.Handler {
 		c.Request().Header.Set("X-Tenant-ID", key.TenantID)
 		c.Request().Header.Set("X-User-ID", "apikey:"+key.ID)
 
-	   // FIX (privilege escalation): X-Role-ID/X-Plan-Tier TIDAK pernah
-       // di-set middleware ini — tapi kalau client API key mengirim
-       // header itu sendiri di request mentah, tidak ada yang
-       // menghapusnya sebelum diteruskan ke mcpServer.ServeHTTP.
-       // Akibatnya caller API key bisa selipkan X-Role-ID: owner +
-       // X-Plan-Tier: business dan lolos gate handlePromptsCreate
-       // (Owner-only + Business-only), walau API key tidak punya
-       // konsep role/tier sama sekali. Del eksplisit, bukan Set(""),
-       // supaya jelas: identitas ini TIDAK ADA untuk jalur API key.
-       c.Request().Header.Del("X-Role-ID")
-       c.Request().Header.Del("X-Plan-Tier")
+		// FIX (privilege escalation): X-Role-ID/X-Plan-Tier TIDAK pernah
+		// di-set middleware ini — tapi kalau client API key mengirim
+		// header itu sendiri di request mentah, tidak ada yang
+		// menghapusnya sebelum diteruskan ke mcpServer.ServeHTTP.
+		// Akibatnya caller API key bisa selipkan X-Role-ID: owner +
+		// X-Plan-Tier: business dan lolos gate handlePromptsCreate
+		// (Owner-only + Business-only), walau API key tidak punya
+		// konsep role/tier sama sekali. Del eksplisit, bukan Set(""),
+		// supaya jelas: identitas ini TIDAK ADA untuk jalur API key.
+		c.Request().Header.Del("X-Role-ID")
+		c.Request().Header.Del("X-Plan-Tier")
 
 		return c.Next()
 	}

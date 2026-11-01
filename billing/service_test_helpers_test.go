@@ -95,7 +95,7 @@ func (f *fakeWebhookEventStore) Claim(_ context.Context, eventID string, eventTy
 	if _, exists := f.events[eventID]; exists {
 		return false, nil
 	}
-		f.events[eventID] = eventType
+	f.events[eventID] = eventType
 	return true, nil
 }
 

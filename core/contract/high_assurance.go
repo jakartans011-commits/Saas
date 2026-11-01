@@ -15,8 +15,8 @@ import (
 // HighAssuranceManager mengelola high-assurance review
 type HighAssuranceManager struct {
 	mu          sync.RWMutex
-	approved    map[string]bool      // pluginName -> approved
-	reviewNotes map[string][]string  // pluginName -> notes
+	approved    map[string]bool     // pluginName -> approved
+	reviewNotes map[string][]string // pluginName -> notes
 	publicKey   string
 }
 

@@ -54,9 +54,9 @@ type Registry interface {
 
 // RegistryStats adalah statistik registry
 type RegistryStats struct {
-	TotalPlugins   int               `json:"total_plugins"`
-	TotalManifests int               `json:"total_manifests"`
-	Categories     map[string]int    `json:"categories"`
-	Permissions    map[string]int    `json:"permissions"`
-	Capabilities   map[string]int    `json:"capabilities"`
+	TotalPlugins   int            `json:"total_plugins"`
+	TotalManifests int            `json:"total_manifests"`
+	Categories     map[string]int `json:"categories"`
+	Permissions    map[string]int `json:"permissions"`
+	Capabilities   map[string]int `json:"capabilities"`
 }

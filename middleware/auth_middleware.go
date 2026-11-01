@@ -64,7 +64,7 @@ func RequireAuth(
 	revocationStore auth.AccessTokenRevocationStore,
 ) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-				tokenString, ok := extractAccessToken(c)
+		tokenString, ok := extractAccessToken(c)
 		if !ok {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "missing_or_malformed_authorization_header",
@@ -212,11 +212,11 @@ func RequireAuthAllowDeletedUser(
 ) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		tokenString, ok := extractAccessToken(c)
-if !ok {
-	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-		"error": "missing_or_malformed_authorization_header",
-	})
-}
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "missing_or_malformed_authorization_header",
+			})
+		}
 
 		// ========================================================
 		// JWT VALIDATION

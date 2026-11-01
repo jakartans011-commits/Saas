@@ -37,11 +37,11 @@ type Project struct {
 // tier plan sungguhan yang menentukan limit per customer.
 const (
 	DefaultMonthlyEventLimit = 10000
-// DefaultRetentionDays — fallback untuk tenant Free/belum-checkout SAJA.
-// Pro/Business dapat retention dari PlanResolver (180/365 hari), tidak
-// lewat konstanta ini. Nilai ini HARUS sama dengan janji pricing publik
-// §1 (Free tier: 14 hari) — diperbaiki dari 90 ke 14 (2026-09-14).
-DefaultRetentionDays     = 14
+	// DefaultRetentionDays — fallback untuk tenant Free/belum-checkout SAJA.
+	// Pro/Business dapat retention dari PlanResolver (180/365 hari), tidak
+	// lewat konstanta ini. Nilai ini HARUS sama dengan janji pricing publik
+	// §1 (Free tier: 14 hari) — diperbaiki dari 90 ke 14 (2026-09-14).
+	DefaultRetentionDays = 14
 )
 
 var (

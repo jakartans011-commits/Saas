@@ -22,16 +22,16 @@ type ContractVerifier interface {
 
 // ContractTestResult adalah hasil contract test
 type ContractTestResult struct {
-	Passed      bool     `json:"passed"`
-	Errors      []string `json:"errors,omitempty"`
-	Warnings    []string `json:"warnings,omitempty"`
-	HighAssurance bool   `json:"high_assurance,omitempty"`
+	Passed        bool     `json:"passed"`
+	Errors        []string `json:"errors,omitempty"`
+	Warnings      []string `json:"warnings,omitempty"`
+	HighAssurance bool     `json:"high_assurance,omitempty"`
 }
 
 // HighAssuranceReview adalah hasil high-assurance review
 type HighAssuranceReview struct {
-	Required    bool     `json:"required"`
-	Completed   bool     `json:"completed"`
-	ApprovedBy  string   `json:"approved_by,omitempty"`
-	Notes       []string `json:"notes,omitempty"`
+	Required   bool     `json:"required"`
+	Completed  bool     `json:"completed"`
+	ApprovedBy string   `json:"approved_by,omitempty"`
+	Notes      []string `json:"notes,omitempty"`
 }

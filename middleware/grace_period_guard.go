@@ -30,8 +30,8 @@ func RequirePaymentCurrent(tenantStore tenant.TenantStore) fiber.Handler {
 			t.GracePeriodDeadline != nil &&
 			time.Now().After(*t.GracePeriodDeadline) {
 			return c.Status(fiber.StatusPaymentRequired).JSON(fiber.Map{
-				"error":               "payment_required",
-				"grace_period_ended":  t.GracePeriodDeadline,
+				"error":                  "payment_required",
+				"grace_period_ended":     t.GracePeriodDeadline,
 				"payment_failure_reason": t.PaymentFailureReason,
 			})
 		}

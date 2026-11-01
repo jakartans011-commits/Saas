@@ -1,4 +1,4 @@
-﻿package mcp
+package mcp
 
 import (
 	"encoding/json"
@@ -33,8 +33,8 @@ type Server struct {
 // (app.go) tidak perlu diubah untuk task built-in-prompt ini.
 func NewServer(gateway *Gateway) *Server {
 	return &Server{
-		gateway: gateway,
-		prompts: NewPromptRegistry(),
+		gateway:  gateway,
+		prompts:  NewPromptRegistry(),
 		sessions: NewSessionStore(defaultSessionTTL),
 	}
 }
@@ -72,7 +72,7 @@ func (s *Server) ServeHTTP(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-		// Streamable HTTP transport (MCP spec): tidak ada server-initiated
+	// Streamable HTTP transport (MCP spec): tidak ada server-initiated
 	// SSE stream, jadi GET WAJIB dibalas 405. DELETE dipakai client
 	// untuk terminate session.
 	if r.Method == http.MethodGet {
@@ -140,7 +140,7 @@ func (s *Server) ServeHTTP(
 		return
 	}
 
-		// DELETE = terminate session. Sesi harus milik tenant+user ini,
+	// DELETE = terminate session. Sesi harus milik tenant+user ini,
 	// sehingga ID yang bocor tidak bisa dipakai menghapus sesi orang lain.
 	if r.Method == http.MethodDelete {
 		sessionID := r.Header.Get(SessionHeader)
@@ -183,7 +183,7 @@ func (s *Server) ServeHTTP(
 		return
 	}
 
-		// Session management (Streamable HTTP). Lenient secara default:
+	// Session management (Streamable HTTP). Lenient secara default:
 	// header divalidasi hanya jika dikirim. 404 di level HTTP, bukan
 	// JSON-RPC error, sesuai spec.
 	if s.sessions != nil {
@@ -214,7 +214,7 @@ func (s *Server) ServeHTTP(
 		&request,
 	)
 
-		writeMCPResponse(w, r, response)
+	writeMCPResponse(w, r, response)
 }
 
 // writeMCPResponse melakukan content negotiation sesuai Streamable
@@ -276,7 +276,7 @@ func (s *Server) handleRequest(
 		return s.handleInitialize(req.ID)
 
 	case "server/discover":
-		return s.handleServerDiscover(req.ID, req.Params)	
+		return s.handleServerDiscover(req.ID, req.Params)
 
 	case "tools/list":
 		return s.handleToolsList(
@@ -387,28 +387,28 @@ func (s *Server) handleInitialize(
 // 2025-06-18), makanya protocolVersion di bawah ini sengaja beda
 // dengan yang di handleInitialize.
 func (s *Server) handleServerDiscover(
-id interface{},
-rawParams json.RawMessage,
+	id interface{},
+	rawParams json.RawMessage,
 ) *JSONRPCResponse {
-_ = rawParams
+	_ = rawParams
 
-result := map[string]interface{}{
-"resultType":       "complete",
-"supportedVersions": []string{"2026-07-28"},
-"capabilities": map[string]interface{}{
-"tools":     map[string]interface{}{},
-"resources": map[string]interface{}{},
-"prompts":   map[string]interface{}{},
-},
-"_meta": map[string]interface{}{
-"io.modelcontextprotocol/serverInfo": map[string]interface{}{
-"name":    "trailseal-mcp",
-"version": "1.0.0",
-},
-},
-}
+	result := map[string]interface{}{
+		"resultType":        "complete",
+		"supportedVersions": []string{"2026-07-28"},
+		"capabilities": map[string]interface{}{
+			"tools":     map[string]interface{}{},
+			"resources": map[string]interface{}{},
+			"prompts":   map[string]interface{}{},
+		},
+		"_meta": map[string]interface{}{
+			"io.modelcontextprotocol/serverInfo": map[string]interface{}{
+				"name":    "trailseal-mcp",
+				"version": "1.0.0",
+			},
+		},
+	}
 
-return newJSONRPCResult(id, result)
+	return newJSONRPCResult(id, result)
 }
 
 // handleToolsList menangani tools/list.

@@ -20,36 +20,36 @@ type HealthCheckable interface {
 
 // HealthMetric adalah metrik kesehatan
 type HealthMetric struct {
-	Name      string                 `json:"name"`
-	Value     float64                `json:"value"`
-	Unit      string                 `json:"unit"`
-	Labels    map[string]string      `json:"labels,omitempty"`
-	Timestamp time.Time              `json:"timestamp"`
+	Name      string            `json:"name"`
+	Value     float64           `json:"value"`
+	Unit      string            `json:"unit"`
+	Labels    map[string]string `json:"labels,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
 }
 
 // HealthReport adalah laporan kesehatan
 type HealthReport struct {
-	Component   string                 `json:"component"`
-	Status      HealthStatus           `json:"status"`
-	Message     string                 `json:"message,omitempty"`
-	Metrics     []HealthMetric         `json:"metrics,omitempty"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Details     map[string]interface{} `json:"details,omitempty"`
-	Children    []HealthReport         `json:"children,omitempty"`
+	Component string                 `json:"component"`
+	Status    HealthStatus           `json:"status"`
+	Message   string                 `json:"message,omitempty"`
+	Metrics   []HealthMetric         `json:"metrics,omitempty"`
+	Timestamp time.Time              `json:"timestamp"`
+	Details   map[string]interface{} `json:"details,omitempty"`
+	Children  []HealthReport         `json:"children,omitempty"`
 }
 
 // HealthAlert adalah alert kesehatan
 type HealthAlert struct {
-	ID          string                 `json:"id"`
-	Severity    string                 `json:"severity"` // "warning", "critical"
-	Message     string                 `json:"message"`
-	Component   string                 `json:"component"`
-	Metric      string                 `json:"metric"`
-	Threshold   float64                `json:"threshold"`
-	ActualValue float64                `json:"actual_value"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Resolved    bool                   `json:"resolved"`
-	ResolvedAt  *time.Time             `json:"resolved_at,omitempty"`
+	ID          string     `json:"id"`
+	Severity    string     `json:"severity"` // "warning", "critical"
+	Message     string     `json:"message"`
+	Component   string     `json:"component"`
+	Metric      string     `json:"metric"`
+	Threshold   float64    `json:"threshold"`
+	ActualValue float64    `json:"actual_value"`
+	Timestamp   time.Time  `json:"timestamp"`
+	Resolved    bool       `json:"resolved"`
+	ResolvedAt  *time.Time `json:"resolved_at,omitempty"`
 }
 
 // HealthMonitor adalah interface untuk health monitor

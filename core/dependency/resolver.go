@@ -10,11 +10,11 @@ import (
 
 // Resolver adalah implementasi DependencyResolver
 type Resolver struct {
-	manifests  map[string]sdk.Manifest
-	graph      map[string]*sdk.DependencyNode
-	visited    map[string]bool
-	recStack   map[string]bool
-	order      []string
+	manifests map[string]sdk.Manifest
+	graph     map[string]*sdk.DependencyNode
+	visited   map[string]bool
+	recStack  map[string]bool
+	order     []string
 }
 
 // NewResolver membuat dependency resolver baru

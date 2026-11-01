@@ -27,11 +27,11 @@ type Trigger interface {
 
 // TriggerDeclaration adalah deklarasi trigger di manifest (data, bukan interface)
 type TriggerDeclaration struct {
-	Type     string                 `json:"type"`                // "interval", "cron", "event", "manual"
-	Config   map[string]interface{} `json:"config"`              // {"interval": "30s"}, {"cron": "0 * * * *"}
-	Enabled  bool                   `json:"enabled"`             // default: true
-	Timeout  string                 `json:"timeout,omitempty"`   // "30s"
-	Retry    *RetryPolicy           `json:"retry,omitempty"`
+	Type    string                 `json:"type"`              // "interval", "cron", "event", "manual"
+	Config  map[string]interface{} `json:"config"`            // {"interval": "30s"}, {"cron": "0 * * * *"}
+	Enabled bool                   `json:"enabled"`           // default: true
+	Timeout string                 `json:"timeout,omitempty"` // "30s"
+	Retry   *RetryPolicy           `json:"retry,omitempty"`
 }
 
 // RetryPolicy adalah kebijakan retry untuk executable

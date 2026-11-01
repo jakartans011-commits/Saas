@@ -40,12 +40,12 @@ type Scheduler interface {
 
 // SchedulerStats adalah statistik scheduler
 type SchedulerStats struct {
-	TotalExecutables int                       `json:"total_executables"`
-	RunningCount     int                       `json:"running_count"`
-	PendingCount     int                       `json:"pending_count"`
-	CompletedCount   int                       `json:"completed_count"`
-	FailedCount      int                       `json:"failed_count"`
-	CancelledCount   int                       `json:"cancelled_count"`
-	TimeoutCount     int                       `json:"timeout_count"`
-	StatusCounts     map[ExecutableStatus]int  `json:"status_counts"`
+	TotalExecutables int                      `json:"total_executables"`
+	RunningCount     int                      `json:"running_count"`
+	PendingCount     int                      `json:"pending_count"`
+	CompletedCount   int                      `json:"completed_count"`
+	FailedCount      int                      `json:"failed_count"`
+	CancelledCount   int                      `json:"cancelled_count"`
+	TimeoutCount     int                      `json:"timeout_count"`
+	StatusCounts     map[ExecutableStatus]int `json:"status_counts"`
 }

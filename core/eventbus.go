@@ -40,12 +40,12 @@ type EventBus struct {
 }
 
 type Subscription struct {
-	ID       string
-	Module   string
-	Handler  EventHandler
-	Active   bool
-	Created  time.Time
-	mu       sync.RWMutex
+	ID      string
+	Module  string
+	Handler EventHandler
+	Active  bool
+	Created time.Time
+	mu      sync.RWMutex
 }
 
 // ============================================================================

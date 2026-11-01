@@ -34,8 +34,8 @@ func TestSubscriptionUpdated_ProTier_ProvisionsAdminAndMemberRoles(t *testing.T)
 	svc.SetRoleStore(roleStore)
 
 	sub := subscriptionPayload{
-		ID:     "sub_123",
-		Status: "active",
+		ID:       "sub_123",
+		Status:   "active",
 		Metadata: map[string]string{"tenant_id": "acme-corp"},
 	}
 	sub.Items.Data = []struct {
@@ -65,8 +65,8 @@ func TestSubscriptionUpdated_RoleStoreNotSet_DoesNotPanic(t *testing.T) {
 	// SetRoleStore intentionally NOT called — must stay nil-safe.
 
 	sub := subscriptionPayload{
-		ID:     "sub_123",
-		Status: "active",
+		ID:       "sub_123",
+		Status:   "active",
 		Metadata: map[string]string{"tenant_id": "acme-corp"},
 	}
 	sub.Items.Data = []struct {

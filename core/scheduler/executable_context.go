@@ -10,13 +10,13 @@ import (
 
 // executableContext adalah implementasi sdk.ExecutableContext
 type executableContext struct {
-	mu          sync.RWMutex
-	id          string
-	pluginName  string
-	triggerType string
-	deadline    time.Time
-	values      map[string]interface{}
-	cancelled   bool
+	mu           sync.RWMutex
+	id           string
+	pluginName   string
+	triggerType  string
+	deadline     time.Time
+	values       map[string]interface{}
+	cancelled    bool
 	cancelReason string
 }
 
