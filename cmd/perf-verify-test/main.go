@@ -15,17 +15,18 @@
 // Yang diukur (sesuai §2D, "ukur VerifyRange"), plus satu tambahan
 // yang direkomendasikan supaya angkanya representatif untuk endpoint
 // sungguhan:
-//   1. VerifyRange mentah — baseline murni, tanpa overhead orkestrasi.
-//   2. VerifyTenant — jalur yang BENAR-BENAR dipakai
-//      GET/POST /api/tenants/:id/audit/verify (semaphore 2 + dedupe,
-//      lihat events/verify_tenant.go §2B poin 4).
+//  1. VerifyRange mentah — baseline murni, tanpa overhead orkestrasi.
+//  2. VerifyTenant — jalur yang BENAR-BENAR dipakai
+//     GET/POST /api/tenants/:id/audit/verify (semaphore 2 + dedupe,
+//     lihat events/verify_tenant.go §2B poin 4).
 //
 // VerifyRange/VerifyChain/ComputeHash dipakai APA ADANYA — tidak
 // diubah sedikit pun, sesuai §3 zona "jangan disentuh".
 //
 // Cara pakai:
-//   $env:TRAILSEAL_TEST_POSTGRES_URL="postgres://..."
-//   go run ./cmd/perf-verify-test -events=1000000
+//
+//	$env:TRAILSEAL_TEST_POSTGRES_URL="postgres://..."
+//	go run ./cmd/perf-verify-test -events=1000000
 //
 // SARAN: jalankan dulu dengan -events=100 sebagai smoke test (skema
 // jsonb payload belum diverifikasi terhadap CopyFrom di lingkungan
@@ -33,7 +34,8 @@
 // chainRows.Values() jadi `string(payload)`).
 //
 // Untuk mengukur ulang project yang sudah di-seed tanpa seed ulang:
-//   go run ./cmd/perf-verify-test -skip-seed -project-id=<id>
+//
+//	go run ./cmd/perf-verify-test -skip-seed -project-id=<id>
 package main
 
 import (

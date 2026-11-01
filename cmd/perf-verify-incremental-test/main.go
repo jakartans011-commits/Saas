@@ -10,8 +10,9 @@
 // manual, seperti cmd/perf-verify-test yang sudah ada.
 //
 // Cara pakai (2 kali, project sudah pernah di-seed):
-//   $env:TRAILSEAL_TEST_POSTGRES_URL="postgres://..."
-//   go run ./cmd/perf-verify-incremental-test -tenant-id=perf-test-tenant-1790364532
+//
+//	$env:TRAILSEAL_TEST_POSTGRES_URL="postgres://..."
+//	go run ./cmd/perf-verify-incremental-test -tenant-id=perf-test-tenant-1790364532
 package main
 
 import (

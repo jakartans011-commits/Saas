@@ -3,18 +3,18 @@
 // Tool standalone (BUKAN bagian dari server) untuk verifikasi manual
 // item #8 ROADMAP — full purge flow. Dua subcommand:
 //
-//   go run ./cmd/purge-verify backdate <tenant_id>
-//     Set DeletedAt tenant jadi 40 hari lalu, supaya grace period (30/60
-//     hari) langsung lolos tanpa nunggu asli. WAJIB stop server dulu
-//     (bbolt exclusive file lock, tidak bisa dibuka 2 proses sekaligus).
+//	go run ./cmd/purge-verify backdate <tenant_id>
+//	  Set DeletedAt tenant jadi 40 hari lalu, supaya grace period (30/60
+//	  hari) langsung lolos tanpa nunggu asli. WAJIB stop server dulu
+//	  (bbolt exclusive file lock, tidak bisa dibuka 2 proses sekaligus).
 //
-//   go run ./cmd/purge-verify verify <tenant_id>
-//     Cek SEMUA store (bolt: tenant/agents/tools, postgres:
-//     audit_events/projects/api_keys) benar-benar kosong untuk tenant_id
-//     itu. Jalankan SETELAH purge via API, dan SETELAH stop server lagi
-//     (bagian bolt-nya). Audit events pindah dari bolt ke postgres sejak
-//     migrasi PostgresAuditStore (2026-09) — WAJIB isi
-//     TRAILSEAL_POSTGRES_URL, kalau tidak audit events TIDAK ikut dicek.
+//	go run ./cmd/purge-verify verify <tenant_id>
+//	  Cek SEMUA store (bolt: tenant/agents/tools, postgres:
+//	  audit_events/projects/api_keys) benar-benar kosong untuk tenant_id
+//	  itu. Jalankan SETELAH purge via API, dan SETELAH stop server lagi
+//	  (bagian bolt-nya). Audit events pindah dari bolt ke postgres sejak
+//	  migrasi PostgresAuditStore (2026-09) — WAJIB isi
+//	  TRAILSEAL_POSTGRES_URL, kalau tidak audit events TIDAK ikut dicek.
 //
 // TODO SEBELUM DIJALANKAN: isi BOLT_DB_PATH dan DATABASE_URL di bawah
 // sesuai .env Anda (cek main.go untuk nilai aslinya kalau tidak yakin).

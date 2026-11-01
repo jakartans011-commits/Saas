@@ -16,9 +16,10 @@ import (
 
 // newTestAppWithFullChain membangun app dengan chain lengkap:
 // (inject claims palsu, simulasi RequireAuth yang sudah lolos)
-//   -> RequireTenantScope("id")
-//   -> RequireCapability(engine, roleResolver, template)
-//   -> handler spy
+//
+//	-> RequireTenantScope("id")
+//	-> RequireCapability(engine, roleResolver, template)
+//	-> handler spy
 //
 // Ini persis urutan yang dipasang di cmd/saas-api/main.go untuk
 // POST /api/tenants/:id/users.

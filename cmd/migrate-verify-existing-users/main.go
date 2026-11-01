@@ -6,8 +6,9 @@
 // EmailVerifiedAt set). Does NOT touch DeletedAt or Status.
 //
 // Usage:
-//   go run ./cmd/migrate-verify-existing-users -db path/to/data.db
-//   go run ./cmd/migrate-verify-existing-users -db path/to/data.db -dry-run
+//
+//	go run ./cmd/migrate-verify-existing-users -db path/to/data.db
+//	go run ./cmd/migrate-verify-existing-users -db path/to/data.db -dry-run
 package main
 
 import (

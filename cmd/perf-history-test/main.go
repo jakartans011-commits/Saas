@@ -17,10 +17,12 @@
 // GET /api/tenants/:id/usage/history. Dipakai APA ADANYA, tidak diubah.
 //
 // Cara pakai:
-//   go run ./cmd/perf-history-test -events=1000000
+//
+//	go run ./cmd/perf-history-test -events=1000000
 //
 // Untuk mengukur ulang tanpa seed ulang:
-//   go run ./cmd/perf-history-test -skip-seed -tenant-id=<id>
+//
+//	go run ./cmd/perf-history-test -skip-seed -tenant-id=<id>
 package main
 
 import (

@@ -11,7 +11,8 @@
 // kosong.
 //
 // Cara pakai:
-//   go run ./cmd/apply-test-migrations
+//
+//	go run ./cmd/apply-test-migrations
 package main
 
 import (
