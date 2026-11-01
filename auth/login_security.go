@@ -7,10 +7,35 @@ import (
 )
 
 // ============================================================
+// BATAS UKURAN PENAMPUNG
+//
+// Ketiga limiter di berkas ini menyimpan satu record per kunci di
+// memori, dan ketiganya hanya menyusut lewat jalur yang menyentuh SATU
+// kunci: saat kunci yang sama diperiksa atau dicatat ulang, atau saat
+// login berhasil. Kunci yang tidak pernah muncul lagi tinggal selamanya.
+//
+// Kuncinya adalah IP dan alamat email — keduanya ditentukan oleh
+// pemanggil, bukan oleh jumlah pelanggan. Jadi penampungnya tumbuh
+// seiring jumlah percobaan dari luar, bukan seiring pemakaian yang sah,
+// dan siapa pun bisa menumbuhkannya tanpa akun.
+//
+// Penyapuan hanya berjalan saat penampung sudah melewati ambang,
+// sehingga login normal tidak pernah membayar biaya O(n). Ambangnya
+// disesuaikan dengan berapa lama record hidup di masing-masing limiter.
+// ============================================================
+
+const (
+	credentialStuffingSweepThreshold = 4096
+	accountLockoutSweepThreshold     = 8192
+	sessionRefreshSweepThreshold     = 4096
+)
+
+// ============================================================
 // CREDENTIAL STUFFING / IP LOGIN LIMITER
 //
 // Berbeda dengan LoginAttemptLimiter yang menggunakan:
-//     IP + email
+//
+//	IP + email
 //
 // limiter ini menggunakan IP SAJA.
 //
@@ -68,6 +93,11 @@ func (l *CredentialStuffingLimiter) RecordAttempt(ip string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	// Satu-satunya jalur yang menambah record.
+	if len(l.records) >= credentialStuffingSweepThreshold {
+		l.sweepExpiredLocked(now)
+	}
+
 	rec, ok := l.records[key]
 
 	if !ok || now.After(rec.windowEnd) {
@@ -81,16 +111,28 @@ func (l *CredentialStuffingLimiter) RecordAttempt(ip string) {
 	rec.attempts++
 }
 
+// sweepExpiredLocked membuang record yang window-nya sudah lewat.
+// Pemanggil wajib memegang l.mu.
+func (l *CredentialStuffingLimiter) sweepExpiredLocked(now time.Time) {
+	for k, rec := range l.records {
+		if now.After(rec.windowEnd) {
+			delete(l.records, k)
+		}
+	}
+}
+
 // ============================================================
 // ACCOUNT LOCKOUT
 //
 // Counter dikaitkan ke email/account, bukan IP.
 //
 // 10 kegagalan dalam 10 menit:
-//     -> account locked 15 menit
+//
+//	-> account locked 15 menit
 //
 // Successful authentication:
-//     -> counter di-reset.
+//
+//	-> counter di-reset.
 //
 // Lockout bersifat sementara sehingga tidak menjadi permanent
 // account destruction dan dapat pulih otomatis.
@@ -159,6 +201,11 @@ func (l *AccountLockout) RecordFailure(email string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	// Satu-satunya jalur yang menambah record.
+	if len(l.records) >= accountLockoutSweepThreshold {
+		l.sweepExpiredLocked(now)
+	}
+
 	rec, ok := l.records[key]
 
 	if !ok || now.After(rec.windowEnd) {
@@ -188,6 +235,29 @@ func (l *AccountLockout) Reset(email string) {
 	defer l.mu.Unlock()
 
 	delete(l.records, key)
+}
+
+// sweepExpiredLocked membuang record yang sudah tidak berguna.
+// Pemanggil wajib memegang l.mu.
+//
+// Urutan pemeriksaannya MENIRU IsLocked dengan sengaja. Akun yang
+// sedang terkunci harus tetap tinggal: membuangnya akan melepaskan
+// penguncian lebih awal, yaitu memperbaiki kebocoran memori dengan
+// harga membuka kembali celah brute-force.
+func (l *AccountLockout) sweepExpiredLocked(now time.Time) {
+	for k, rec := range l.records {
+		if !rec.lockedTo.IsZero() {
+			// Masih terkunci — jangan disentuh.
+			if now.After(rec.lockedTo) {
+				delete(l.records, k)
+			}
+			continue
+		}
+
+		if now.After(rec.windowEnd) {
+			delete(l.records, k)
+		}
+	}
 }
 
 // ============================================================
@@ -249,6 +319,11 @@ func (l *SessionRefreshLimiter) Record(ip, userID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	// Satu-satunya jalur yang menambah record.
+	if len(l.records) >= sessionRefreshSweepThreshold {
+		l.sweepExpiredLocked(now)
+	}
+
 	rec, ok := l.records[key]
 
 	if !ok || now.After(rec.windowEnd) {
@@ -260,6 +335,16 @@ func (l *SessionRefreshLimiter) Record(ip, userID string) {
 	}
 
 	rec.attempts++
+}
+
+// sweepExpiredLocked membuang record yang window-nya sudah lewat.
+// Pemanggil wajib memegang l.mu.
+func (l *SessionRefreshLimiter) sweepExpiredLocked(now time.Time) {
+	for k, rec := range l.records {
+		if now.After(rec.windowEnd) {
+			delete(l.records, k)
+		}
+	}
 }
 
 func normalizeSecurityEmail(email string) string {
