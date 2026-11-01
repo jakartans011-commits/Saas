@@ -693,6 +693,30 @@ func (s *Server) handlePromptsGet(
 		)
 	}
 
+		// Kuota dikonsumsi SETELAH validasi berhasil, bukan sebelumnya.
+	// usage_handlers.go mendefinisikan prompts/get sebagai billable hanya
+	// kalau sukses; memotong kuota di awal membuat laporan pemakaian dan
+	// penghitung kuota tidak pernah cocok. Rate limiter per menit yang
+	// menjaga dari penyalahgunaan nama prompt asal-asalan, bukan kuota.
+	//
+	// CATATAN: resources.go:108 masih memotong di awal. Keduanya harus
+	// disamakan, tapi itu mengubah perilaku yang sudah punya test.
+	if s.gateway != nil && s.gateway.quota != nil {
+		allowed, _, err := s.gateway.quota.TryConsumeQuota(tenantID, 1)
+		if err != nil {
+			return jsonRPCResponseFromMCPError(id, InternalMCPError(
+				fmt.Errorf("quota check failed: %w", err),
+			))
+		}
+		if !allowed {
+			return jsonRPCResponseFromMCPError(id, newMCPError(
+				MCPErrorQuotaExceeded,
+				"monthly event quota exceeded",
+				nil,
+			))
+		}
+	}
+
 	return newJSONRPCResult(id, MCPPromptsGetResult{
 		Description: prompt.Description,
 		Messages:    renderPromptMessages(prompt, params.Arguments),
@@ -1080,6 +1104,27 @@ func jsonRPCResponseFromMCPError(
 			nil,
 		)
 
+		case MCPErrorQuotaExceeded:
+		// Kuota bulanan habis BUKAN kerusakan server. Sebelum ini ia
+		// jatuh ke default dan client menerima -32603 "internal error",
+		// dengan pesan aslinya dibuang. Akibatnya agen mencoba lagi
+		// berulang-ulang dan pemilik tenant menyimpulkan servernya rusak,
+		// padahal yang perlu ia lakukan hanya menaikkan paket.
+		//
+		// -32600 (InvalidRequest), sama seperti MCPErrorForbidden di atas:
+		// permintaannya sendiri yang ditolak. Kode ini juga menahan client
+		// dari retry otomatis, dan itu memang yang benar — retry tidak akan
+		// berhasil sampai periode kuota berikutnya.
+		//
+		// Kalau nanti client perlu membedakannya dari Forbidden secara
+		// programatik, tempatnya di field data JSON-RPC, bukan kode baru.
+		return newJSONRPCError(
+			id,
+			JSONRPCInvalidRequest,
+			err.Error(),
+			nil,
+		)
+		
 	default:
 		return newJSONRPCError(
 			id,
