@@ -314,6 +314,7 @@
         <div class="docs-nav-title">Audit</div>
         <a href="#audit">Events &amp; verification</a>
         <a href="#audit">Retention &amp; quotas</a>
+        <a href="#limits">Rate limits</a>
       </div>
       <div class="docs-nav-group">
         <div class="docs-nav-title">Account</div>
@@ -463,6 +464,54 @@
         can change the retention window.
       </p>
 
+      <h2 id="limits">Rate limits</h2>
+      <p>
+        Every authenticated endpoint is rate limited per tenant, in a fixed
+        60-second window. The window is aligned to the clock, not to your
+        first request — a counter resets on the minute boundary rather than
+        60 seconds after you started.
+      </p>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <h3>Event API</h3>
+          <p><code>/v1/events</code>, <code>/batch</code>, <code>/verify</code>, <code>/export</code> — <strong>1,000 requests/minute</strong> on every plan. Batch ingest sends many events per request, so this is a guard against runaway loops, not a usage cap.</p>
+        </div>
+        <div class="concept-card">
+          <h3>MCP gateway</h3>
+          <p>Scales with your plan — <strong>60/min (Free), 300/min (Pro), 1,000/min (Business)</strong>. Counted separately from the event API, so exhausting one never blocks the other.</p>
+        </div>
+      </div>
+      <p>
+        Every response carries your current position, so you can back off
+        before being rejected rather than after:
+      </p>
+      <div class="code-block">
+        <div class="code-block-head"><span class="dot"></span>http</div>
+        <pre>X-RateLimit-Limit:     <span class="cs">1000</span>
+X-RateLimit-Remaining: <span class="cs">847</span>
+X-RateLimit-Reset:     <span class="cs">1762003260</span>  <span class="cm"># unix seconds</span></pre>
+      </div>
+      <p>
+        Once the limit is reached, requests are rejected with
+        <code>429 Too Many Requests</code> and a <code>Retry-After</code>
+        header in seconds:
+      </p>
+      <div class="code-block">
+        <div class="code-block-head"><span class="dot"></span>json</div>
+        <pre>{
+  <span class="cs">"error"</span>: <span class="cs">"rate_limit_exceeded"</span>,
+  <span class="cs">"limit"</span>: 1000,
+  <span class="cs">"priority"</span>: <span class="cs">"normal"</span>,
+  <span class="cs">"reset"</span>: 1762003260
+}</pre>
+      </div>
+      <p>
+        Rate-limited requests are <strong>not</strong> counted against your
+        monthly event quota — nothing was recorded, so nothing is billed.
+        Need a higher ceiling? <a href="mailto:support@trailseal.dev">Talk to us</a>
+        rather than retrying in a tight loop.
+      </p>
+
       <div class="callout">
         <strong>Note:</strong> this Introduction page covers the fundamentals
         in one place — see the full <a href="/api-reference.html">API reference</a>
@@ -533,6 +582,7 @@
       <a href="#concepts">Core concepts</a>
       <a href="#mcp-gateway">Tools, prompts &amp; resources</a>
       <a href="#audit">Events, verification &amp; retention</a>
+      <a href="#limits">Rate limits</a>
       <a href="#quickstart">Quickstart</a>
       <a href="#next-steps">Next steps</a>
     </aside>

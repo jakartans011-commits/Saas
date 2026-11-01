@@ -275,6 +275,7 @@ func BuildApp(
 	billingService.SetPortalReturnURL(os.Getenv("BILLING_PORTAL_RETURN_URL"))
 	billingService.SetAuditLogger(auditStore) // BARU
 	billingService.SetRoleStore(roleStore)
+	billingService.SetSubscriptionFetcher(billing.NewStripeSubscriptionFetcher())
 
 	// ============================================================
 	// PLAN RESOLVER
@@ -530,15 +531,35 @@ func BuildApp(
 	// HEALTH
 	// ============================================================
 
+		// /health lama dipertahankan apa adanya — sudah dipakai agent_test.go
+	// dan konfigurasi lain. Menghapusnya bukan bagian pekerjaan ini.
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status": "ok",
 		})
 	})
 
+	// Liveness vs readiness — lihat health_handlers.go.
+	//
+	// Didaftarkan di sini, sebelum requireAuth/rateLimiter/AuditLogger,
+	// supaya pemantau eksternal bisa mencapainya tanpa kredensial dan
+	// tanpa menulis 43.200 baris audit per bulan.
+	app.Get("/healthz", HealthzHandler())
+	app.Get("/readyz", ReadyzHandler(db, pgPool))
+
 	// ============================================================
 	// POST /api/admin/tenants
 	// ============================================================
+
+		// Snapshot bbolt. requireRoot, BUKAN JWT tenant: endpoint ini
+	// mengeluarkan SELURUH database — semua tenant, user, hash password,
+	// hash API key, refresh token. Siapa pun yang bisa memanggilnya
+	// memiliki seluruh produk.
+	app.Get(
+		"/api/admin/backup/bolt",
+		requireRoot,
+		BoltBackupHandler(db),
+	)
 
 	app.Post(
 		"/api/admin/tenants",
@@ -1578,6 +1599,11 @@ func BuildApp(
 	app.Post(
 		"/v1/events",
 		requireAPIKey,
+		// Satu pelanggan dengan loop yang salah bisa membanjiri ingest
+		// sepanjang malam. Limiter ini SUDAH mendukung jalur API key
+		// (rate_limit.go mengambil tenant dari APIKeyFromFiberCtx), jadi
+		// cukup dipasang — tidak perlu limiter kedua.
+		rateLimiter,
 		middleware.RequireScope(events.ScopeCanIngest),
 		events.IngestHandler(eventsStore, eventStore, auditStore, tenantStore),
 	)

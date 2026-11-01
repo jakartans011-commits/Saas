@@ -51,7 +51,13 @@ const (
 
 	// DefaultMCPLimit adalah jumlah request maksimum per tenant
 	// untuk traffic MCP dalam satu window.
-	DefaultMCPLimit = 100
+	//
+	// Nilainya WAJIB sama dengan plan termurah (Free = 60), bukan lebih
+	// longgar. Nilai ini hanya terpakai bila MCPLimitResolver memulangkan
+	// 0 — dan dalam keadaan "plan tidak diketahui", memberi lebih dari
+	// yang didapat pelanggan Free adalah gagal-TERBUKA.
+	// Sebelumnya 100, yang lebih longgar dari Free.
+	DefaultMCPLimit = 60
 
 	// DefaultWindow adalah ukuran fixed window dalam detik.
 	DefaultWindow = 60
@@ -304,12 +310,15 @@ func NewRateLimiter(config *RateLimiterConfig) fiber.Handler {
 
 		allowed, remaining, resetAt, err := counter.Allow()
 
-		if err != nil {
-			// Fail-open:
-			// jika storage rate limiter gagal, jangan membuat
-			// seluruh API unavailable.
-			return c.Next()
-		}
+					if err != nil {
+				// Fail-open:
+				// jika storage rate limiter gagal, jangan membuat
+				// seluruh API unavailable.
+				//
+				// TAPI jangan diam. Lihat rate_limit_failopen.go.
+				notifyRateLimiterStorageFailure(err)
+				return c.Next()
+			}
 
 		c.Set(
 			"X-RateLimit-Limit",

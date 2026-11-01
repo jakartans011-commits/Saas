@@ -1,0 +1,43 @@
+# Dependabot — pembaruan dependensi mingguan.
+#
+# Produk kepatuhan yang punya CVE belum ditambal adalah masalah PENJUALAN,
+# bukan hanya masalah teknis: ia akan muncul di kuesioner keamanan pembeli
+# B2B pertama Anda.
+#
+# Mingguan, bukan harian: PR tiap hari akan diabaikan, dan dependabot yang
+# diabaikan sama saja dengan tidak ada.
+version: 2
+
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Satu PR untuk pembaruan patch — kebanyakan aman dan tidak layak
+      # satu PR masing-masing.
+      go-patch:
+        update-types: ["patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/saas-agent-sdk-ts"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      npm-dev:
+        dependency-type: "development"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore(ci)"

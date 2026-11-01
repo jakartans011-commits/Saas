@@ -160,6 +160,25 @@ func main() {
 		}
 	}()
 
+	// Rekonsiliasi Stripe harian — menangkap webhook yang tidak pernah
+	// sampai. Dry-run kecuali STRIPE_RECONCILE_APPLY=true.
+	stopReconcile, err := startStripeReconcileScheduler(billingService)
+	if err != nil {
+		log.Printf("stripe reconcile scheduler disabled: %v", err)
+	} else {
+		defer stopReconcile()
+	}
+
+	// Alert disk penuh. Bukan rotasi log: saas-api menulis ke stderr dan
+	// platform yang menangkapnya. Sumber disk penuh yang nyata adalah
+	// bbolt yang tumbuh dan tidak pernah mengecil, plus berkas backup.
+	stopDisk, err := startDiskMonitor()
+	if err != nil {
+		log.Printf("disk monitor disabled: %v", err)
+	} else {
+		defer stopDisk()
+	}
+
 	// P5-1: retensi events + purge tenant kedaluwarsa (harian)
 	stopRetention, err := startRetentionScheduler(boltDB, pgPool)
 	if err != nil {

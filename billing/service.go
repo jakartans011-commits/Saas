@@ -202,6 +202,11 @@ type Service struct {
 	auditLogger       AuditLogger // opsional, nil-safe
 	roleStore         RoleProvisioner // opsional, nil-safe — sama pola seperti auditLogger
 
+	// subscriptionFetcher — opsional, nil-safe. Dipakai rekonsiliasi harian
+	// (stripe_reconcile.go). nil = rekonsiliasi mati, dan ReconcileStripe
+	// mengembalikan error alih-alih laporan bersih palsu.
+	subscriptionFetcher SubscriptionFetcher
+
 // tenantLocks — serializes webhook read-modify-write cycles per
 // tenant. Stripe can deliver multiple events for the same tenant
 // within the same second (e.g. checkout.session.completed +
