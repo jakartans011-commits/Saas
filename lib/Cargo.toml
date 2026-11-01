@@ -1,0 +1,48 @@
+[package]
+name = "shadowharvest_engine"
+version = "0.1.0"
+edition = "2021"
+authors = ["ShadowHarvest Team"]
+description = "Stealth engine for ShadowHarvest Agent"
+license = "MIT"
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+name = "shadowharvest_engine"
+
+[dependencies]
+libc = "0.2"
+rand = "0.8"
+
+winapi = { version = "0.3", features = [
+    "winuser",
+    "winbase", 
+    "winnt",
+    "processthreadsapi",
+    "securitybaseapi", 
+    "debugapi",
+    "memoryapi",
+    "tlhelp32",
+    "winreg",        # ← PASTIKAN INI ADA!
+    "synchapi",
+    "handleapi",
+    "errhandlingapi",
+    "fileapi",
+    "sysinfoapi",
+] }
+
+aes-gcm = "0.10"
+base64 = "0.21"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[build-dependencies]
+cc = "1.0"
+
+[profile.release]
+lto = true
+opt-level = "z"
+strip = true
+panic = "abort"
+codegen-units = 1
+incremental = false

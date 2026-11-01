@@ -1,0 +1,125 @@
+{{define "content"}}
+<div class="page-header">
+    <div>
+        <h1>Usage &amp; Telemetry</h1>
+        <p class="lede">API request metering for tenant <span class="text-mono">{{.Tenant.ID}}</span>. Sourced directly from the usage event store — nothing here is estimated.</p>
+    </div>
+</div>
+
+<div class="grid grid-3 mb-16">
+    <div class="card metric-tile">
+        <div class="metric-label">Total Requests Recorded</div>
+        <div class="metric-value">{{.UsageCount}}</div>
+    </div>
+    <div class="card metric-tile">
+        <div class="metric-label">Rate Limit</div>
+        <div class="metric-value">1,000</div>
+        <div class="metric-sub">requests / 60s (tenant-wide)</div>
+    </div>
+    <div class="card metric-tile">
+        <div class="metric-label">Distinct Event Types</div>
+        <div class="metric-value">{{len .EventTypeCounts}}</div>
+    </div>
+</div>
+
+<div class="card card-pad mb-16">
+    <div class="card-header">
+        <h2>Monthly Quota</h2>
+        <span class="card-meta">{{.QuotaUsed}} / {{.QuotaLimit}} recorded events</span>
+    </div>
+    <p class="text-dim" style="margin-top:-4px;">Shared monthly quota across all projects in this tenant — projects do not have separate allowances.</p>
+    <div class="progress-track">
+        <div class="progress-fill{{if eq .QuotaWarningTier "exceeded"}} crit{{else if eq .QuotaWarningTier "critical"}} crit{{else if eq .QuotaWarningTier "warning"}} warn{{end}}" style="width: {{.QuotaPercent}}%;"></div>
+    </div>
+    <div class="progress-meta">
+        <span>{{.QuotaPercent}}% of plan allowance used &middot; {{.QuotaRemaining}} events remaining &middot; resets {{.QuotaResetDate.Format "Jan 2, 2006"}}</span>
+        {{if eq .QuotaWarningTier "exceeded"}}<span class="badge crit">Quota exceeded</span>
+        {{else if eq .QuotaWarningTier "critical"}}<span class="badge warn">90%+ used</span>
+        {{else if eq .QuotaWarningTier "warning"}}<span class="badge warn">80%+ used</span>
+        {{else}}<span class="badge ok">Healthy</span>{{end}}
+    </div>
+    {{if eq .QuotaWarningTier "exceeded"}}
+    <p class="text-dim" style="margin-top:8px;">You've used your full monthly allowance for the <strong>{{.PlanTier}}</strong> plan. Additional requests will receive an HTTP <span class="text-mono">429</span> response until usage resets on {{.QuotaResetDate.Format "Jan 2, 2006"}}, or until you upgrade — there is no automatic overage billing.</p>
+    {{else if eq .QuotaWarningTier "critical"}}
+    <p class="text-dim" style="margin-top:8px;">You're close to your monthly allowance. Once usage reaches 100%, additional requests will receive an HTTP <span class="text-mono">429</span> response until reset or upgrade.</p>
+    {{else if eq .QuotaWarningTier "warning"}}
+    <p class="text-dim" style="margin-top:8px;">You've used over 80% of this month's allowance. Requests beyond 100% return an HTTP <span class="text-mono">429</span> until reset.</p>
+    {{end}}
+    {{if ne .PlanTier "business"}}
+    <a href="/pricing" class="btn btn-primary" style="margin-top:12px;">Upgrade plan</a>
+    {{end}}
+</div>
+
+<div class="grid grid-2 mb-16">
+    <div class="card card-pad">
+        <div class="card-header">
+            <h2>Requests — Last 14 Days</h2>
+        </div>
+        {{if .DailySeries}}
+        <div class="bar-chart">
+            {{range .DailySeries}}
+            <div class="bar-chart-col" title="{{.Date}}: {{.Count}} requests">
+                <div class="bar-chart-bar" style="height: {{.Percent}}%;"></div>
+                <div class="bar-chart-label">{{slice .Date 8 10}}</div>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="empty-state">
+            <div class="empty-title">No data yet</div>
+            <div class="empty-body">Once requests start hitting the API for this tenant, daily volume will chart here automatically.</div>
+        </div>
+        {{end}}
+    </div>
+
+    <div class="card card-pad">
+        <div class="card-header">
+            <h2>Breakdown by Event Type</h2>
+        </div>
+        {{if .EventTypeBreakdown}}
+        {{range .EventTypeBreakdown}}
+        <div class="breakdown-row">
+            <span class="text-mono">{{.EventType}}</span>
+            <div class="breakdown-track"><div class="breakdown-fill" style="width: {{.Percent}}%;"></div></div>
+            <span class="text-dim text-mono">{{.Count}} ({{.Percent}}%)</span>
+        </div>
+        {{end}}
+        {{else}}
+        <div class="empty-state">
+            <div class="empty-title">No event types recorded yet</div>
+            <div class="empty-body">This breaks down recorded usage events by type once traffic starts flowing.</div>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Recent Events</h2>
+        <span class="card-meta">Last {{len .UsageEvents}} shown</span>
+    </div>
+    {{if .UsageEvents}}
+    <table>
+        <thead>
+            <tr><th>Time</th><th>Event Type</th><th>Method</th><th>Path</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {{range .UsageEvents}}
+            <tr>
+                <td class="text-mono text-dim">{{.Timestamp.Format "2006-01-02 15:04:05"}}</td>
+                <td>{{.EventType}}</td>
+                <td class="text-mono">{{index .Metadata "method"}}</td>
+                <td class="text-mono">{{index .Metadata "path"}}</td>
+                <td>{{index .Metadata "status"}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <div class="empty-state">
+        <div class="empty-title">No usage events recorded yet</div>
+        <div class="empty-body">Requests will appear here automatically once traffic hits the API for this tenant — the usage middleware records them without any action needed.</div>
+    </div>
+    {{end}}
+</div>
+{{end}}

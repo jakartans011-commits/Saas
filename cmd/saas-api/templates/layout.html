@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{if .PageTitle}}{{.PageTitle}} — {{end}}TrailSeal Console</title>
+    <link rel="stylesheet" href="/portal-static/style.css">
+</head>
+<body>
+        <div class="app-shell">
+        <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="mark">TS</div>
+                <div>
+                    <div class="name">TrailSeal</div>
+                    <div class="subline">Platform Console</div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-group">
+                    <div class="nav-group-label">Platform</div>
+                    <a href="/overview" class="nav-item {{if eq .Page "overview"}}active{{end}}">Overview</a>
+                    <a href="/agents" class="nav-item {{if eq .Page "agents"}}active{{end}}">
+                        Agent Fleet <span class="badge-soon">PHASE 9-11</span>
+                    </a>
+                    <a href="/operations" class="nav-item {{if eq .Page "operations"}}active{{end}}">
+                        Operations <span class="badge-soon">ROADMAP</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Security</div>
+                    <a href="/audit" class="nav-item {{if eq .Page "audit"}}active{{end}}">
+                        Audit &amp; Compliance <span class="badge-soon">PHASE 10</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">Developer</div>
+                    <a href="/developer/projects" class="nav-item {{if eq .Page "projects"}}active{{end}}">Projects</a>
+                    <a href="/developer/api-keys" class="nav-item {{if eq .Page "apikeys"}}active{{end}}">API Keys</a>
+                    <a href="/developer/usage" class="nav-item {{if eq .Page "usage"}}active{{end}}">Usage &amp; Telemetry</a>
+                    <a href="/docs/README.md" target="_blank" class="nav-item">Documentation ↗</a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                TrailSeal Console v0.3
+            </div>
+        </aside>
+
+        <div class="main-col">
+            <header class="topbar">
+                <div class="topbar-context">
+                    <button type="button" class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation menu">☰</button>
+                    <!--
+                        SECURITY NOTE: the previous version of this template
+                        had a "Tenant Switch" form here (GET ?tenant=<any
+                        value>) that let anyone viewing this page navigate
+                        to any other tenant's dashboard, and the handlers
+                        trusted that query param as the authoritative
+                        tenant. That form is intentionally removed — the
+                        tenant shown below is whichever tenant the
+                        logged-in session's JWT belongs to (claims.TenantID
+                        server-side), and there is no client-controllable
+                        way to view or act on a different tenant's data
+                        from this console.
+                    -->
+                    <div class="tenant-switch">
+                        <span class="text-dim">Tenant</span>
+                        <span class="text-mono">{{.TenantID}}</span>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <span class="env-pill">{{if .TenantStatus}}{{.TenantStatus}}{{else}}unknown{{end}}</span>
+                    <button type="button" class="nav-item" style="background:none;border:none;cursor:pointer;margin-left:12px" onclick="trailsealLogout()">Logout</button>
+                </div>
+            </header>
+
+            <main class="content">
+                {{template "content" .}}
+            </main>
+        </div>
+        </div>
+
+    <script>
+      function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('open');
+        document.getElementById('sidebar-backdrop').classList.toggle('active');
+      }
+
+      // Auto-close the sidebar after tapping a nav link on mobile,
+      // so the user doesn't have to close it manually every time.
+      document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.sidebar-nav a.nav-item').forEach(function (link) {
+          link.addEventListener('click', function () {
+            if (window.matchMedia('(max-width: 860px)').matches) {
+              document.querySelector('.sidebar').classList.remove('open');
+              document.getElementById('sidebar-backdrop').classList.remove('active');
+            }
+          });
+        });
+      });
+    </script>
+    
+    <script>
+  // Bootstraps tokens passed via ?access_token=...&refresh_token=... after
+  // an OAuth redirect (see cmd/saas-api/oauth_handlers.go). Still needed
+  // even though page navigation itself no longer depends on sessionStorage
+  // (see NOTE below) — the OAuth flow still hands the token back this way,
+  // and other code (e.g. logout, and any future programmatic API calls made
+  // from this console) reads it from sessionStorage.
+  (function bootstrapOAuthToken() {
+    var params = new URLSearchParams(window.location.search);
+    var accessToken = params.get('access_token');
+    if (!accessToken) return;
+
+    sessionStorage.setItem('trailseal_access_token', accessToken);
+
+    var refreshToken = params.get('refresh_token');
+    if (refreshToken) sessionStorage.setItem('trailseal_refresh_token', refreshToken);
+
+    try {
+      var payload = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+      if (payload.tenant_id) sessionStorage.setItem('trailseal_tenant_id', payload.tenant_id);
+    } catch (e) {}
+
+    params.delete('access_token');
+    params.delete('refresh_token');
+    var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.replaceState({}, document.title, clean);
+  })();
+</script>
+
+    <script>
+                async function trailsealLogout() {
+            const token = sessionStorage.getItem('trailseal_access_token');
+            try {
+                // Always call logout — even with no token in sessionStorage
+                // (normal case now, since login/signup no longer store it).
+                // extractAccessToken() in auth_middleware.go falls back to
+                // the httpOnly "access_token" cookie, which the browser
+                // sends automatically on this same-origin fetch. The
+                // Authorization header is only needed for OAuth-only
+                // sessions, which still bootstrap a sessionStorage token
+                // (see bootstrapOAuthToken above — separate known gap).
+                const headers = {};
+                if (token) headers['Authorization'] = 'Bearer ' + token;
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: headers
+                });
+            } catch (e) {
+                // network error saat logout tidak boleh menahan user di dashboard
+            } finally {
+                sessionStorage.removeItem('trailseal_access_token');
+                sessionStorage.removeItem('trailseal_refresh_token');
+                sessionStorage.removeItem('trailseal_tenant_id');
+                window.location.href = '/login';
+            }
+        }
+    </script>
+
+    <!--
+        NOTE (fix 2026-09-05): the SPA-style click interceptor that used to
+        live here — preventDefault() + fetch(url, {Authorization header
+        from sessionStorage}) + document.write(html) + history.pushState —
+        has been REMOVED.
+
+        Root cause of the bugs it caused: middleware.RequireAuth accepts
+        EITHER the Authorization header OR the "access_token" cookie
+        (see middleware/auth_middleware.go extractAccessToken). This script
+        only ever knew about the header/sessionStorage side, so:
+          - if sessionStorage was empty in a given tab (different tab,
+            fresh reload, etc.) it force-logged the user out and redirected
+            to /login WITHOUT ever asking the server — even though a valid
+            "access_token" cookie may have let the request through.
+          - document.write() + pushState() on every nav click was also
+            fragile on its own: back/forward and rapid clicks produced
+            mangled URLs (e.g. "//developer/api-keys" with the query string
+            dropped).
+
+        Nav links are now plain <a href="..."> and rely on normal browser
+        navigation, which sends cookies automatically. This requires the
+        login endpoint (see cmd/saas-api, wherever /api/auth/login issues
+        tokens) to also set the "access_token" cookie on successful login —
+        not just return it in the JSON body — so that page navigation
+        (which cannot send a custom Authorization header) still
+        authenticates via extractAccessToken's cookie fallback.
+    -->
+</body>
+</html>

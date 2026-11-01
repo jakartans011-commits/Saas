@@ -1,0 +1,235 @@
+{{define "content"}}
+<div class="page-header">
+    <div>
+        <h1>API Keys</h1>
+        <p class="lede">Service-account credentials for tenant <span class="text-mono">{{.Tenant.ID}}</span>. Each key has full access to this tenant's scope — treat it like a password.</p>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <div class="card-header">
+        <h2>Active Keys</h2>
+        <div class="header-actions">
+            <span class="card-meta mr-12">{{len .Keys}} total</span>
+            {{if .Projects}}
+            <form method="get" action="/developer/api-keys" class="form-inline no-margin">
+                <select name="project" onchange="this.form.submit()" class="input-sm">
+                    {{range .Projects}}
+                    <option value="{{.ID}}" {{if eq $.SelectedProject.ID .ID}}selected{{end}}>{{.Name}}</option>
+                    {{end}}
+                </select>
+            </form>
+            {{end}}
+        </div>
+    </div>
+        {{if .Keys}}
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Prefix</th><th>Created</th><th>Last used</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            {{range .Keys}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td class="text-mono">{{.KeyPrefix}}…</td>
+                <td>{{.CreatedAt.Format "2006-01-02"}}</td>
+                <td>{{if .LastUsedAt}}{{.LastUsedAt.Format "2006-01-02"}}{{else}}<span class="text-dim">Never</span>{{end}}</td>
+                <td>
+                    {{if .RevokedAt}}<span class="badge crit">revoked</span>{{else}}<span class="badge ok">active</span>{{end}}
+                </td>
+                <td>
+                    {{if not .RevokedAt}}
+                    <form method="post" action="/developer/api-keys/revoke" style="display:inline">
+                        <input type="hidden" name="key_id" value="{{.ID}}">
+                        <input type="hidden" name="project_id" value="{{$.SelectedProject.ID}}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Revoke this key? Any service using it will lose access immediately.')">Revoke</button>
+                    </form>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+        </table>
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <div class="empty-title">No API keys yet</div>
+        <div class="empty-body">Generate a key below to authenticate automation or service accounts against this tenant with an <span class="text-mono">Authorization: Bearer</span> header.</div>
+    </div>
+    {{end}}
+</div>
+
+<div class="card">
+    <div class="card-header"><h2>Generate a New Key</h2></div>
+    <div class="card-pad">
+        {{if .NoProject}}
+        <div class="empty-state">
+            <div class="empty-title">No projects found</div>
+            <p>You need to create a project before you can generate API keys.</p>
+            <a href="/developer/projects" class="btn btn-primary">Go to Projects</a>
+        </div>
+        {{else}}
+        <form id="generate-key-form" class="form-inline">
+            <input type="hidden" name="project_id" id="project_id" value="{{.SelectedProject.ID}}">
+            <div class="form-row">
+                <label for="name">Key name</label>
+                <input type="text" id="name" name="name" placeholder="e.g. ci-pipeline, ingest-service" required>
+            </div>
+            <div class="form-row">
+                <label for="scope">Scope</label>
+                <select id="scope" name="scope">
+                    <option value="ingest">Ingest Only</option>
+                    <option value="read">Read Only</option>
+                    <option value="admin">Full Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" id="generate-btn">Generate key</button>
+        </form>
+        {{end}}
+    </div>
+</div>
+
+<!-- One-time reveal modal -->
+<div id="key-modal-overlay" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>API Key Generated</h3>
+        </div>
+        <div class="modal-body">
+            <p>Copy this key and save it somewhere safe. <strong>You won't be able to see it again.</strong></p>
+            <div class="secret-reveal" id="key-display"></div>
+            <div id="copy-status" style="font-size: 12px; color: var(--status-ok-fg); height: 18px; margin-bottom: 8px;"></div>
+            <div class="callout neutral">
+                Treat this key like a password. It gives full access to the selected scope in this tenant.
+            </div>
+
+            <div class="quickstart" style="margin-top: 16px;">
+                <p style="margin-bottom: 6px;"><strong>Send your first event</strong></p>
+                <pre id="quickstart-snippet" style="background: var(--surface-2, #1a1a1a); color: var(--console-text-hi, #f1f5f9); padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all;"></pre>
+                <button type="button" class="btn btn-secondary btn-sm" id="copy-snippet-btn" style="margin-top: 6px;">Copy snippet</button>
+                <p id="quickstart-scope-warning" class="text-dim" style="font-size: 12px; margin-top: 8px; display: none;">
+                    This key is Read Only — it can't ingest events. Generate an Ingest or Full Admin key to run this example.
+                </p>
+                <details style="margin-top: 10px; font-size: 13px;">
+                    <summary style="cursor: pointer;">Expected response &amp; troubleshooting</summary>
+                    <p class="text-dim" style="margin-top: 6px;"><strong>201 Created</strong> — <code>{"event": {"id": "...", "sequence": 1, "event_type": "user.login", "hash": "...", ...}}</code></p>
+                    <ul class="text-dim" style="font-size: 12px; padding-left: 18px; margin-top: 6px;">
+                        <li><strong>401 unauthenticated_context</strong> — key is missing, malformed, or invalid.</li>
+                        <li><strong>403</strong> — key is revoked, or scope doesn't include ingest (Read Only keys can't POST).</li>
+                        <li><strong>429 quota_exceeded</strong> — tenant's monthly event quota is used up; upgrade plan or wait for reset.</li>
+                        <li><strong>400 event_type_required</strong> — request body is missing <code>event_type</code>.</li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="copy-btn">Copy Key</button>
+            <button type="button" class="btn btn-primary" id="close-modal-btn">I've saved it</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('generate-key-form');
+    if (!form) return;
+
+    const overlay = document.getElementById('key-modal-overlay');
+    const keyDisplay = document.getElementById('key-display');
+    const copyBtn = document.getElementById('copy-btn');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const copyStatus = document.getElementById('copy-status');
+    const generateBtn = document.getElementById('generate-btn');
+
+        form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const projectID = document.getElementById('project_id').value;
+        const name = document.getElementById('name').value;
+        const scope = document.getElementById('scope').value;
+
+        generateBtn.disabled = true;
+        generateBtn.innerText = 'Generating...';
+
+        try {
+            // 2026-09 fix: no longer reads sessionStorage for the token —
+            // login/signup no longer store it there. This is a same-origin
+            // fetch, so the httpOnly "access_token" cookie is sent
+            // automatically; extractAccessToken() in auth_middleware.go
+            // picks it up. A 401 here means the session cookie is missing
+            // or expired, not that sessionStorage was empty.
+            const response = await fetch('/developer/api-keys/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ project_id: projectID, name, scope })
+            });
+
+            if (response.status === 401) { window.location.href = '/login'; return; }
+
+            if (!response.ok) {
+                const err = await response.json();
+                alert('Failed to generate key: ' + (err.error || response.statusText));
+                return;
+            }
+
+            const data = await response.json();
+            
+            // Show modal with plaintext key
+            keyDisplay.innerText = data.key;
+
+            // Quickstart snippet — real key, real origin, scope-aware warning
+            const snippetEl = document.getElementById('quickstart-snippet');
+            const scopeWarningEl = document.getElementById('quickstart-scope-warning');
+            const ingestURL = window.location.origin + '/v1/events';
+            snippetEl.textContent =
+                'curl -X POST ' + ingestURL + ' \\\n' +
+                '  -H "Authorization: Bearer ' + data.key + '" \\\n' +
+                '  -H "Content-Type: application/json" \\\n' +
+                '  -d \'{"event_type": "user.login", "payload": {"example": true}}\'';
+            scopeWarningEl.style.display = (scope === 'read') ? 'block' : 'none';
+
+            overlay.classList.add('active');
+            
+            // Reset form
+            form.reset();
+
+        } catch (err) {
+            console.error('Error generating key:', err);
+            alert('An unexpected error occurred.');
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerText = 'Generate key';
+        }
+    });
+
+    copyBtn.addEventListener('click', function() {
+        const key = keyDisplay.innerText;
+        navigator.clipboard.writeText(key).then(() => {
+            copyStatus.innerText = 'Copied to clipboard!';
+            setTimeout(() => { copyStatus.innerText = ''; }, 3000);
+        });
+    });
+
+    document.getElementById('copy-snippet-btn').addEventListener('click', function() {
+        const snippet = document.getElementById('quickstart-snippet').textContent;
+        navigator.clipboard.writeText(snippet).then(() => {
+            copyStatus.innerText = 'Snippet copied to clipboard!';
+            setTimeout(() => { copyStatus.innerText = ''; }, 3000);
+        });
+    });
+
+    closeBtn.addEventListener('click', function() {
+        // Remove key from DOM immediately (snippet also embeds the plaintext key)
+        keyDisplay.innerText = '';
+        document.getElementById('quickstart-snippet').textContent = '';
+        overlay.classList.remove('active');
+        // Refresh page to show new key in list
+        window.location.reload();
+    });
+});
+</script>
+{{end}}

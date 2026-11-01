@@ -1,0 +1,45 @@
+{{define "content"}}
+<div class="page-header">
+    <div>
+        <h1>Agent Fleet</h1>
+        <p class="lede">Registered agents and tool allowlists for tenant <span class="text-mono">{{.Tenant.ID}}</span>.</p>
+    </div>
+</div>
+
+<div class="callout neutral mb-16">
+    This section is an extension point, not a mock. The agent registry, capability grants, and allowlisted tool
+    execution already exist on the backend (<span class="text-mono">agent/registry.go</span>,
+    <span class="text-mono">mcp/gateway.go</span>). This console does not call that service yet, so no counts,
+    health states, or fleet numbers are shown here until that wiring exists and can be verified against real data.
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Fleet Status</h2>
+    </div>
+    <div class="empty-state">
+        <div class="empty-title">No live fleet data connected</div>
+        <div class="empty-body">
+            When connected, this view will list agents by status (running / degraded / offline), the tools each
+            is allowed to execute, and the tenant-scoped capability grants enforced by the RBAC layer.
+        </div>
+    </div>
+</div>
+
+<div class="card mt-24">
+    <div class="card-header">
+        <h2>Governance model (already enforced by the backend)</h2>
+    </div>
+    <div class="card-pad">
+        <table>
+            <thead><tr><th>Control</th><th>Enforced by</th></tr></thead>
+            <tbody>
+                <tr><td>Tenant isolation for agents &amp; tools</td><td class="text-mono">middleware/tenant_scope.go</td></tr>
+                <tr><td>Capability-based authorization</td><td class="text-mono">core/capability/engine.go</td></tr>
+                <tr><td>Tool execution allowlist (no arbitrary commands)</td><td class="text-mono">agent/tool.go</td></tr>
+                <tr><td>MCP query gateway</td><td class="text-mono">mcp/gateway.go</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{{end}}

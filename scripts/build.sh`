@@ -1,0 +1,59 @@
+#!/bin/bash
+# scripts/build.sh - Multi-platform build script
+
+set -e
+
+echo "🔨 ShadowHarvest Agent - Multi-Platform Build"
+echo "=============================================="
+
+# Create bin directory
+mkdir -p bin
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Build function
+build_platform() {
+    local os=$1
+    local arch=$2
+    local output=$3
+    
+    echo -e "${YELLOW}📦 Building for $os/$arch...${NC}"
+    
+    if GOOS=$os GOARCH=$arch go build -o "bin/$output" cmd/agent/main.go; then
+        echo -e "${GREEN}✅ $os/$arch complete: bin/$output${NC}"
+    else
+        echo -e "${RED}❌ $os/$arch failed${NC}"
+        exit 1
+    fi
+}
+
+# Build all platforms
+echo ""
+
+# Windows
+build_platform "windows" "amd64" "agent-windows-amd64.exe"
+
+# Linux
+build_platform "linux" "amd64" "agent-linux-amd64"
+build_platform "linux" "arm64" "agent-linux-arm64"
+
+# macOS
+build_platform "darwin" "amd64" "agent-darwin-amd64"
+build_platform "darwin" "arm64" "agent-darwin-arm64"
+
+# Summary
+echo ""
+echo -e "${GREEN}=============================================="
+echo -e "✅ BUILD COMPLETE!${NC}"
+echo ""
+echo "📁 Files in bin/:"
+ls -lh bin/
+echo ""
+echo "🚀 Usage:"
+echo "  Windows: bin\\agent-windows-amd64.exe"
+echo "  Linux:   ./bin/agent-linux-amd64"
+echo "  macOS:   ./bin/agent-darwin-amd64"

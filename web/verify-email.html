@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify email — TrailSeal</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <header class="site-nav">
+    <div class="site-nav-inner">
+      <a href="/" class="brand-lockup">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </a>
+      <nav class="site-nav-links">
+        <a href="/">Home</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs/README.md" target="_blank" rel="noopener">Docs</a>
+      </nav>
+      <div class="site-nav-cta">
+        <a href="/login" class="btn btn-secondary btn-sm">Log in</a>
+        <a href="/signup" class="btn btn-primary btn-sm">Get started</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="auth-shell">
+    <div class="card auth-card">
+
+      <!-- ============================================================
+           STATE 1: LOADING (default) — shown while the token is being
+           verified against /api/auth/verify-email. There is no separate
+           "check token" step; the GET request itself consumes the token,
+           same as reset-password consumes on POST.
+           ============================================================ -->
+      <div id="verify-email-loading-state">
+        <div class="auth-card-head">
+          <h1>Verifying your email…</h1>
+          <p class="text-dim">Hang tight, this only takes a moment.</p>
+        </div>
+      </div>
+
+      <!-- ============================================================
+           STATE 2: SUCCESS — backend returned {"status":"verified"}.
+           ============================================================ -->
+      <div id="verify-email-success-state" style="display:none;">
+        <div class="auth-card-head">
+          <h1>Email verified</h1>
+          <p class="text-dim">Your email address has been confirmed. You can now log in and use TrailSeal.</p>
+        </div>
+        <a href="/login" class="btn btn-primary auth-submit" style="justify-content:center;">Go to log in</a>
+      </div>
+
+      <!-- ============================================================
+           STATE 3: EXPIRED — backend returned
+           email_verification_token_expired.
+           ============================================================ -->
+      <div id="verify-email-expired-state" style="display:none;">
+        <div class="auth-card-head">
+          <h1>This verification link has expired</h1>
+          <p class="text-dim">Verification links only work for a limited time. Log in and request a new one from your account.</p>
+        </div>
+        <a href="/login" class="btn btn-primary auth-submit" style="justify-content:center;">Go to log in</a>
+      </div>
+
+      <!-- ============================================================
+           STATE 4: INVALID — covers: missing token, token_not_found,
+           already_used, user_not_found, and any unrecognized/5xx error.
+           We fold these together because the user-facing action is the
+           same in every case: this specific link no longer works.
+           ============================================================ -->
+      <div id="verify-email-invalid-state" style="display:none;">
+        <div class="auth-card-head">
+          <h1 id="invalid-title">This verification link isn't valid</h1>
+          <p class="text-dim" id="invalid-message">
+            This link is invalid or has already been used. Log in and request a new one from your account.
+          </p>
+        </div>
+        <a href="/login" class="btn btn-primary auth-submit" style="justify-content:center;">Go to log in</a>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="footer-brand">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </div>
+      <nav class="footer-links">
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs/README.md" target="_blank" rel="noopener">Docs</a>
+        <a href="mailto:support@trailseal.dev">Support</a>
+      </nav>
+      <div class="text-dim footer-copyright">© 2026 TrailSeal. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    // ------------------------------------------------------------
+    // Token comes from the URL query string, e.g.
+    // /verify-email?token=abcdef123...
+    // Unlike reset-password, there's no form: the GET request to
+    // /api/auth/verify-email both validates AND consumes the token
+    // (see auth.VerifyEmailToken -> store.MarkUsed), so we call it
+    // automatically on page load.
+    // ------------------------------------------------------------
+    function getTokenFromURL() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('token');
+    }
+
+    function showState(stateId) {
+      ['verify-email-loading-state', 'verify-email-success-state', 'verify-email-expired-state', 'verify-email-invalid-state']
+        .forEach(function (id) {
+          document.getElementById(id).style.display = (id === stateId) ? '' : 'none';
+        });
+    }
+
+    // ------------------------------------------------------------
+    // NOTE ON ERROR MAPPING:
+    // /api/auth/verify-email returns {"error": err.Error()} straight
+    // from auth.VerifyEmailToken, which currently can be:
+    //   - email_verification_token_not_found
+    //   - email_verification_token_already_used
+    //   - email_verification_token_expired
+    // plus two edge cases from the handler itself: "user_not_found"
+    // (404) and "verify_failed" (500). These are NOT normalized
+    // snake_case-vs-other-endpoints consistent, so — same as
+    // reset-password.html — we classify by substring rather than
+    // exact match, and fold not_found/already_used/user_not_found/
+    // verify_failed all into the single "invalid" state, since the
+    // user-facing next step is identical for all of them.
+    // ------------------------------------------------------------
+    function verifyEmailErrorState(code) {
+      var lower = (code || '').toLowerCase();
+
+      if (lower.indexOf('expired') !== -1) {
+        return { type: 'expired' };
+      }
+      if (lower.indexOf('used') !== -1) {
+        return {
+          type: 'invalid',
+          title: 'This verification link was already used',
+          message: 'Each verification link can only be used once. If your email is still unverified, log in and request a new one.',
+        };
+      }
+      if (lower.indexOf('not_found') !== -1 || lower.indexOf('notfound') !== -1) {
+        return {
+          type: 'invalid',
+          title: "This verification link isn't valid",
+          message: 'This link is invalid. Log in and request a new verification email from your account.',
+        };
+      }
+      // Unknown/5xx error shape — fail safe to the generic invalid
+      // state rather than claiming something more specific than we know.
+      return {
+        type: 'invalid',
+        title: 'Something went wrong',
+        message: 'We couldn\'t verify your email right now. Log in and try requesting a new verification email.',
+      };
+    }
+
+    var token = getTokenFromURL();
+    if (!token) {
+      document.getElementById('invalid-title').textContent = 'Missing verification link';
+      document.getElementById('invalid-message').textContent =
+        'This page needs a verification link from your email. Log in and request a new one from your account.';
+      showState('verify-email-invalid-state');
+    } else {
+      fetch('/api/auth/verify-email?token=' + encodeURIComponent(token), { method: 'GET' })
+        .then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        })
+        .then(function (result) {
+          if (result.ok) {
+            showState('verify-email-success-state');
+            return;
+          }
+          var mapped = verifyEmailErrorState(result.data && result.data.error);
+          if (mapped.type === 'expired') {
+            showState('verify-email-expired-state');
+          } else {
+            document.getElementById('invalid-title').textContent = mapped.title;
+            document.getElementById('invalid-message').textContent = mapped.message;
+            showState('verify-email-invalid-state');
+          }
+        })
+        .catch(function () {
+          document.getElementById('invalid-title').textContent = 'Something went wrong';
+          document.getElementById('invalid-message').textContent =
+            'We couldn\'t reach the server to verify your email. Please check your connection and try again.';
+          showState('verify-email-invalid-state');
+        });
+    }
+  </script>
+
+</body>
+</html>

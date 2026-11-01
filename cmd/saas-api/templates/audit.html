@@ -1,0 +1,22 @@
+{{define "content"}}
+<div class="page-header">
+    <div>
+        <h1>Audit &amp; Compliance</h1>
+        <p class="lede">Audit trail and retention status for tenant <span class="text-mono">{{.Tenant.ID}}</span>.</p>
+    </div>
+</div>
+
+<div class="callout neutral mb-16">
+    Audit logging already exists on the backend (<span class="text-mono">audit/store_bbolt.go</span>,
+    365-day retention, 30-day PII anonymization per Phase 10/13). This console does not yet call
+    <span class="text-mono">GET /api/tenants/:id/audit</span>, so no entries are shown here until that
+    integration is added and verified.
+</div>
+
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-title">No audit feed connected</div>
+        <div class="empty-body">Once connected, this view will show a searchable, filterable audit trail plus the tenant's current retention and anonymization policy.</div>
+    </div>
+</div>
+{{end}}

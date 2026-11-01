@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference — TrailSeal Docs</title>
+  <meta name="description" content="TrailSeal API reference: event ingestion and verification, the MCP gateway, and the tenant dashboard API." />
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <style>
+    .docs-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 40px 32px 96px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .docs-sidebar { position: sticky; top: 88px; font-size: 13.5px; }
+    .docs-nav-group { margin-bottom: 22px; }
+    .docs-nav-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-tertiary); margin-bottom: 8px;
+    }
+    .docs-nav-group a { display: block; padding: 5px 0; color: var(--text-secondary); }
+    .docs-nav-group a:hover { color: var(--text-primary); }
+    .docs-nav-group a.active { color: var(--accent); font-weight: 600; }
+
+    .docs-content { min-width: 0; }
+    .docs-eyebrow { font-size: 12.5px; color: var(--text-tertiary); font-weight: 500; margin-bottom: 8px; }
+    .docs-content h1 { font-size: 34px; line-height: 1.2; margin: 0 0 14px; color: var(--text-primary); }
+    .docs-lede { font-size: 16px; color: var(--text-secondary); max-width: 680px; margin-bottom: 36px; }
+    .docs-content h2 {
+      font-size: 21px; margin: 52px 0 12px; padding-top: 10px;
+      border-top: 1px solid var(--surface-border-2); color: var(--text-primary);
+    }
+    .docs-content h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+    .docs-content h3 { font-size: 15.5px; margin: 26px 0 8px; color: var(--text-primary); }
+    .docs-content p { color: var(--text-secondary); margin: 0 0 14px; }
+    .docs-content code {
+      background: var(--surface-border-2); border-radius: 4px; padding: 1px 6px; font-size: 0.9em;
+    }
+
+    .endpoint {
+      display: flex; align-items: center; gap: 10px; margin: 20px 0 4px;
+      font-family: var(--font-mono); font-size: 13.5px;
+    }
+    .endpoint .method {
+      font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 11.5px;
+      color: #fff; flex-shrink: 0;
+    }
+    .method.get { background: var(--accent); }
+    .method.post { background: var(--status-ok-dot); }
+    .method.put { background: var(--status-warn-dot); }
+    .method.delete { background: var(--status-crit-dot); }
+    .endpoint .path { color: var(--text-primary); }
+    .auth-badge {
+      font-size: 10.5px; font-family: var(--font-ui); font-weight: 600;
+      border: 1px solid var(--surface-border-2); border-radius: 999px; padding: 1px 8px;
+      color: var(--text-tertiary); margin-left: auto;
+    }
+
+    .code-block {
+      background: var(--console-bg); border-radius: var(--radius); padding: 14px 16px;
+      margin: 10px 0 18px; overflow-x: auto;
+    }
+    .code-block pre { margin: 0; font-family: var(--font-mono); font-size: 12px; line-height: 1.55; color: var(--console-text); white-space: pre; }
+    .code-block .cm { color: var(--console-text-dim); }
+    .code-block .cs { color: var(--status-ok-dot); }
+    .code-block .ck { color: #7dabf8; }
+
+    table.ref-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 22px; }
+    table.ref-table th, table.ref-table td {
+      text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--surface-border-2); vertical-align: top;
+    }
+    table.ref-table th { color: var(--text-tertiary); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+    table.ref-table td.mono { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+
+    .callout {
+      border: 1px solid var(--surface-border-2); border-left: 3px solid var(--accent); border-radius: var(--radius-sm);
+      padding: 12px 16px; background: var(--accent-soft); font-size: 13.5px; color: var(--text-secondary); margin: 4px 0 24px;
+    }
+    .callout.warn { border-left-color: var(--status-warn-dot); background: var(--status-warn-bg); }
+
+    @media (max-width: 860px) {
+      .docs-shell { grid-template-columns: 1fr; }
+      .docs-sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="tsnav">
+    <div class="tsnav-inner">
+      <a href="/" class="brand-lockup" aria-label="TrailSeal home">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </a>
+
+      <nav class="tsnav-links" aria-label="Main">
+        <div class="tsnav-dd">
+          <button type="button" class="tsnav-link" aria-expanded="false" aria-haspopup="true">Product <span class="tsnav-caret" aria-hidden="true"></span></button>
+          <div class="tsnav-menu">
+            <a href="/#how-it-works"><strong>How it works</strong><span>From agent call to provable record</span></a>
+            <a href="/#capabilities"><strong>Capabilities</strong><span>Verification, isolation, MCP gateway</span></a>
+            <a href="/pricing.html"><strong>Plans &amp; quotas</strong><span>Free tier to paid</span></a>
+          </div>
+        </div>
+        <a href="/docs.html" class="tsnav-link">Docs</a>
+        <a href="/api-reference.html" class="tsnav-link" aria-current="page">API Reference</a>
+        <a href="/pricing.html" class="tsnav-link">Pricing</a>
+        <a href="/security.html" class="tsnav-link">Security</a>
+      </nav>
+
+      <div class="tsnav-cta">
+        <a href="/login" class="btn btn-ghost btn-sm" data-auth-link>Log in</a>
+        <a href="/signup" class="btn btn-primary btn-sm">Start free</a>
+      </div>
+
+      <button type="button" class="tsnav-burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+
+    <div class="tsnav-panel">
+      <a href="/#how-it-works">How it works</a>
+      <a href="/#capabilities">Capabilities</a>
+      <a href="/docs.html">Docs</a>
+      <a href="/api-reference.html">API Reference</a>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/security.html">Security</a>
+      <div class="tsnav-panel-cta">
+        <a href="/login" class="btn btn-ghost" data-auth-link>Log in</a>
+        <a href="/signup" class="btn btn-primary">Start free</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="docs-shell">
+
+    <aside class="docs-sidebar">
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Docs</div>
+        <a href="/docs.html">← Introduction</a>
+      </div>
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Reference</div>
+        <a href="#auth" class="active">Authentication</a>
+        <a href="#events">Events API</a>
+        <a href="#mcp">MCP gateway</a>
+        <a href="#dashboard">Dashboard API</a>
+        <a href="#billing">Billing</a>
+        <a href="#account">Account &amp; auth</a>
+        <a href="#compliance">Retention &amp; GDPR</a>
+        <a href="#errors">Error reference</a>
+      </div>
+    </aside>
+
+    <main class="docs-content">
+
+      <div class="docs-eyebrow">API Reference</div>
+      <h1>API Reference</h1>
+      <p class="docs-lede">
+        Two authentication schemes cover the whole API: an <strong>API key</strong>
+        for the event chain and MCP gateway, and a <strong>JWT session</strong> for
+        the dashboard. Every endpoint below notes which one it expects.
+      </p>
+
+      <h2 id="auth">Authentication</h2>
+      <table class="ref-table">
+        <tr><th>Scheme</th><th>Header</th><th>Used by</th></tr>
+        <tr>
+          <td class="mono">API key</td>
+          <td class="mono">Authorization: Bearer tsk_...</td>
+          <td>Events API (<code>/v1/events*</code>) and the native MCP gateway (<code>/mcp/v1/rpc</code>). Tenant and project are resolved from the key itself.</td>
+        </tr>
+        <tr>
+          <td class="mono">JWT session</td>
+          <td class="mono">Authorization: Bearer &lt;access token&gt;</td>
+          <td>Everything under <code>/api/tenants/:id/*</code> and <code>/api/admin/*</code> — the dashboard.</td>
+        </tr>
+      </table>
+      <p>
+        API keys carry a <strong>scope</strong> that limits what they can do —
+        <code>ingest</code> (write-only), <code>read</code> (read-only), or
+        <code>admin</code> (both). Keys are generated with prefix <code>tsk_</code>,
+        shown in full exactly once at creation time, and stored server-side only
+        as a SHA-256 hash — losing it means revoking and issuing a new one.
+      </p>
+
+      <h2 id="events">Events API <span class="text-dim" style="font-size:14px;font-weight:400;">— the hash-chained event log</span></h2>
+      <p>Scoped to one project at a time (resolved from the API key). This is the core, verifiable chain — see the <a href="/docs.html#audit">Introduction</a> for how hashing works.</p>
+
+      <div class="endpoint"><span class="method post">POST</span><span class="path">/v1/events</span><span class="auth-badge">API key · ingest/admin</span></div>
+      <div class="code-block"><pre><span class="cm">// request</span>
+{
+  <span class="ck">"event_type"</span>: <span class="cs">"tools/call"</span>,
+  <span class="ck">"actor_id"</span>: <span class="cs">"agent-a1b2c3"</span>,
+  <span class="ck">"payload"</span>: { <span class="cm">/* any JSON */</span> },
+  <span class="ck">"occurred_at"</span>: <span class="cs">"2026-09-20T10:00:00Z"</span>  <span class="cm">// optional</span>
+}
+<span class="cm">// 201 response</span>
+{ <span class="ck">"event"</span>: { <span class="ck">"id"</span>, <span class="ck">"sequence"</span>, <span class="ck">"hash"</span>, <span class="ck">"prev_hash"</span>, ... } }</pre></div>
+      <p>Optional <code>Idempotency-Key</code> header prevents duplicate ingestion on retry. <code>occurred_at</code> is accepted but the server-assigned <code>sequence</code> is what orders the chain — a client's clock can never reorder it.</p>
+
+      <div class="endpoint"><span class="method post">POST</span><span class="path">/v1/events/batch</span><span class="auth-badge">API key · ingest/admin</span></div>
+      <p>Body: <code>{"events": [IngestRequest, ...]}</code>, max 500 per batch. Each event is appended individually — a failure partway through does <strong>not</strong> roll back the ones that already succeeded.</p>
+      <div class="code-block"><pre>{
+  <span class="ck">"results"</span>: [ { <span class="ck">"index"</span>: 0, <span class="ck">"event"</span>: {...} }, { <span class="ck">"index"</span>: 1, <span class="ck">"error"</span>: <span class="cs">"quota_exceeded"</span> } ],
+  <span class="ck">"success_count"</span>: 1,
+  <span class="ck">"total_count"</span>: 2
+}</pre></div>
+      <p>Status is <code>201</code> if every event succeeded, <code>207</code> (Multi-Status) if some failed, <code>400</code> if none did.</p>
+
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/v1/events</span><span class="auth-badge">API key · read/admin</span></div>
+      <p>Cursor-paginated query. Params: <code>event_type</code>, <code>actor_id</code>, <code>since</code>/<code>until</code> (RFC3339), <code>cursor</code>, <code>limit</code> (default 100). Response: <code>{"events": [...], "next_cursor": "..."}</code>.</p>
+
+      <div class="endpoint"><span class="method post">POST</span><span class="path">/v1/events/verify</span><span class="auth-badge">API key · read/admin</span></div>
+      <p>Body optional: <code>{"from_sequence": 1}</code> — omit to verify the whole chain from the start.</p>
+      <div class="code-block"><pre><span class="cm">// valid</span>
+{ <span class="ck">"valid"</span>: true, <span class="ck">"checked_count"</span>: 4821, <span class="ck">"from_sequence"</span>: 1 }
+
+<span class="cm">// broken</span>
+{ <span class="ck">"valid"</span>: false, <span class="ck">"checked_count"</span>: 4821, <span class="ck">"from_sequence"</span>: 1, <span class="ck">"broken_at_event_id"</span>: <span class="cs">"evt_..."</span> }</pre></div>
+      <p>A broken chain triggers an internal alert every time — it's treated as a possible tampering incident, not a routine warning.</p>
+
+      <div class="endpoint"><span class="method get">GET</span><span class="path">/v1/events/export</span><span class="auth-badge">API key · read/admin</span></div>
+      <p>Params: <code>format</code> (<code>json</code> default or <code>csv</code>), same filters as the query endpoint, plus <code>max</code> (default 10,000, hard cap 100,000). Returns a file download (<code>Content-Disposition: attachment</code>). On the Free plan the export is limited to the latest 100 events; capped responses include <code>X-Export-Capped: true</code> and <code>X-Export-Plan-Cap</code> headers. Pro and Business export in full.</p>
+
+      <h2 id="mcp">MCP Gateway <span class="text-dim" style="font-size:14px;font-weight:400;">— JSON-RPC 2.0</span></h2>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Auth</th><th>Notes</th></tr>
+        <tr>
+          <td class="mono">POST /mcp/v1/rpc</td>
+          <td>API key</td>
+          <td>Tenant resolved from the key. This is what external MCP clients (Claude Desktop, Claude Code) connect to — see the <a href="/docs.html#quickstart">Quickstart</a>.</td>
+        </tr>
+        <tr>
+          <td class="mono">POST /api/tenants/:id/mcp/rpc</td>
+          <td>JWT session</td>
+          <td>Same protocol, for calls made from the dashboard's own logged-in session.</td>
+        </tr>
+      </table>
+      <p><code>GET</code> is not supported (single-shot HTTP, no server-initiated stream) — it returns <code>405</code>. Send <code>Accept: text/event-stream</code> to get the response back as one SSE event instead of plain JSON.</p>
+
+      <h3>Methods</h3>
+      <table class="ref-table">
+        <tr><th>Method</th><th>Params</th><th>Billable</th><th>Notes</th></tr>
+        <tr><td class="mono">initialize</td><td>—</td><td>No</td><td>Protocol handshake.</td></tr>
+        <tr><td class="mono">tools/list</td><td>—</td><td>No</td><td>Tools registered for the calling tenant.</td></tr>
+        <tr><td class="mono">tools/call</td><td class="mono">{name, arguments}</td><td>Yes</td><td>Executes a tool; result is a content block.</td></tr>
+        <tr><td class="mono">resources/list</td><td>—</td><td>No</td><td>Currently always returns one resource: the audit log.</td></tr>
+        <tr><td class="mono">resources/read</td><td class="mono">{uri}</td><td>Yes</td><td>Only <code>trailseal://audit-log</code> exists today — returns the tenant's last 50 audit trail entries as JSON.</td></tr>
+        <tr><td class="mono">prompts/list</td><td>—</td><td>No</td><td>Built-in + any custom prompts visible to the tenant.</td></tr>
+        <tr><td class="mono">prompts/get</td><td class="mono">{name, arguments}</td><td>Yes</td><td>Renders a prompt template into messages.</td></tr>
+        <tr><td class="mono">prompts/create<br>prompts/update<br>prompts/delete</td><td class="mono">varies</td><td>No</td><td>Non-standard extensions. <strong>Owner role + Business plan only</strong> — see below.</td></tr>
+      </table>
+
+      <div class="code-block"><pre><span class="cm">// tools/call request</span>
+{ <span class="ck">"jsonrpc"</span>: <span class="cs">"2.0"</span>, <span class="ck">"id"</span>: 1, <span class="ck">"method"</span>: <span class="cs">"tools/call"</span>,
+  <span class="ck">"params"</span>: { <span class="ck">"name"</span>: <span class="cs">"health-check"</span>, <span class="ck">"arguments"</span>: {} } }
+
+<span class="cm">// result</span>
+{ <span class="ck">"content"</span>: [ { <span class="ck">"type"</span>: <span class="cs">"text"</span>, <span class="ck">"text"</span>: <span class="cs">"..."</span> } ], <span class="ck">"isError"</span>: false }</pre></div>
+
+      <p>Built-in tool types: <code>health_check</code>, <code>metadata_lookup</code>, <code>echo</code>, <code>audit_lookup</code> (queries the audit trail directly as a tool call, same data as the <code>resources/read</code> audit-log resource). Built-in prompts: <code>audit-investigate</code>, <code>agent-health-report</code>, <code>tool-failure-triage</code>.</p>
+
+      <div class="callout warn">
+        <strong>Custom prompts are Business-only, Owner-only, and dashboard-only in practice.</strong>
+        <code>prompts/create</code>/<code>update</code>/<code>delete</code> check the caller's role and plan tier via internal headers set by the dashboard session — an API key has no concept of "role," so those three methods always reject calls made through <code>/mcp/v1/rpc</code>, regardless of the key's scope or the tenant's plan.
+      </div>
+
+      <h3>Limits</h3>
+      <table class="ref-table">
+        <tr><td>Max query size</td><td class="mono">8 KB</td></tr>
+        <tr><td>Max tool name</td><td class="mono">256 bytes</td></tr>
+        <tr><td>Max arguments</td><td class="mono">64 entries, 16 KB per string value, depth 8</td></tr>
+        <tr><td>Max context entries</td><td class="mono">32 (4 KB per value)</td></tr>
+      </table>
+
+      <h2 id="dashboard">Dashboard API <span class="text-dim" style="font-size:14px;font-weight:400;">— JWT session</span></h2>
+      <p>Everything below is under <code>/api/tenants/:id/...</code> unless noted, and requires a valid dashboard session.</p>
+
+      <h3>Projects</h3>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">POST /projects</td><td>Body: <code>{"name"}</code>. Quota/retention are resolved from the tenant's plan and baked into the project at creation — not applied after the fact.</td></tr>
+        <tr><td class="mono">GET /projects</td><td><code>{"projects": [...], "count"}</code></td></tr>
+        <tr><td class="mono">GET /projects/:project_id</td><td><code>{"project": {...}}</code> — 404 <code>project_not_found</code></td></tr>
+        <tr><td class="mono">DELETE /projects/:project_id</td><td>Soft delete.</td></tr>
+      </table>
+
+      <h3>API Keys</h3>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">POST /projects/:project_id/keys</td><td>Body: <code>{"name", "scope"}</code>. Response includes the plaintext key <strong>once</strong>: <code>{"api_key", "key", "warning"}</code>.</td></tr>
+        <tr><td class="mono">GET /projects/:project_id/keys</td><td><code>{"api_keys": [...], "count"}</code> — plaintext never included.</td></tr>
+        <tr><td class="mono">POST /projects/:project_id/keys/:key_id/revoke</td><td><code>{"status": "revoked"}</code></td></tr>
+      </table>
+
+      <h3>Agents &amp; tools</h3>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">POST /agents · GET /agents · GET /agents/:id · PUT /agents/:id/status · DELETE /agents/:id</td><td>Agent fields: <code>status</code> is <code>active</code> / <code>inactive</code> / <code>error</code>; <code>capabilities</code> is a free-form string list.</td></tr>
+        <tr><td class="mono">POST /tools · GET /tools · GET /tools/:id · DELETE /tools/:id</td><td>Tool <code>type</code> must be one of the four built-ins listed under MCP above.</td></tr>
+        <tr><td class="mono">POST /tools/:id/execute</td><td>Runs a tool directly over REST (outside MCP). Body: <code>{"params": {...}}</code>.</td></tr>
+      </table>
+
+      <h3>Usage &amp; audit</h3>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">GET /usage</td><td>Quota, events billed this month, plan tier.</td></tr>
+        <tr><td class="mono">GET /audit</td><td>General activity log (logins, user changes, API requests) — not the hash-chained event log.</td></tr>
+        <tr><td class="mono">GET /users · POST /users · GET /roles</td><td>Team management.</td></tr>
+      </table>
+
+      <h2 id="billing">Billing</h2>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">POST /billing/checkout</td><td>Body: <code>{"plan": "pro"|"business"}</code>. Returns <code>{"checkout_url"}</code> — a Stripe Checkout session. <code>400 invalid_plan</code> lists valid plans.</td></tr>
+        <tr><td class="mono">POST /billing/portal</td><td>Returns <code>{"portal_url"}</code> for the Stripe Billing Portal (payment method, invoices, cancel). <code>400 no_stripe_customer</code> if the tenant has never checked out.</td></tr>
+        <tr><td class="mono">POST /api/billing/webhook</td><td>Stripe-only, verified by signature (no JWT). Handles checkout completion, subscription updates/cancellation, and failed payments.</td></tr>
+      </table>
+      <p>
+        Upgrading to Pro or Business auto-provisions two extra roles for the tenant —
+        <code>admin</code> (full operational access, excluding billing and
+        compliance/delete actions) and <code>member</code> (read-only, plus
+        <code>tool.execute</code> and <code>mcp.query</code> so day-to-day use still
+        works). Free-tier tenants only have the <code>owner</code> role.
+      </p>
+      <p>
+        A failed payment gives roughly a 4-day grace period before the tenant is
+        auto-downgraded to Free (status becomes <code>canceled_nonpayment</code>,
+        distinct from a voluntary <code>canceled</code>).
+      </p>
+
+      <h2 id="account">Account &amp; auth</h2>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">POST /api/auth/register</td><td>Creates tenant + owner user; sends a verification email.</td></tr>
+        <tr><td class="mono">POST /api/auth/login</td><td>Returns an access token (15 min) + refresh token (7 days, rotates on use, single-use).</td></tr>
+        <tr><td class="mono">POST /api/auth/refresh</td><td>Rotates the refresh token; the old one is immediately invalidated.</td></tr>
+        <tr><td class="mono">POST /api/auth/logout</td><td>Revokes the current session.</td></tr>
+        <tr><td class="mono">GET /api/auth/session</td><td>Current user/tenant/role.</td></tr>
+        <tr><td class="mono">GET /api/auth/verify-email · POST /resend-verification</td><td>Email verification, 24h token TTL.</td></tr>
+        <tr><td class="mono">POST /api/auth/forgot-password · /reset-password</td><td>Password reset, 1h token TTL.</td></tr>
+        <tr><td class="mono">GET /api/auth/oauth/:provider/start · /callback</td><td><code>github</code> or <code>google</code> — only enabled if credentials are configured. Auto-links to an existing account by verified email.</td></tr>
+      </table>
+      <p>
+        Passwords are hashed with bcrypt (cost 12). Login is rate-limited per
+        IP+email (12 failures/min) and per IP alone (30 attempts/min,
+        anti credential-stuffing); an account locks for 15 minutes after 10
+        failures within 10 minutes.
+      </p>
+
+      <h2 id="compliance">Retention &amp; GDPR</h2>
+      <table class="ref-table">
+        <tr><th>Endpoint</th><th>Notes</th></tr>
+        <tr><td class="mono">GET /audit/retention · PUT /audit/retention</td><td>Read/update the audit trail's retention policy. Owner-only to write; days must be ≤ your plan's ceiling.</td></tr>
+        <tr><td class="mono">POST /audit/retention/cleanup</td><td>Triggers cleanup immediately instead of waiting for the daily job.</td></tr>
+        <tr><td class="mono">GET /audit/export</td><td>Export audit trail entries. Free plan: latest 100 events; Pro/Business: full export.</td></tr>
+        <tr><td class="mono">POST /data/delete · POST /data/restore</td><td>Soft-delete / restore the whole tenant.</td></tr>
+        <tr><td class="mono">POST /data/purge</td><td>Permanent hard delete — only allowed after the grace period has passed (30 days on Free/Pro, 60 days on Business), and only once the tenant has already been soft-deleted.</td></tr>
+        <tr><td class="mono">GET /data/status</td><td>Current deletion state.</td></tr>
+      </table>
+
+      <h2 id="errors">Error reference</h2>
+      <p>REST endpoints return <code>{"error": "code"}</code> (sometimes with extra fields, e.g. <code>valid_scopes</code>). MCP errors use a separate taxonomy, mapped to JSON-RPC error codes:</p>
+      <table class="ref-table">
+        <tr><th>MCP error code</th><th>JSON-RPC code</th><th>Meaning</th></tr>
+        <tr><td class="mono">invalid_request</td><td class="mono">-32602</td><td>Malformed or missing required params.</td></tr>
+        <tr><td class="mono">tool_not_found</td><td class="mono">-32602</td><td>No tool matches the given name/ID for this tenant.</td></tr>
+        <tr><td class="mono">resource_not_found</td><td class="mono">-32602</td><td>Unknown resource URI.</td></tr>
+        <tr><td class="mono">prompt_not_found</td><td class="mono">-32602</td><td>Unknown prompt name.</td></tr>
+        <tr><td class="mono">quota_exceeded</td><td class="mono">—</td><td>Monthly event quota hit; also returned as REST <code>429</code> on <code>/v1/events</code>.</td></tr>
+        <tr><td class="mono">forbidden</td><td class="mono">-32600</td><td>Caller isn't allowed to do this (e.g. non-Owner calling <code>prompts/create</code>).</td></tr>
+        <tr><td class="mono">internal_error</td><td class="mono">-32603</td><td>Unhandled server error — details are never leaked to the response.</td></tr>
+      </table>
+
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="footer-brand">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </div>
+      <nav class="footer-links">
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs.html">Docs</a>
+        <a href="mailto:support@trailseal.dev">Support</a>
+        <a href="https://github.com/shadowharvest/saas-agent" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="text-dim footer-copyright">© 2026 TrailSeal. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script src="/static/nav.js" defer></script>
+</body>
+</html>

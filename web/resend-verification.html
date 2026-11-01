@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resend verification — TrailSeal</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <header class="site-nav">
+    <div class="site-nav-inner">
+      <a href="/" class="brand-lockup">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </a>
+      <nav class="site-nav-links">
+        <a href="/">Home</a>
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs/README.md" target="_blank" rel="noopener">Docs</a>
+      </nav>
+      <div class="site-nav-cta">
+        <a href="/login" class="btn btn-secondary btn-sm">Log in</a>
+        <a href="/signup" class="btn btn-primary btn-sm">Get started</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="auth-shell">
+    <div class="card auth-card">
+
+      <!-- ============================================================
+           STATE 1: FORM (default) — email input, submits to
+           /api/auth/resend-verification.
+           ============================================================ -->
+      <div id="resend-form-state">
+        <div class="auth-card-head">
+          <h1>Resend verification email</h1>
+          <p class="text-dim">Enter your account email and we'll send a new verification link if it's needed.</p>
+        </div>
+
+        <form id="resend-form" novalidate>
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+
+          <div id="resend-error" class="form-error" role="alert" aria-live="polite"></div>
+
+          <button type="submit" id="resend-submit" class="btn btn-primary auth-submit">Send verification email</button>
+        </form>
+
+        <p class="auth-footnote text-dim">
+          Already verified? <a href="/login" class="link">Log in</a>.
+        </p>
+      </div>
+
+      <!-- ============================================================
+           STATE 2: SUCCESS — generic, anti-enumeration. Shown for
+           ANY submitted email regardless of whether the account
+           exists or is already verified (backend always returns
+           {"status":"ok"}).
+           ============================================================ -->
+      <div id="resend-success-state" style="display:none;">
+        <div class="auth-card-head">
+          <h1>Check your inbox</h1>
+          <p class="text-dim">
+            If an account with that email exists and isn't verified yet, we've sent a new verification link.
+            It may take a few minutes to arrive.
+          </p>
+        </div>
+        <a href="/login" class="btn btn-primary auth-submit" style="justify-content:center;">Go to log in</a>
+        <p class="auth-footnote text-dim">
+          Didn't get it? <a href="#" id="resend-try-again" class="link">Try a different email</a>.
+        </p>
+      </div>
+
+      <!-- ============================================================
+           STATE 3: RATE-LIMITED — backend returned 429
+           {"error":"too_many_attempts"}.
+           ============================================================ -->
+      <div id="resend-rate-limited-state" style="display:none;">
+        <div class="auth-card-head">
+          <h1>Too many attempts</h1>
+          <p class="text-dim">You've requested this too many times recently. Please wait a bit before trying again.</p>
+        </div>
+        <a href="/login" class="btn btn-primary auth-submit" style="justify-content:center;">Go to log in</a>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="footer-brand">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </div>
+      <nav class="footer-links">
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs/README.md" target="_blank" rel="noopener">Docs</a>
+        <a href="mailto:support@trailseal.dev">Support</a>
+      </nav>
+      <div class="text-dim footer-copyright">© 2026 TrailSeal. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script>
+    // ------------------------------------------------------------
+    // Optional convenience: prefill email from ?email=... query
+    // param, e.g. if linked from the login page's "resend" prompt.
+    // Not required by the backend, purely a UX nicety.
+    // ------------------------------------------------------------
+    function getEmailFromURL() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('email') || '';
+    }
+
+    function showState(stateId) {
+      ['resend-form-state', 'resend-success-state', 'resend-rate-limited-state']
+        .forEach(function (id) {
+          document.getElementById(id).style.display = (id === stateId) ? '' : 'none';
+        });
+    }
+
+    var emailInput = document.getElementById('email');
+    var prefill = getEmailFromURL();
+    if (prefill) emailInput.value = prefill;
+
+    // ------------------------------------------------------------
+    // NOTE ON RESPONSE SHAPE:
+    // /api/auth/resend-verification ALWAYS returns 200 {"status":"ok"}
+    // on success — it does not distinguish "email sent" from "account
+    // not found" or "already verified", by design (anti-enumeration,
+    // same pattern as /api/auth/forgot-password). The only non-200
+    // path observed is 429 {"error":"too_many_attempts"} from the
+    // shared IP-based stuffingLimiter. Any other failure (network
+    // error, unexpected 4xx/5xx) falls back to a generic in-form
+    // error rather than claiming a specific cause.
+    // ------------------------------------------------------------
+    var form = document.getElementById('resend-form');
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      var btn = document.getElementById('resend-submit');
+      var errorEl = document.getElementById('resend-error');
+      errorEl.textContent = '';
+
+      var email = emailInput.value.trim();
+      if (!email) {
+        errorEl.textContent = 'Please enter your email address.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      try {
+        var res = await fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        });
+
+        if (res.status === 429) {
+          showState('resend-rate-limited-state');
+          return;
+        }
+
+        if (!res.ok) {
+          errorEl.textContent = 'Something went wrong. Please try again.';
+          btn.disabled = false;
+          btn.textContent = 'Send verification email';
+          return;
+        }
+
+        showState('resend-success-state');
+      } catch (err) {
+        errorEl.textContent = 'Something went wrong. Please check your connection and try again.';
+        btn.disabled = false;
+        btn.textContent = 'Send verification email';
+      }
+    });
+
+    document.getElementById('resend-try-again').addEventListener('click', function (e) {
+      e.preventDefault();
+      showState('resend-form-state');
+    });
+  </script>
+
+</body>
+</html>

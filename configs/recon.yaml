@@ -1,0 +1,66 @@
+# configs/recon.yaml
+recon:
+  enabled: true
+  poll_interval: 30s
+  timeout: 10s
+  max_concurrent: 10
+
+  scanners:
+    network_scan:
+      enabled: true
+      cidr:
+        - "192.168.1.0/24"
+        - "10.0.0.0/24"
+      ports:
+        - 22
+        - 80
+        - 443
+        - 445
+        - 3389
+      timeout: 2s
+      concurrent: 100
+
+    process_scan:
+      enabled: true
+      include_edr: true
+      include_all: false
+
+    user_scan:
+      enabled: true
+      include_local: true
+      include_domain: false
+
+    system_scan:
+      enabled: true
+      include_os: true
+      include_hardware: true
+
+  providers:
+    windows_event_log:
+      enabled: true
+      channels:
+        - "System"
+        - "Security"
+        - "Application"
+      max_events: 1000
+
+    etw:
+      enabled: false
+      providers: []
+
+    sysmon:
+      enabled: false
+      events: []
+
+    linux_auditd:
+      enabled: false
+      rules: []
+
+  collector:
+    interval: 60s
+    batch_size: 100
+
+  reporter:
+    enabled: true
+    type: "event_bus"
+    file: "/var/log/shadowharvest/recon.log"

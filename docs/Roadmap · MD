@@ -1,0 +1,584 @@
+# Trailseal — Master Roadmap
+
+*Single source of truth. Dokumen acuan utama pengembangan produk.*
+
+Gunakan dokumen ini sebagai satu-satunya acuan kerja. Jangan berpindah fokus atau merombak fondasi yang sudah lulus test.
+
+**Tool routing (hemat biaya AI):**
+- 🟢 **Cline/Gemini (gratis)** — UI/template boilerplate mengikuti pola existing, form, styling, copy text, tidak sentuh folder Locked.
+- 🔴 **Claude (review wajib)** — apa pun yang sentuh folder Locked, security-sensitive (key handling, webhook, auth), keputusan arsitektur, atau verifikasi sebelum eksekusi besar. Selalu minta Cline tunjukkan bukti kode (signature method, hasil grep, hasil test) sebelum approve — jangan percaya ringkasan naratif begitu saja.
+
+**Aturan utama:**
+1. Kerjakan hanya fase yang sedang aktif.
+2. Jangan loncat fase.
+3. Jangan ubah fondasi, quota, atau pricing tanpa bug spesifik atau data customer nyata.
+4. Semua ide di luar fase aktif masuk Parking Lot.
+5. Setiap item selesai harus memiliki bukti: text, screenshot, deploy, atau dokumen.
+6. "Selesai" berarti user dapat memakai fitur tanpa bantuan developer.
+
+---
+
+## 0. Foundation Status — LOCKED (do not refactor without a reproducible bug)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Tenant-level pooled quota | ✅ Locked | Tenant-level quota, concurrent/race-safe tests |
+| MCP tenant identity and isolation | ✅ Locked | Tenant-scoped discovery/execution tests |
+| Cryptographic audit log | ✅ Locked | Hash chain, verification, tamper detection |
+| Stripe billing lifecycle | ✅ Locked | Checkout, webhook, upgrade/downgrade, failure/grace handling |
+| RBAC and tenant isolation | ✅ Locked | RBAC coverage 94.1%; cross-tenant tests |
+| API key lifecycle | ✅ Locked | Generate, hash, scope, revoke, tenant/project isolation |
+| Usage metering | ✅ Locked | Request path, quota, limits, tenant isolation |
+| Project module | ✅ Locked | Project is metadata, not billing unit |
+| Event ingest/export/retention | ✅ Locked | JSON/CSV export, retention job, checkpoint validation |
+| Account deletion lifecycle | ✅ Locked | Soft delete, restore, purge, recovery windows |
+| Full test suite | ✅ Locked | `go test ./...` passing |
+| Race detector | ✅ Locked | `go test -race ./...` passing |
+| Static analysis | ✅ Locked | `go vet ./...` passing |
+| Dependency vulnerability scan | ✅ Locked | 0 reachable vulnerabilities via `govulncheck` |
+
+**Do not refactor:** tenant, billing, rbac, apikey, audit, events, usage, mcp, middleware, project, compliance
+
+**Allowed changes:**
+- A reproducible bug with a failing regression test
+- A security vulnerability
+- A production incident
+- A pricing change supported by real customer data
+- A required API/UX endpoint needed for a phase item
+
+Any "improvement idea" goes to Parking Lot first.
+
+**Explicitly out of scope** (internal infra, not product promises — do not market or improve without real product requirement): `core/contract`, `core/manifest`, `core/plugin`, `core/scheduler`, observability internals, sdk internals.
+
+---
+
+## 1. Locked Pricing
+
+| Feature | Free | Pro | Business |
+|---|---|---|---|
+| Price | $0/month | $99/month | $499/month |
+| Best for | Evaluation and experimentation | Production teams | Organizations with governance needs |
+| Events per month | 5,000 | 250,000 | 1,000,000 |
+| Log retention | 14 days | 180 days | 365 days |
+| Account-deletion recovery | 30 days | 30 days | 60 days |
+| MCP Gateway | Sandbox access | Production access | Production access with tenant-scoped controls |
+| Audit logs | Limited | Full | Full |
+| Cryptographic audit hash chain | Limited | Included | Included |
+| MCP audit lookup | Limited | Included | Included |
+| Audit export | Not included | Included | Included |
+| API keys | 1 active key | Scoped API keys | Scoped API keys |
+| API-key scope enforcement | Basic | Included | Included |
+| API-key revocation | Included | Included | Included |
+| RBAC | Owner-only access | Owner / Admin / Member | Custom roles and permissions |
+| Rate limiting | Shared | Priority | High priority |
+| Quota enforcement | Included | Included | Included |
+| Usage dashboard | Basic | Included | Included |
+| Support | Documentation | Email support | Priority email support |
+| Formal SLA | Not included | Not included | Separate Enterprise agreement only |
+
+**Do not change:** $0/$99/$499; 5,000/250,000/1,000,000 events; 14/180/365-day retention; 30/30/60-day deletion recovery.
+
+**Do not publish:** project-count limits, unlimited projects, scheduled API-key rotation, API-key expiry, SSO/SAML, SCIM, 24/7 support, 99.9% uptime, formal SLA in Business, "Fully GDPR compliant", "SOC 2 certified", "HIPAA compliant".
+
+**Commercial policy copy:**
+- Cancellation: moves tenant to Free plan. Does not auto-delete account.
+- Account deletion: must be explicitly requested. Free/Pro = 30-day recovery. Business = 60-day recovery. Records permanently removed after recovery period.
+- Data retention: audit/usage records follow retention policy; backups follow separate backup-retention policy.
+
+---
+
+## 2. Phase 2A — Product Foundations ✅ DoD PASSED
+
+**Goal:** A customer can create an account, verify email, reset password, log in, log out, and recover access without manual help.
+
+### 2A.1 Transactional email foundation
+- [x] Choose a transactional email provider
+- [x] Create email-sending domain or subdomain
+- [x] Create DNS records required by provider
+- [x] Configure SPF
+- [x] Configure DKIM
+- [x] Configure DMARC
+- [x] Create sender identity: no-reply@, support@, security@
+- [x] Add environment variables: EMAIL_PROVIDER, EMAIL_API_KEY, EMAIL_FROM, APP_BASE_URL
+- [x] Add development email mode
+- [x] Add staging email mode
+- [x] Add production email mode
+- [x] Verify production-like test email delivery
+- [x] Verify emails do not include secrets/passwords/tokens/API keys in logs
+- [x] Add text for missing/invalid email configuration
+
+### 2A.2 Email verification
+- [x] Add User.EmailVerifiedAt field or equivalent
+- [x] Add secure email-verification token model (random, hashed at rest, single-use, time-limited)
+- [x] Add request-email-verification endpoint
+- [x] Add verify-email endpoint
+- [x] Add resend-verification endpoint
+- [x] Add resend rate limit per account and IP
+- [x] Add generic error behavior where needed
+- [x] Add verification-email template
+- [x] Add verified-email success screen — `web/verify-email.html`
+- [x] Add expired-token screen — `web/verify-email.html`
+- [x] Add invalid-token screen — `web/verify-email.html`
+- [x] Add resend-email success state
+- [x] Restrict selected sensitive actions until email is verified
+- [x] Audit verification requests and completion
+- [x] Add unit tests
+- [x] Add E2E test: sign up -> receive email -> verify -> login/use protected flow
+
+### 2A.3 Password reset
+- [x] Add secure password-reset token model
+- [x] Add forgot-password endpoint
+- [x] Do not reveal whether an email exists
+- [x] Add password-reset rate limit by IP and email
+- [x] Add password-reset email template
+- [x] Add reset-password page — `web/reset-password.html`
+- [x] Add password-strength requirements (frontend) — cek >= 8 karakter client-side
+- [x] Add confirm-password validation (frontend)
+- [x] Invalidate reset token after successful use
+- [x] Revoke existing sessions/refresh tokens after successful reset
+- [x] Add password-reset success page — state `#reset-password-success`
+- [x] Add expired-token screen — state `#reset-password-expired` (dari `password_reset_token_expired`)
+- [x] Add invalid-token screen — state `#reset-password-invalid` (dari `password_reset_token_not_found` / `password_reset_token_already_used` / token kosong di URL)
+- [x] Audit password-reset request and completion
+- [x] Add unit tests
+- [x] Add E2E test: request reset -> complete reset -> old creds fail -> new creds work
+
+### 2A.4 Authentication UI — ACTIVE
+> Ditemukan 2026-09-02: frontend sudah ada di `web/` (server-rendered HTML, bukan SPA) —
+> `web/login.html`, `web/signup.html`, `web/index.html`, `web/pricing.html` + `web/static/style.css`.
+> Ada juga developer portal terpisah di `cmd/saas-api/templates/` (dashboard, agents, apikeys,
+> audit, usage, operations) — relevan untuk Phase 2C nanti, verifikasi isinya saat masuk fase itu.
+> **Keputusan: lanjutkan pola HTML+vanilla JS yang sudah ada. Next.js dibatalkan (folder web-app/
+> dihapus) untuk hindari duplikasi.**
+
+- [x] Login page — `web/login.html`, fetch ke `/api/auth/login`
+- [x] Sign-up page — `web/signup.html`, fetch ke `/api/auth/register`, redesign split-screen (referensi llmgateway.io). **Plan selector dipindah keluar dari signup** — signup selalu buat akun Free dulu, upgrade dilakukan dari dashboard/pricing (2B.2), bukan di form signup. `web/pricing.html` tetap jadi satu-satunya tempat pilih plan.
+- [x] Forgot-password page — `web/forgot-password.html`, selalu sukses generik (anti email-enumeration), disable setelah submit
+- [x] Reset-password page — `web/reset-password.html`
+- [x] Email-verification page — `web/verify-email.html`, route `/verify-email?token=...`
+- [x] Resend-verification page — `web/resend-verification.html`
+- [x] Logout action — layout.html, hit revoke endpoint + clear sessionStorage + redirect `/login` (fail-open ke logout kalau network down); bukti: `TestE2E_AccessTokenReplayAfterLogoutRejected` pass
+- [x] Expired-session state — expired token → 401 → redirect `/login`, tidak ada halaman blank/bocor
+- [x] Locked-account state (beda dari rate-limited)
+- [x] Invalid credentials state — login.html: `invalid_credentials`
+- [x] Rate-limited state — login.html: `too_many_login_attempts`, signup.html: `too_many_attempts`
+- [x] Suspended-user state — login.html: `user_suspended`
+- [x] Deleted-user state — soft-delete filter otomatis di `GetByID`/`GetByEmail`, middleware reject, error `account_deleted` konsisten dengan pola `user_suspended`
+- [x] Mobile responsive authentication pages — diverifikasi manual di device/breakpoint sungguhan
+- [x] Accessible labels, focus state, error messages, keyboard navigation — diverifikasi manual, walkthrough keyboard-nav + screen reader
+
+**Catatan teknis (jangan diubah tanpa alasan):**
+- Token disimpan di `sessionStorage` **DIGANTI** 2026-09-05: migrasi ke httpOnly cookie (`access_token`, `SameSite=Lax`) untuk `/api/auth/login`, `/api/auth/register` (jalur Free-tier), dan `/api/auth/logout` (hapus cookie). OAuth callback (`OAuthCallbackHandler`) belum ikut migrasi — masih pakai query param + `bootstrapOAuthToken()` di `layout.html`, dicatat sebagai known-gap, bukan blocker (navigasi berikutnya tetap dapat cookie begitu user login ulang lewat email/password). Diverifikasi manual: login → semua nav jalan normal tanpa redirect nyasar; logout → akses langsung ke halaman protected menghasilkan `401` yang benar (session ter-invalidate, tidak ada kebocoran akses).
+- `tenant_id` di login didecode dari JWT payload (bukan dari response body) — konsisten dengan signup.html.
+- Redirect setelah login sukses: `/dashboard` → backend redirect ke `/overview`.
+
+### Definition of Done — Phase 2A
+User can: register; receive & verify email; log in; log out; reset forgotten password; be protected from brute-force/reset abuse; recover access without contacting developer. All auth email flows tested in staging-like environment.
+
+---
+
+### 2A.5 OAuth Login (GitHub & Google) — SEPARATE SCOPE, ACTIVE
+> **Catatan aturan:** Ini BUKAN bagian dari checklist 2A.4 asli (Definition of Done Phase 2A
+> di atas tidak menyebut OAuth). Ditambahkan atas keputusan sadar founder (referensi
+> llmgateway.io), bukan bug/data customer. Item ini SENGAJA menyentuh `auth/` (Locked)
+> — pengecualian disetujui eksplisit, jangan diulang untuk perubahan lain ke folder locked
+> tanpa persetujuan serupa. Kerjakan backend dulu sampai selesai, baru frontend — jangan lompat.
+> Passkey dan SSO **tidak** termasuk (SSO dilarang di luar Phase 6C, lihat Parking Lot).
+
+**Backend — semua selesai + teruji (bukti: 9 unit test PASS, PASS -race, `go build ./...` bersih):**
+- [x] Registrasi OAuth App di GitHub dan Google Cloud Console
+- [x] Env vars: `GITHUB_OAUTH_CLIENT_ID/SECRET`, `GOOGLE_OAUTH_CLIENT_ID/SECRET`
+- [x] Endpoint `GET /api/auth/oauth/:provider/start` — redirect + CSRF state
+- [x] Endpoint `GET /api/auth/oauth/:provider/callback` — token exchange + fetch email
+- [x] `PasswordHash` kosong untuk user OAuth-only — short-circuit di `VerifyPasswordForLogin`
+      sebelum bcrypt, tidak ada timing-attack/edge-case (`ErrPasswordLoginDisabled`)
+- [x] `ResolveOAuthUser` — find-or-create, auto-link by verified email, tenant provisioning
+- [x] JWT access + refresh token issuance (refresh token httpOnly cookie, access token 
+      di redirect query — short-lived, dengan justifikasi tercatat di kode)
+- [x] Audit event jalur sukses DAN jalur gagal (exchange fails, fetch email fails) —
+      pola error-handling disamakan dengan `middleware/audit_middleware.go`
+- [x] Test: user baru dibuat, user existing di-link, suspended user ditolak, 
+      race condition tenant provisioning, CSRF state validation
+
+**Frontend — semua selesai:**
+- [x] Tombol GitHub/Google di `web/login.html` dan `web/signup.html`
+- [x] `.btn-oauth`, `.auth-divider` di `style.css`
+- [x] `layout.html` bootstrap token dari `?access_token=` hasil redirect OAuth
+  > **Catatan deviasi dari rencana awal:** rencana semula pakai halaman landing terpisah 
+  > `web/oauth-complete.html`; implementasi aktual malah baca token langsung di `layout.html` 
+  > (shared layout dashboard). Fungsional sama, lebih sederhana — tidak masalah, tapi dicatat 
+  > di sini supaya rencana di atas tidak dianggap belum dikerjakan.
+
+**Sisa 1 item — BLOCKER sebelum 2A.5 boleh dicentang selesai:**
+- [ ] **Manual end-to-end test di browser sungguhan**: klik tombol GitHub di `/login`, 
+      login pakai akun GitHub asli → verifikasi redirect balik ke `/dashboard` dengan 
+      user ter-autentikasi. Ulangi untuk Google. Ulangi untuk kasus signup (user baru).
+
+**Definition of Done — 2A.5:**
+User bisa signup/login pakai GitHub atau Google, tenant/user baru otomatis dibuat kalau belum
+ada, tidak ada duplikat akun kalau email sama, dan alur ini punya audit trail sama seperti
+login email/password. **Belum bisa dicentang selesai sampai manual E2E test di atas dilakukan.**
+
+---
+
+> ⚠️ **Catatan penyimpangan fase (dicatat, bukan dihapus):** selama mengerjakan 2A.5, turut
+> diselesaikan beberapa item yang sebetulnya milik fase lain (belum aktif menurut roadmap ini):
+> race condition `ProvisionTenant`, webhook `invoice.payment_failed` + grace period + 
+> `RequirePaymentCurrent` (ini isi **Phase 2B.2**), test coverage `apikey`/`usage_middleware`, 
+> dan data race `observability/sentry.go` (ini isi **Phase 4D**). Semua sudah lulus test dan
+> boleh tetap dipakai — TAPI jangan anggap Phase 2B/4 sudah mulai. Saat nanti masuk fase 
+> tersebut, cek dulu apakah item ini sudah tercakup sebelum mengerjakan ulang dari nol.
+
+---
+
+## 3. Phase 2B — Commercial Onboarding — ACTIVE
+
+**Goal:** Verified user creates org, chooses plan, pays if required, creates first project, generates first API key, completes first successful product action.
+
+> ⚠️ **Catatan audit 2026-09-05:** ditemukan mayoritas checklist 2B.1 & 2B.2
+> di bawah ini sudah tercakup oleh kode yang sudah ada sejak Phase 2A
+> (`web/signup.html`, `cmd/saas-api/portal_static/`), hanya belum tercatat
+> selesai di roadmap ini. Status tiap item sudah dikoreksi sesuai audit kode
+> langsung (bukan asumsi) — lihat evidence di tiap baris.
+
+### 2B.1 Tenant onboarding
+- [x] Welcome screen — N/A, tercakup `web/signup.html` 🔴 *(dikonfirmasi Claude, cek kode)*
+- [x] Create organization/tenant screen — N/A, tercakup `web/signup.html` (field `company_name`) 🔴
+- [x] Organization name validation — sudah ada, `signup.html` + `/api/auth/register` 🔴
+- [x] Tenant creation success state — N/A, redirect ke `/dashboard` (`portal_static/templates/dashboard.html`) 🔴
+- [x] Plan selection screen (Free/Pro/Business exactly as locked) — N/A, radio button sudah di `signup.html` 🔴
+- [x] "Start Free" action — tercakup, default plan Free di form signup
+- [x] "Choose Pro" action — tercakup, checkout Stripe otomatis dari signup
+- [ ] "Contact Sales" action for Business — **belum diverifikasi, cek `signup.html` plan=business**
+- [ ] Show cancellation policy before checkout — **belum diverifikasi**
+- [ ] Show account-deletion recovery policy — **belum diverifikasi**
+- [ ] Show usage quota explanation (pooled at tenant level) — **belum diverifikasi**
+- [ ] Show log-retention explanation — **belum diverifikasi**
+- [ ] Onboarding progress indicator — **belum diverifikasi, kemungkinan tidak relevan lagi karena onboarding 1-langkah (signup), bukan multi-step**
+- [ ] Persist onboarding state — sama, kemungkinan tidak relevan (lihat di atas)
+- [ ] Allow resume of interrupted onboarding — sama, kemungkinan tidak relevan (lihat di atas)
+
+> Catatan: 5 item terakhir di atas ditulis dengan asumsi onboarding multi-step
+> (Welcome → Create org → Plan select terpisah). Karena kenyataannya onboarding
+> cuma 1 layar (`signup.html`), konsep "progress indicator/resume/persist state"
+> mungkin sudah tidak relevan. **Perlu keputusan sadar** (bukan tebakan): apakah
+> item ini di-drop karena arsitektur sudah beda, atau tetap dikerjakan untuk
+> alasan UX tertentu (misal: signup form kepanjangan, mau dipecah lagi)?
+
+### 2B.2 Stripe billing experience
+- [x] Connect Pro action to Stripe Checkout — sudah, langsung dari `/api/auth/register` 🔴
+- [ ] Checkout cancel return screen — **belum diverifikasi**
+- [ ] Checkout success return screen — **belum diverifikasi**
+- [x] Verify subscription status before showing Pro access — sudah, `RequirePaymentCurrent` (dikerjakan saat 2A.5) 🔴
+- [ ] Show plan status: free / active / past_due / canceled / suspended — **belum diverifikasi di UI, backend sudah punya state-nya**
+- [x] Payment failure warning — sudah, webhook `invoice.payment_failed` (dikerjakan saat 2A.5) 🔴
+- [x] Billing grace-period warning — sudah, `grace_period_sweep.go` + `middleware/grace_period_guard.go` (dikerjakan saat 2A.5) 🔴
+- [ ] Upgrade CTA from Free — **belum diverifikasi**
+- [ ] Downgrade/cancel explanation — **belum diverifikasi**
+
+**Evidence webhook handler (2026-09-05):** `customer.subscription.updated` dan `invoice.payment_failed`
+diverifikasi lewat kombinasi:
+- Stripe CLI end-to-end untuk event non-tenant-specific — `customer.created`, `payment_method.attached`,
+  `customer.updated`, `invoiceitem.created`, `invoice.created` semua `200 Delivered` ke
+  `/api/billing/webhook` (bukti: log `stripe listen`).
+- `stripe trigger invoice.payment_failed` dengan tenant/customer asli **diblokir keterbatasan Stripe CLI**
+  fixture chain (payment_method fixture selalu attach ke customer fixture baru, bukan customer yang
+  di-override) — dicoba beberapa pendekatan (`--override invoice:customer`, Dashboard Workbench
+  "Send test webhook" — endpoint `tfql` ternyata local CLI listener, bukan Event Destination biasa,
+  tidak punya editor payload). Bukan bug kode, murni limitasi tooling test-mode.
+- Digantikan `billing/webhook_handlers_test.go` — 8 unit test baru memanggil `handleSubscriptionUpdated`
+  dan `handleInvoicePaymentFailed` langsung dengan tenant asli (`tenant.InMemoryTenantStore`), semua
+  PASS: upgrade/downgrade plan, fail-closed untuk tenant_id/price ID/customer ID tak dikenal, grace-period
+  deadline diisi sekali dan **tidak reset** pada kegagalan bayar berulang. Overlap ditemukan dengan test
+  lama bernama beda (`..._DowngradesBusinessToPro`, dll di file lain) — tidak dihapus, ditandai untuk
+  audit konsolidasi nanti (bukan blocker).
+
+### 2B.3 First project & API key — ✅ SELESAI 2026-09-05
+- [x] Projects page baru — `cmd/saas-api/templates/projects.html` 🟢 *(Cline, direview Claude)*
+- [x] Nav "Projects" di `layout.html` 🟢
+- [x] `handleProjects` (GET, list per tenant) + `handleProjectCreate` (POST) di `portal_handlers.go` 🟢🔴 *(logic Cline, tenant-isolation & template-collision fix direview Claude)*
+- [x] `apikeys.html`: project selector + scope selector (ingest/read/admin) 🟢🔴
+- [x] One-time reveal modal untuk plaintext key + copy-to-clipboard 🟢🔴 *(bug fetch URL salah sasaran ketemu & diperbaiki saat review)*
+- [x] Tenant isolation terverifikasi: `portalTenantID()` dari JWT di semua handler baru, bukan dari form/query 🔴
+- [x] `go build ./...` + `go test ./cmd/saas-api/...` PASS
+- [x] Project name validation — required, non-empty (server-side reject)
+- [x] Project list / empty state — sudah ada di `projects.html`
+- [x] Explain projects are organizational units, not separate quota pools — sudah di copy `projects.html` ("isolated environment for your audit logs", bukan klaim quota terpisah)
+- [x] API key revoke confirmation + revoked state — sudah ada dari `apikeys.html` lama, diverifikasi masih jalan
+- [x] Warning: keys shown once, cannot be recovered — ada di modal reveal
+- [ ] API-key quickstart snippet + security doc link — **belum, digabung ke 2B.4 di bawah (butuh key nyata untuk contoh snippet)**
+- [ ] Create/delete project (with confirmation) — **delete belum ada, create sudah. Evaluasi apakah delete perlu sekarang atau bisa ditunda (project jarang dihapus di alur onboarding awal)**
+
+**Evidence 2B.3:** commit "Phase 2B: add Projects portal page, fix API key generation wiring" — 3 bug nyata ditemukan & diperbaiki selama proses: (1) `apikeys.html` lama tidak kirim `project_id`/`scope` sama sekali, (2) fetch generate key sempat salah nembak endpoint API publik (`/api/tenants/.../keys`) alih-alih portal route yang aman, (3) template rendering lama berisiko "content block collision" antar halaman portal — sekalian diperbaiki jadi template terpisah per halaman.
+
+**Evidence tambahan 2026-09-05 (verifikasi manual end-to-end di browser):** login → Overview → Projects (create project "batuaas" sukses) → API Keys (generate 2 key beda scope sukses, modal reveal tampil benar) → Usage (quota tampil, lihat bug ditemukan di bawah) → Logout → akses `/developer/api-keys` manual → `401 missing_or_malformed_authorization_header` (tenant isolation & session invalidation setelah logout terbukti benar, TIDAK ada kebocoran akses).
+
+**Bug ditemukan & diperbaiki dalam proses verifikasi ini (di luar scope asli, tapi wajib karena dampak ke pricing komersial):**
+- [x] **Dashboard quota display salah** — `portalHandlers.go` punya hardcoded map `planMonthlyLimit` (Free 1,000 / Pro 50,000 / Business 250,000) yang **tidak sinkron** dengan Locked Pricing asli di `billing/plans.go` (Free 5,000 / Pro 250,000 / Business 1,000,000). Fix: hardcoded map dihapus, diganti fungsi `quotaLimitForPlan()` yang baca langsung dari `billing` package. Test `portal_handlers_pure_test.go` diupdate assert ke angka billing yang benar. `go build ./...` + test PASS.
+
+### 2B.2 — sisa item (lanjutan, belum dikerjakan)
+- [ ] Stripe Customer Portal session endpoint
+- [ ] Use Customer Portal for payment methods, invoices, cancellation, billing details
+- [ ] Test full Stripe test-mode flow (Checkout -> webhook -> entitlement active)
+- [ ] Test cancel -> webhook -> tenant becomes Free
+- [ ] Test payment failure -> past_due -> grace period UI
+- [ ] Add billing audit events
+
+### 2B.4 First value moment
+- [ ] Select API event ingest or MCP call as primary first action
+- [ ] One official quickstart path (cURL + expected response) — **siap dikerjakan, dependency (project+key) sudah ada**
+- [ ] Show successful first event/MCP call, usage increment, audit event
+- [ ] Troubleshooting: invalid key, revoked key, missing scope, quota exceeded, invalid request
+- [ ] Mark onboarding complete only after first successful action
+
+### Definition of Done — Phase 2B
+Verified customer completes: sign up → verify email → create tenant → select plan → Checkout if Pro → create project → generate scoped API key → send first event/MCP request → see usage/audit evidence → manage billing via Customer Portal — all without developer help.
+
+---
+
+> **Referensi desain — pola dari llmgateway.io yang relevan untuk fase ini (dianalisis 2026-09):**
+> Dashboard: hero visual usage/analytics di atas; card metrik ringkas (cost/latency/token → di TrailSeal jadi: events used, remaining quota, reset date); breakdown per-project/per-tool; error-rate & reliability trend chart.
+> **Tidak relevan/skip** (bukan fitur TrailSeal): multi-provider routing comparison, model rankings, DevPass/credit top-up, self-host toggle.
+> Terapkan pola ini nanti saat 2C.1/2C.2, bukan sekarang.
+
+## 4. Phase 2C — Core Commercial Dashboard (NOT ACTIVE)
+
+**Goal:** Customer understands account state, usage, quota, plan, billing status, API-key status, and next action within one minute.
+
+### 2C.1 Dashboard overview
+- [ ] Org selector (multi-tenant) · Current plan card · Monthly usage card
+- [ ] Usage %, remaining quota, reset date, retention period
+- [ ] Recent audit events · Active API-key count · Recent project activity
+- [ ] Billing status card (payment-failed, past-due, quota warnings, upgrade CTA)
+- [ ] Empty state, error state, loading skeletons
+
+### 2C.2 Usage dashboard
+- [ ] Tenant-level quota bar — "Shared monthly quota across all projects"
+- [ ] Used/remaining events, monthly limit, reset date
+- [ ] Read-only usage by project, event type breakdown, daily usage chart (if backend supports)
+- [ ] 80%/90%/100% quota warnings, explain 429 behavior
+- [ ] Upgrade CTA — do not promise overage billing
+
+### 2C.3 Billing dashboard
+- [ ] Current plan, subscription status, Stripe portal button
+- [ ] Upgrade to Pro button, Business contact-sales CTA
+- [ ] Payment-failed state, grace-period deadline
+- [ ] Cancellation explanation, downgrade impact explanation
+- [ ] Account-deletion policy link, billing support link
+
+### 2C.4 Account and tenant settings
+- [ ] Edit tenant name (if endpoint exists), show tenant ID, plan/subscription status
+- [ ] Account-deletion recovery period, deletion request action (high-friction confirm)
+- [ ] Restore experience for soft-deleted account
+- [ ] Access-denied screen, security/contact link
+
+### Definition of Done — Phase 2C
+Customer can answer from dashboard: plan? usage? quota remaining? reset date? active projects? active/revoked keys? billing status? how to upgrade/manage/cancel/delete?
+
+---
+
+## 5. Phase 2 — Final Gate
+
+- [ ] Phase 2A/2B/2C Definition of Done all pass
+- [ ] Free/Pro/Business UI matches locked pricing exactly, no unimplemented features shown
+- [ ] No hardcoded secrets in frontend; API key never shown again after reveal
+- [ ] Sensitive routes handle unauthorized states; no cross-tenant data visible
+- [ ] Stripe test-mode flow passes end-to-end
+- [ ] Email verification & password reset work in staging-like environment
+- [ ] Mobile/desktop critical path works; accessibility pass on login/onboarding/billing/API-key flow
+- [ ] Product copy reviewed for accuracy
+- [ ] One non-technical person completes onboarding without help
+
+---
+
+## 6. Phase 3 — Audit and MCP Product Experience (NOT ACTIVE)
+
+**Goal:** Turn tenant isolation, audit integrity, scoped API keys, MCP execution, quota control into visible customer value.
+
+### 3A. Audit log viewer
+- [ ] Audit log page with filters (project, actor, action, outcome, date range), pagination, states
+- [ ] Event detail page/drawer, correlation ID, resource/outcome
+- [ ] Hash-chain integrity indicator (only after actual verification)
+- [ ] CSV/JSON export, export auth-denied state, retention notice per plan
+
+### 3B. Hash-chain integrity experience
+- [ ] Explain in plain language — use "Integrity verification detects unexpected changes" (avoid "tamper-proof")
+- [ ] Verify-chain action (only if backend endpoint appropriate)
+- [ ] Verification progress/success/failure states, escalation guidance
+- [ ] Do not expose internal forensic details unnecessarily
+
+### 3C. MCP gateway workspace
+- [ ] MCP endpoint config per project, auth instructions, scope guidance
+- [ ] Tool discovery page, metadata/status view
+- [ ] JSON-RPC request examples, success/error responses
+- [ ] Guidance: tool-not-found, invalid-request, quota-exceeded, permission-denied
+- [ ] Tenant-isolation explanation
+- [ ] Request activity / execution history (only if backend data supports)
+
+### 3D. Notification experience
+- [ ] Define configurable notifications; do not expose global admin alerts to tenants
+- [ ] Tenant-scoped notification settings (only if backend/API exists)
+- [ ] Usage threshold, billing/payment failure, deletion, security/integrity notifications
+- [ ] Delivery status/retry visibility if available
+
+### Definition of Done — Phase 3
+Pro/Business customer can inspect/filter/export audit data, understand retention, see integrity verification, find MCP config, discover tools, troubleshoot common errors — without support.
+
+---
+
+## 7. Phase 4 — Operational Readiness (NOT ACTIVE)
+
+**Goal:** Deploy, monitor, back up, restore, and support the product safely with real users.
+
+### 4A. Staging and deployment
+- [ ] Staging + production environments, separate DBs/Stripe/email configs
+- [ ] Env vars documented; secrets not in Git or logs
+- [ ] Migration process documented & tested in staging
+- [ ] Roll-forward/rollback procedures documented
+- [ ] App starts after deploy, health endpoint, graceful shutdown, HTTPS/TLS, cert renewal monitored
+
+### 4B. Backup and restore
+- [ ] Automatic DB backup, restricted storage access, retention/encryption documented
+- [ ] Restore tested into clean environment and verified
+- [ ] RPO/RTO documented, backup failure alerting, restore runbook
+- [ ] Billing/audit/event data restore behavior documented
+
+### 4C. Workers and scheduled jobs
+- [ ] Retention job: starts, scheduled, idempotent, logs outcome, alerts on failure, respects plan retention, checkpoint verified
+- [ ] Notification worker: starts, retries, alerts on failure
+- [ ] Worker deployment/restart process documented
+
+### 4D. Monitoring and incident response
+- [ ] Error tracking (Sentry) test error, critical alert channel with owner
+- [ ] Uptime, API error-rate, API latency, DB availability/storage, worker failure monitoring
+- [ ] Quota, hash-chain integrity, billing/webhook failure alerts verified
+- [ ] Status page, incident severity definitions, runbook, customer comms template, published security contact
+
+### 4E. Load and resilience testing
+- [ ] Define expected workload; test normal/concurrent/quota-boundary traffic, rate-limit behavior
+- [ ] Test DB connection failure, Stripe webhook retry, email/alert-provider failure
+- [ ] Record performance baseline, document capacity limits, configure cost alerts
+
+### Definition of Done — Phase 4
+App can be deployed, monitored, backed up, restored, supported. Incidents have owner, alert path, runbook, comms channel, rollback/recovery path.
+
+---
+
+> **Referensi desain — pola dari llmgateway.io yang relevan untuk fase ini:**
+> Landing: hero headline + CTA "Get Started", stat bar 2-3 angka besar (di TrailSeal: pakai angka real setelah ada traksi, jangan mengarang), grid fitur (icon + judul + 1 kalimat + "Learn more"), FAQ accordion, footer link dikelompokkan per kategori, badge status "All systems operational" linked ke status page.
+> **Tidak relevan/skip:** testimonial dari akun X/Twitter (jangan pakai kutipan fiktif — kalau nanti ada testimoni asli dari closed beta/5E, baru dipakai), SOC 2 badge (dilarang diklaim — lihat aturan pricing "Do not publish"), fitur multi-provider/model comparison, DevPass/referral program, Enterprise SSO CTA (belum dibangun).
+
+## 8. Phase 5 — Legal, Documentation, and Commercial Launch (NOT ACTIVE)
+
+### 5A. Public website
+- [ ] Landing page (value prop, ideal customer, what Trailseal is not), feature/security/pricing pages, FAQ, contact/support pages, status-page link
+- [ ] No unsupported claims, no false compliance/uptime/SLA claims
+
+### 5B. Documentation
+- [ ] Getting started, tenant/project/API key guides, key security guide
+- [ ] Event ingest & MCP quickstarts, JSON-RPC guide, tool discovery, scope/permission guide
+- [ ] Audit log guide, hash-chain explanation, export guide
+- [ ] Usage/quota, rate-limit, billing, cancellation, deletion/recovery guides
+- [ ] Error-code reference, API reference, changelog, security reporting guide
+
+### 5C. Legal and privacy
+- [ ] ToS, Privacy Policy, data retention policy, account deletion policy, AUP
+- [ ] Cookie policy (if applicable), subprocessor list (if applicable), security contact
+- [ ] Data export/deletion request process, controller/processor role identified
+- [ ] Legal review appropriate to target market
+- [ ] Do not claim GDPR/SOC 2/HIPAA compliance without evidence
+
+### 5D. Support operations
+- [ ] support@ / security@ configured, support policy & hours published
+- [ ] Ticket intake method, bug/security/billing/feature-request templates
+- [ ] Internal severity & escalation policy, canned responses, support owner named
+
+### 5E. Closed beta
+- [ ] Select 3–5 target beta customers, define ICP, prepare invitation & onboarding walkthrough
+- [ ] Define feedback questions, weekly feedback review
+- [ ] Track activation funnel, usage, support requests, billing friction, churn reasons
+- [ ] Collect testimonials only with permission
+- [ ] Fix only blockers/repeated pain points — no unrelated features during beta
+
+### 5F. Public launch
+- [ ] Closed beta success criteria met (≥1 customer onboards unaided, ≥1 uses product repeatedly)
+- [ ] Pricing page matches entitlement; Checkout/portal verified
+- [ ] Support channel, status page, backup restore, monitoring alerts operational
+- [ ] Legal pages, docs, security contact live
+- [ ] Launch announcement prepared, public sign-up enabled, post-launch monitoring schedule defined
+
+### Definition of Done — Phase 5
+Public customer can understand, evaluate pricing, sign up, verify, pay, configure, use, understand quotas/billing, get support, export data, request deletion, see status, use docs — without founder intervention.
+
+---
+
+## 9. Phase 6 — Post-launch Growth (NOT ACTIVE)
+
+**Goal:** Do not build Enterprise features from imagination. Decide from real user behavior, revenue, support cost, churn, buyer requests.
+
+### 6A. Metrics to track
+Visitors · sign-up conversion · email-verification completion · onboarding completion · time to first project/key/successful call · Free→Pro conversion · MRR · ARPC · active tenants · events/tenant · quota utilization · API/MCP error rate · support tickets/customer · time to first response · retention · churn reasons · payment failure rate · refund requests
+
+### 6B. Revenue milestones
+- **Milestone 1:** $500 MRR (e.g. 5 Pro, or 1 Business + 1 Pro)
+- **Milestone 2:** $1,000 MRR (e.g. 10 Pro, or 2 Business, mixed base)
+- **Milestone 3:** $3,000 MRR → then evaluate support workload, infra cost, pricing changes, dedicated support, plan expansion
+
+### 6C. Enterprise requests
+Only build after a real qualified buyer requests:
+- [ ] SSO/SAML · SCIM · Custom API-key lifecycle controls · Scheduled key expiry/rotation
+- [ ] Custom data retention · Private deployment · Dedicated environment · Data residency
+- [ ] Formal SLA · Custom quota · SOC 2 workstream · HIPAA workstream · Advanced compliance center
+
+### Definition of Done — Phase 6
+Decisions made from customer interviews, usage data, support volume, churn data, revenue, qualified buyer requests — not anxiety, assumptions, or competitor feature lists.
+
+---
+
+## 10. Parking Lot
+
+Use this section for all new ideas that do not belong to the current phase.
+
+- [ ] `token_expired` sebagai kode error terpisah dari `invalid_token` (UX pesan lebih spesifik saat sesi habis)
+- [ ] Known limitation, sengaja: tidak ada auto-refresh token — user harus login ulang begitu access token expired. Evaluasi ulang kalau ada keluhan customer nyata.
+- [ ] GitHub OAuth login — dipindah jadi kerja aktif, lihat **2A.5** di atas.
+- [ ] Google OAuth login — dipindah jadi kerja aktif, lihat **2A.5** di atas.
+- [ ] Passkey/WebAuthn login — butuh backend WebAuthn baru. Evaluasi setelah ada permintaan customer nyata.
+- [ ] SSO login button di halaman login — **JANGAN dikerjakan di luar Phase 6C.** Roadmap sudah eksplisit: SSO dilarang dipublikasikan untuk Free/Pro, dan untuk Business hanya via Enterprise agreement terpisah (lihat Section 1 & Phase 6C). Builds hanya setelah ada qualified buyer nyata yang minta.
+- [ ] Audit-ulang (opsional, bukan gap): endpoint token-refresh/session-check di `app.go:~1743` pakai `user.Status` tanpa cek `DeletedAt` eksplisit — aman karena `GetByID` sudah otomatis filter, tapi layak dicatat untuk audit berikutnya.
+- [ ] **UX 401 pada navigasi browser biasa** — sejak migrasi ke httpOnly cookie (2026-09-05), akses ke halaman protected (`/developer/*`) setelah logout/sesi habis menampilkan JSON error mentah (`{"error":"missing_or_malformed_authorization_header"}`), bukan redirect ke `/login`. Bukan bug keamanan (session tetap ter-invalidate dengan benar), murni UX kasar. Perlu middleware yang deteksi request non-API/non-fetch (`Accept: text/html`) dan redirect ke `/login`. Ditunda: belum ada bukti dampak ke user asli (skenario ini cuma kejadian kalau user ketik URL manual/buka bookmark lama setelah logout).
+- [ ] **Atomic tenant provisioning** — `tenant/provisioning.go:108`, TODO eksplisit di kode. Tenant+role+user dibuat di 3 store terpisah tanpa transaksi bersama; rollback saat ini best-effort saja. Risiko: "ghost tenant" kalau proses gagal di tengah jalan pada flow signup komersial yang sedang live. Folder `tenant/` Locked — butuh izin eksplisit sebelum edit (evaluasi naikkan ke prioritas kalau ada laporan user nyata kena masalah ini).
+
+**Rules:** Do not implement immediately. Do not discuss while completing the daily task. Review only after active phase's Definition of Done passes. Discard items that don't solve a real customer problem.
+
+---
+
+## 11. Daily Operating System
+
+1. Open this roadmap.
+2. Identify the active phase.
+3. Pick one unchecked item.
+4. Decide what it requires: backend / frontend / DB migration / Stripe / email / documentation / deployment / test.
+5. Write the smallest Definition of Done for that item.
+6. Implement it.
+7. Test it.
+8. Save evidence.
+9. Check the box.
+10. Stop when the planned item is done.
+11. Put unrelated ideas into Parking Lot.
+
+**Current status (update 2026-09-05, sesi ke-2):** Phase 2A DoD PASS. Phase 2B sedang berjalan.
+- ✅ **2B.1** — sudah tercakup kode lama (`signup.html`), sebagian item "belum diverifikasi" masih perlu dicek.
+- ✅ **2B.2 webhook/checkout inti** — teruji 18 unit test PASS. Sisa: Stripe Customer Portal (payment methods, invoices, cancellation) belum dikerjakan.
+- ✅ **2B.3** — SELESAI penuh + diverifikasi manual end-to-end di browser (bukan cuma unit test). 1 bug quota-display ditemukan & diperbaiki di jalan (dashboard sempat tampilkan angka quota yang tidak sinkron dengan Locked Pricing).
+- ✅ **Migrasi auth sessionStorage → httpOnly cookie** — selesai untuk email/password login (login/register/logout), diverifikasi aman (logout benar-benar invalidate akses). OAuth belum ikut migrasi (dicatat, bukan blocker). 1 item UX minor (401 tampil JSON mentah, bukan redirect) masuk Parking Lot.
+
+**Sisa kerjaan nyata sebelum 2B tuntas:**
+1. Verifikasi sisa item 2B.1 yang masih "belum diverifikasi" (cancellation policy, deletion policy, quota/retention explanation di UI signup).
+2. Stripe Customer Portal (2B.2 lanjutan).
+3. **2B.4 — First value moment** (quickstart snippet pakai key nyata) — dependency sudah lengkap, siap dikerjakan berikutnya.
+4. Evaluasi item reliability (atomic provisioning) — lihat Parking Lot.
+
+Next: mulai dari **2B.4 — First value moment**, karena semua dependency-nya (project + API key) sudah terbukti jalan.
+
+Next: mulai dari poin 1 (audit cepat) sebelum lanjut bangun apa pun baru.

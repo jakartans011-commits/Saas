@@ -1,0 +1,155 @@
+# TrailSeal Architecture
+
+## Overview
+
+TrailSeal adalah platform SaaS multi-tenant untuk:
+- **Audit Logging** - Immutable event chain dengan cryptographic verification
+- **MCP Gateway** - Model Context Protocol untuk LLM/Agent integration
+- **Agent & Tool Management** - Custom tools untuk agent
+
+---
+
+## High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           CLIENT                                   │
+│              (Web Dashboard / API / LLM Agent)                     │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         FIBER ROUTES                               │
+│  /api/auth/*      /api/admin/*      /api/tenants/:id/*             │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                       MIDDLEWARE CHAIN                             │
+│  ┌────────────────────────────────────────────────────────────────┐│
+│  │ requireAuth → AuditLogger → RequireTenantScope → RateLimiter  ││
+│  │ → RequireCapability → Handler                                 ││
+│  └────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DOMAIN SERVICES                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────────────┐│
+│  │ Auth     │ │ Tenant   │ │ RBAC     │ │ MCP Gateway            ││
+│  │ JWT      │ │ Store    │ │ Roles    │ │ ├── Protocol           ││
+│  │ Refresh  │ │          │ │ Capab.   │ │ ├── Executor           ││
+│  └──────────┘ └──────────┘ └──────────┘ │ └── Discovery          ││
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ └────────────────────────┘│
+│  │ Events   │ │ Audit    │ │ Billing  │                           │
+│  │ Ingest   │ │ Record   │ │ Stripe   │                           │
+│  │ Query    │ │ Export   │ │ Webhook  │                           │
+│  │ Verify   │ │ Retention│ │          │                           │
+│  └──────────┘ └──────────┘ └──────────┘                           │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                          DATA STORES                               │
+│  ┌─────────────────────────┐  ┌───────────────────────────────────┐│
+│  │        BoltDB           │  │          PostgreSQL               ││
+│  │  ├── users              │  │  ├── projects                    ││
+│  │  ├── tenants            │  │  ├── api_keys                    ││
+│  │  ├── roles              │  │  ├── events                      ││
+│  │  ├── agents             │  │  ├── webhook_events              ││
+│  │  ├── tools              │  │  └── usage_counters              ││
+│  │  ├── audit_events       │  └───────────────────────────────────┘│
+│  │  ├── refresh_tokens     │                                       │
+│  │  └── email_queue        │                                       │
+│  └─────────────────────────┘                                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## MCP Gateway Architecture
+
+### Two Interfaces
+
+TrailSeal memiliki **dua pendekatan** untuk MCP:
+
+| Interface | Endpoint | Format | Status |
+|-----------|----------|--------|--------|
+| **MCP Gateway** | `/api/tenants/:id/mcp/query` | MCPRequest | ✅ Aktif |
+| **MCP Server** | `/mcp` (belum terdaftar) | JSON-RPC 2.0 | ⚠️ Future |
+
+---
+
+### MCPRequest Format
+
+#### ✅ Query Mode (Natural Language)
+
+```json
+{
+  "query": "echo hello"
+}
+```
+
+#### ✅ ToolCall Mode (Explicit Tool)
+
+```json
+{
+  "tool_call": {
+    "tool_name": "echo",
+    "params": {
+      "message": "Hello World!"
+    }
+  }
+}
+```
+
+---
+
+### ❌ JANGAN kirim JSON-RPC ke Gateway!
+
+**Salah:** Kirim format JSON-RPC ke `/api/tenants/:id/mcp/query`
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list"
+}
+```
+
+**JSON-RPC hanya untuk MCP Server internal (jika route `/mcp` terdaftar).**
+
+---
+
+### Supported Tool Types
+
+| Type | Description |
+|------|-------------|
+| `echo` | Echo back message |
+| `health_check` | Check system health |
+| `metadata_lookup` | Lookup tool metadata |
+
+---
+
+## Data Store Strategy
+
+| Data | Store | Reason |
+|------|-------|--------|
+| Users, Tenants, Roles | BoltDB | Embedded, no schema, fast |
+| Agents, Tools | BoltDB | Embedded, tenant-scoped |
+| Audit Events | BoltDB | Embedded, retention policy |
+| Refresh Tokens | BoltDB | Embedded, TTL |
+| Events (Product) | PostgreSQL | Scalable, queryable |
+| Projects, API Keys | PostgreSQL | Relational, foreign keys |
+
+---
+
+## Testing
+
+```bash
+# All tests
+go test ./... -v
+
+# MCP tests
+go test ./mcp/... -v
+```

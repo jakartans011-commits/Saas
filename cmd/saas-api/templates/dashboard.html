@@ -1,0 +1,351 @@
+{{define "content"}}
+<div class="page-header">
+    <div>
+        <h1>Overview</h1>
+        <p class="lede">Current state of tenant <span class="text-mono">{{.Tenant.ID}}</span> — API activity, credentials, and platform status.</p>
+    </div>
+</div>
+
+<div id="checkout-banner" class="card mb-16" style="display:none;"></div>
+<script>
+(function () {
+    var params = new URLSearchParams(window.location.search);
+    var checkout = params.get('checkout');
+    if (!checkout) return;
+    var el = document.getElementById('checkout-banner');
+    if (checkout === 'success') {
+        el.innerHTML = '<strong>Payment successful.</strong> Your plan is now active — new limits apply immediately.';
+        el.className = 'card mb-16';
+    } else if (checkout === 'canceled') {
+        el.innerHTML = '<strong>Checkout canceled.</strong> No charge was made. You can upgrade again anytime from below.';
+        el.className = 'card mb-16';
+    } else {
+        return;
+    }
+    el.style.display = 'block';
+    // Clean the URL so refresh/back doesn't re-show the banner.
+    params.delete('checkout');
+    var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.replaceState({}, '', clean);
+})();
+</script>
+
+{{$planTier := .Tenant.PlanTier}}
+{{if eq $planTier ""}}{{$planTier = "free"}}{{end}}
+{{$subStatus := .Tenant.SubscriptionStatus}}
+{{if eq $subStatus ""}}{{$subStatus = "active"}}{{end}}
+<div class="card mb-16">
+    <div class="card-header">
+        <h2>Plan &amp; Billing Status</h2>
+    </div>
+    <div class="grid grid-3">
+        <div>
+            <div class="metric-label">Current plan</div>
+            <div class="metric-value" style="font-size:20px; text-transform:capitalize;">{{$planTier}}</div>
+        </div>
+        <div>
+            <div class="metric-label">Subscription status</div>
+            <div class="metric-value" style="font-size:20px;">
+            <span class="badge {{if eq $subStatus "active"}}ok{{else if eq $subStatus "past_due"}}warn{{else if eq $subStatus "suspended"}}warn{{else if eq $subStatus "canceled"}}idle{{else}}idle{{end}}">{{$subStatus}}</span>
+         </div>
+        </div>
+        <div>
+            <div class="metric-label">Next step</div>
+            <div class="metric-sub">
+    {{if eq $planTier "free"}}
+        <a href="/pricing.html" class="link">Upgrade to Pro or Business →</a>
+    {{else if eq $subStatus "past_due"}}
+        <span class="text-dim">Payment failed{{if .Tenant.GracePeriodDeadline}} — resolve by {{.Tenant.GracePeriodDeadline.Format "2006-01-02"}}{{end}} or your tenant drops to Free.</span>
+    {{else if eq $subStatus "suspended"}}
+        <span class="text-dim">Subscription suspended — contact support to restore access.</span>
+    {{else if eq $subStatus "canceled"}}
+        <span class="text-dim">Subscription canceled — you're on Free now. Resubscribe anytime from Pricing.</span>
+    {{else}}
+        <span class="text-dim">Cancel anytime — your tenant drops to the Free plan, nothing is deleted.</span>
+    {{end}}
+</div>
+        </div>
+    </div>
+    {{if ne $planTier "free"}}
+    <div class="mt-16">
+        <button id="manage-billing-btn" class="link" style="background:none;border:none;padding:0;cursor:pointer;">Manage billing — payment method, invoices, cancel →</button>
+    </div>
+    {{end}}
+</div>
+
+<script>
+(function () {
+    var btn = document.getElementById('manage-billing-btn');
+    if (!btn) return;
+    var originalText = btn.textContent;
+        btn.addEventListener('click', async function () {
+        // 2026-09 fix: tenant ID no longer read from sessionStorage
+        // (unreliable — cleared by browser context resets, e.g. DevTools
+        // device-mode toggle, while the auth cookie survives). Rendered
+        // directly from the server-side template instead, which is
+        // always correct for whoever the cookie actually authenticates.
+        var tenantId = "{{.Tenant.ID}}";
+        if (!tenantId) return;
+        btn.textContent = 'Opening…';
+        try {
+            // 2026-09 fix: no longer sends Authorization header from
+            // sessionStorage (login/signup stopped storing the token).
+            // Same-origin fetch sends the httpOnly "access_token" cookie
+            // automatically, which extractAccessToken() accepts.
+            var res = await fetch('/api/tenants/' + tenantId + '/billing/portal', {
+                method: 'POST',
+            });
+            var data = await res.json();
+            if (res.ok && data.portal_url) {
+                window.location.href = data.portal_url;
+            } else {
+                btn.textContent = originalText;
+                alert(data.message || 'Could not open billing portal.');
+            }
+        } catch (err) {
+            btn.textContent = originalText;
+        }
+    });
+})();
+</script>
+
+<div class="card mb-16">
+    <div class="card-header">
+        <h2>Usage &amp; Quota</h2>
+        <a href="/developer/usage?tenant={{.Tenant.ID}}" class="text-dim" style="font-size:12px;">View details →</a>
+    </div>
+    <div class="grid grid-3">
+        <div>
+            <div class="metric-label">Used / Limit this cycle</div>
+            <div class="metric-value" style="font-size:20px;">{{.QuotaUsed}} / {{.QuotaLimit}}</div>
+            <div class="metric-sub">{{.QuotaPercent}}% used{{if .QuotaNearLimit}} — <span style="color:var(--color-text-warn);">approaching limit</span>{{end}}</div>
+        </div>
+        <div>
+            <div class="metric-label">Resets</div>
+            <div class="metric-value" style="font-size:20px;">{{.QuotaResetDate.Format "2006-01-02"}}</div>
+            <div class="metric-sub">Calendar-month cycle (approx.)</div>
+        </div>
+        <div>
+            <div class="metric-label">Log retention</div>
+            <div class="metric-value" style="font-size:20px;">{{.RetentionDays}} days</div>
+            <div class="metric-sub">Per current plan</div>
+        </div>
+    </div>
+</div>
+
+{{if eq .UsageCount 0}}
+<div class="card mb-16" style="border: 2px solid var(--color-border-ok);">
+    <div class="card-header">
+        <h2 style="color: var(--color-text-ok);">🚀 Getting Started: Send your first event</h2>
+    </div>
+    <div class="card-pad">
+        <p>To see the platform in action, try sending a test event using one of your API keys. Copy and run the command below in your terminal:</p>
+        
+        <div class="mt-16">
+            <div class="text-mono card-pad" style="background: var(--color-bg-alt); position: relative; border-radius: 4px;">
+                <pre id="curl-snippet" style="margin:0; overflow-x: auto; white-space: pre-wrap;">curl -X POST {{.BaseURL}}/v1/events \
+  -H "Authorization: Bearer YOUR_API_KEY_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"event_type": "test.first_event"}'</pre>
+                <button onclick="copySnippet()" class="link" style="position: absolute; top: 8px; right: 8px; font-size: 12px; background: var(--color-bg); padding: 4px 8px; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer;">Copy</button>
+            </div>
+        </div>
+
+        <div class="grid grid-2 mt-16" style="gap: 24px;">
+            <div>
+                <h4 class="mb-8">Expected Response (201 Created)</h4>
+                <div class="text-mono text-dim card-pad" style="background: var(--color-bg-alt); border-radius: 4px; font-size: 13px;">
+                    <pre style="margin:0;">{
+  "event": {
+    "id": "evt_...",
+    "project_id": "proj_...",
+    "tenant_id": "{{.Tenant.ID}}",
+    "sequence": 1,
+    "event_type": "test.first_event",
+    "actor_id": "",
+    "payload": {"event_type": "test.first_event"},
+    "hash": "...",
+    "occurred_at": "...",
+    "created_at": "..."
+  }
+}</pre>
+                </div>
+            </div>
+            <div>
+                <h4 class="mb-8">Common Issues</h4>
+                <ul style="padding-left: 16px; font-size: 14px; line-height: 1.6;">
+                    <li><strong>401 Unauthorized:</strong> Check if your API Key is correct and active.</li>
+                    <li><strong>403 Forbidden:</strong> Key needs <code>ingest</code> scope.</li>
+                    <li><strong>400 Bad Request:</strong> <code>event_type</code> is required in body.</li>
+                    <li><strong>429 Too Many:</strong> Quota exceeded for your plan.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-16 text-center">
+            <p class="text-dim">Done? <a href="javascript:location.reload()" class="link">Refresh this page</a> to see your activity appear below.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function copySnippet() {
+    const text = document.getElementById('curl-snippet').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = originalText, 2000);
+    });
+}
+</script>
+{{end}}
+
+<div class="grid grid-3 mb-16">
+    <div class="card metric-tile">
+        <div class="metric-label">API Requests (recorded)</div>
+        <div class="metric-value">{{.UsageCount}}</div>
+        <div class="metric-sub">{{if .LastEventAt}}Last request {{.LastEventAt}}{{else}}No requests recorded yet{{end}}</div>
+    </div>
+    <div class="card metric-tile">
+        <div class="metric-label">Active API Keys</div>
+        <div class="metric-value">{{.ActiveKeyCount}}</div>
+        <div class="metric-sub">{{.RevokedKeyCount}} revoked</div>
+    </div>
+    <div class="card metric-tile">
+        <div class="metric-label">Tenant Status</div>
+        <div class="metric-value" style="font-size:20px;">
+            <span class="badge {{if eq .Tenant.Status "active"}}ok{{else}}idle{{end}}">{{.Tenant.Status}}</span>
+        </div>
+        <div class="metric-sub">Created {{.Tenant.CreatedAt.Format "2006-01-02"}}</div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb-16">
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent API Activity</h2>
+            <a href="/developer/usage?tenant={{.Tenant.ID}}" class="text-dim" style="font-size:12px;">View all →</a>
+        </div>
+        {{if .RecentUsage}}
+        <table>
+            <thead>
+                <tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {{range .RecentUsage}}
+                <tr>
+                    <td class="text-mono text-dim">{{.Timestamp.Format "15:04:05"}}</td>
+                    <td class="text-mono">{{index .Metadata "method"}}</td>
+                    <td class="text-mono">{{index .Metadata "path"}}</td>
+                    <td>{{index .Metadata "status"}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <div class="empty-state">
+            <div class="empty-title">No API activity yet</div>
+            <div class="empty-body">Requests made with an API key or session token for this tenant will appear here as they happen.</div>
+        </div>
+        {{end}}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Agent Fleet</h2>
+            <span class="badge idle">not connected</span>
+        </div>
+        <div class="empty-state">
+            <div class="empty-title">Fleet status is not wired into the console yet</div>
+            <div class="empty-body">The agent registry and tool execution layer exist on the backend (Phase 9–11), but this console does not yet call it. Once <span class="text-mono">agent/registry.go</span> is exposed to the portal, live agent counts and health will appear here — not before.</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb-16">
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent Projects</h2>
+            <a href="/developer/projects" class="text-dim" style="font-size:12px;">View all →</a>
+        </div>
+        {{if .RecentProjects}}
+        <table>
+            <thead><tr><th>Name</th></tr></thead>
+            <tbody>
+                {{range .RecentProjects}}
+                <tr><td>{{.Name}}</td></tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <div class="empty-state">
+            <div class="empty-title">No projects yet</div>
+            <div class="empty-body">Create a project to start generating scoped API keys.</div>
+        </div>
+        {{end}}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent Audit Events</h2>
+            <a href="/audit" class="text-dim" style="font-size:12px;">View all →</a>
+        </div>
+        {{if .RecentAuditEvents}}
+        <table>
+            <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Resource</th><th>Outcome</th></tr></thead>
+            <tbody>
+                {{range .RecentAuditEvents}}
+                <tr>
+                    <td class="text-mono text-dim">{{.Timestamp.Format "2006-01-02 15:04:05"}}</td>
+                    <td class="text-mono">{{if .UserID}}{{.UserID}}{{else}}—{{end}}</td>
+                    <td class="text-mono">{{.Action}}</td>
+                    <td class="text-mono text-dim">{{.Resource}}</td>
+                    <td>
+                        <span class="badge {{if eq .Outcome "success"}}ok{{else if eq .Outcome "denied"}}warn{{else}}idle{{end}}">{{.Outcome}}</span>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <div class="empty-state">
+            <div class="empty-title">No audit events yet</div>
+            <div class="empty-body">Actions taken on this tenant will appear here.</div>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Platform Roadmap — What's Next in This Console</h2>
+        <span class="card-meta">Reflects engineering roadmap, not marketing</span>
+    </div>
+    <div class="card-pad">
+        <div class="roadmap-strip">
+            <div class="roadmap-item">
+                <span class="phase-tag">P9–11</span>
+                <div>
+                    <div class="item-title">Agent Fleet</div>
+                    <div class="item-desc">Live agent status, capability grants, and tool allowlists per tenant, sourced from the agent registry.</div>
+                </div>
+            </div>
+            <div class="roadmap-item">
+                <span class="phase-tag">P10</span>
+                <div>
+                    <div class="item-title">Audit &amp; Compliance</div>
+                    <div class="item-desc">Searchable audit trail, retention policy status, and GDPR export/deletion requests from this console.</div>
+                </div>
+            </div>
+            <div class="roadmap-item">
+                <span class="phase-tag">P15+</span>
+                <div>
+                    <div class="item-title">Operations</div>
+                    <div class="item-desc">Simulation/campaign run history once the BAS operation layer lands on top of the agent platform.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

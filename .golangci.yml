@@ -1,0 +1,22 @@
+# .golangci.yml
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - misspell
+    - gofmt
+    - goimports
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  staticcheck:
+    checks: ["all"]
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

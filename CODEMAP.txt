@@ -1,0 +1,3579 @@
+﻿## agent\agent.go
+  9: type AgentStatus string
+  17: type Agent struct {
+## agent\registry.go
+  14: func NewAgentID() string {
+  20: func NewToolID() string {
+  27: func RegisterAgent(
+  61: func UpdateAgentStatus(
+  82: func RegisterTool(
+## agent\store_bbolt.go
+  20: type BoltAgentStore struct {
+  24: func NewBoltAgentStore(db *bolt.DB) (*BoltAgentStore, error) {
+  44: func (s *BoltAgentStore) SaveAgent(agent *Agent) error {
+  68: func (s *BoltAgentStore) GetAgent(tenantID, agentID string) (*Agent, error) {
+  80: func (s *BoltAgentStore) GetAgentIncludingDeleted(tenantID, agentID string) (*Agent, error) {
+  103: func (s *BoltAgentStore) ListAgents(tenantID string) ([]*Agent, error) {
+  130: func (s *BoltAgentStore) ListDeletedAgents(tenantID string) ([]*Agent, error) {
+  155: func (s *BoltAgentStore) DeleteAgent(tenantID, agentID string) error {
+  164: func (s *BoltAgentStore) DeleteAllAgentsForTenant(tenantID string) error {
+  187: func (s *BoltAgentStore) ListAllAgents() ([]*Agent, error) {
+  216: func (s *BoltAgentStore) SaveTool(tool *Tool) error {
+  240: func (s *BoltAgentStore) GetTool(tenantID, toolID string) (*Tool, error) {
+  252: func (s *BoltAgentStore) GetToolIncludingDeleted(tenantID, toolID string) (*Tool, error) {
+  275: func (s *BoltAgentStore) ListTools(tenantID string) ([]*Tool, error) {
+  301: func (s *BoltAgentStore) ListDeletedTools(tenantID string) ([]*Tool, error) {
+  326: func (s *BoltAgentStore) DeleteTool(tenantID, toolID string) error {
+  335: func (s *BoltAgentStore) DeleteAllToolsForTenant(tenantID string) error {
+  358: func (s *BoltAgentStore) ListAllTools() ([]*Tool, error) {
+## agent\tool.go
+  9: type ToolType string
+  18: type Tool struct {
+  31: type ToolExecutionRequest struct {
+  39: type ToolExecutionResult struct {
+## alerts\alerts.go
+  34: type Provider string
+  45: type notifier struct {
+  73: func Init() {
+  80: func InitWithConfig(webhookURL, providerRaw string) {
+  110: func parseCooldownEnv() time.Duration {
+  133: func NotifyCritical(dedupeKey, title, message string, fields map[string]string) {
+  154: func (n *notifier) isCooling(key string) bool {
+  166: func (n *notifier) send(title, message string, fields map[string]string) {
+  196: func sortedFieldLines(fields map[string]string) []string {
+  210: func slackPayload(title, message string, fields map[string]string) map[string]any {
+  223: func discordPayload(title, message string, fields map[string]string) map[string]any {
+  241: func Enabled() bool {
+## apikey\apikey.go
+  24: type Scope string
+  32: func (s Scope) Valid() bool {
+  43: func (s Scope) CanIngest() bool { return s == ScopeIngest || s == ScopeAdmin }
+  44: func (s Scope) CanRead() bool   { return s == ScopeRead || s == ScopeAdmin }
+  46: type APIKey struct {
+  67: type GeneratedKey struct {
+  75: func GenerateAPIKey(tenantID, projectID, name string, scope Scope) (*GeneratedKey, error) {
+  112: func HashKey(plaintext string) string {
+## apikey\handlers.go
+  21: type KeyLimitResolver func(tenantID string) int
+  23: func CreateAPIKeyHandler(apiStore *PostgresStore, projectStore *project.PostgresStore, limitResolver ...KeyLim
+  97: func ListAPIKeysHandler(apiStore *PostgresStore) fiber.Handler {
+  116: func RevokeAPIKeyHandler(apiStore *PostgresStore) fiber.Handler {
+## apikey\store_postgres.go
+  20: type DBQuerier interface {
+  26: type PostgresStore struct {
+  30: func NewPostgresStore(pool DBQuerier) *PostgresStore {
+  34: func (s *PostgresStore) Create(ctx context.Context, k *APIKey) error {
+  57: func (s *PostgresStore) FindByPlaintext(ctx context.Context, plaintext string) (*APIKey, error) {
+  81: func (s *PostgresStore) ListByProject(ctx context.Context, tenantID, projectID string) ([]*APIKey, error) {
+  104: func (s *PostgresStore) Revoke(ctx context.Context, tenantID, projectID, keyID string) error {
+  128: func (s *PostgresStore) UpdateLastUsed(ctx context.Context, keyID string) error {
+  140: func (s *PostgresStore) DeleteAllForTenant(ctx context.Context, tenantID string) error {
+  154: func (s *PostgresStore) CountActiveByTenant(ctx context.Context, tenantID string) (int, error) {
+  171: func (s *PostgresStore) CreateWithLimit(ctx context.Context, k *APIKey, limit int) error {
+## apikey\store_postgres_allowed.go
+  11: func (s *PostgresStore) IsAmongOldestActive(ctx context.Context, tenantID, keyID string, limit int) (bool, err
+## audit\anonymize.go
+  19: type AnonymizedAuditEvent struct {
+  31: func hashUserID(userID string) string {
+  40: func sanitizeMetadata(metadata map[string]string) map[string]string {
+  66: func AnonymizeEvent(event *AuditEvent) *AnonymizedAuditEvent {
+  80: func StoreAnonymizedEvent(db *bolt.DB, event *AnonymizedAuditEvent) error {
+## audit\event.go
+  10: type EventType string
+  25: type Outcome string
+  34: type AuditEvent struct {
+  46: type Store interface {
+## audit\platform_login.go
+  27: type platformThrottleState struct {
+  36: func (t *platformThrottleState) allow(ip string, now time.Time) bool {
+  68: func truncate(s string, n int) string {
+  75: func emailHash(email string) string {
+  85: func RecordPlatformLoginAttempt(store Store, ip, email, userAgent, reason string) {
+  110: func RecordLoginBlocked(store Store, tenantID, userID, ip, userAgent, reason string) {
+## audit\record.go
+  10: func RecordEvent(
+## audit\retention.go
+  42: type RetentionPolicy struct {
+  52: func DefaultRetentionPolicy() *RetentionPolicy {
+  61: type RetentionStore struct {
+  67: func retentionPolicyKey(tenantID string) []byte {
+  72: func NewRetentionStore(db *bolt.DB) (*RetentionStore, error) {
+  91: func (s *RetentionStore) GetPolicy(tenantID string, planRetentionDays int) (*RetentionPolicy, error) {
+  140: func (s *RetentionStore) SetPolicy(tenantID string, policy *RetentionPolicy, planRetentionDays int) error {
+## audit\security.go
+  20: func IsSecurityEvent(action string) bool {
+## audit\store_bbolt.go
+  22: type BoltAuditStore struct {
+  26: func NewBoltAuditStore(db *bolt.DB) (*BoltAuditStore, error) {
+  37: func reverseTimestampKeyAudit(tenantID string, ts time.Time, eventID string) []byte {
+  42: func (s *BoltAuditStore) Save(event *AuditEvent) error {
+  69: func (s *BoltAuditStore) ListForTenant(tenantID string, limit int) ([]*AuditEvent, error) {
+  111: func (s *BoltAuditStore) CleanupForTenant(tenantID string, policy *RetentionPolicy) (deleted int, anonymized i
+  199: func (s *BoltAuditStore) DeleteAllForTenant(tenantID string) error {
+  224: func isAnonymizedEvent(event *AuditEvent) bool {
+  233: func anonymizeEvent(event *AuditEvent) {
+## audit\store_postgres.go
+  24: type PostgresAuditStore struct {
+  31: func NewPostgresAuditStore(pool *pgxpool.Pool) (*PostgresAuditStore, error) {
+  39: func (s *PostgresAuditStore) Save(event *AuditEvent) error {
+  67: func (s *PostgresAuditStore) ListForTenant(tenantID string, limit int) ([]*AuditEvent, error) {
+  109: func (s *PostgresAuditStore) CleanupForTenant(tenantID string, policy *RetentionPolicy) (deleted int, anonymiz
+  169: func (s *PostgresAuditStore) DeleteAllForTenant(tenantID string) error {
+  186: func marshalMetadata(metadata map[string]string) ([]byte, error) {
+  195: type rowScanner interface {
+  199: func scanAuditEvent(row rowScanner) (*AuditEvent, error) {
+## auth\access_token_revocation.go
+  13: type AccessTokenRevocationStore interface {
+  19: type InMemoryAccessTokenRevocationStore struct {
+  24: func NewInMemoryAccessTokenRevocationStore() *InMemoryAccessTokenRevocationStore {
+  30: func (s *InMemoryAccessTokenRevocationStore) Revoke(
+  56: func (s *InMemoryAccessTokenRevocationStore) IsRevoked(
+## auth\access_token_revocation_store_bbolt.go
+  14: type BoltAccessTokenRevocationStore struct {
+  18: func NewBoltAccessTokenRevocationStore(
+  39: func (s *BoltAccessTokenRevocationStore) Revoke(
+  74: func (s *BoltAccessTokenRevocationStore) IsRevoked(
+## auth\email_templates.go
+  19: func BuildVerificationEmail(baseURL, rawToken string) (subject, textBody, htmlBody string) {
+  72: func BuildPasswordResetEmail(baseURL, rawToken string) (subject, textBody, htmlBody string) {
+## auth\email_verification.go
+  11: type EmailVerificationRecord struct {
+  19: type EmailVerificationStore interface {
+  25: func GenerateEmailVerificationToken(userID string, store EmailVerificationStore) (plaintext string, err error)
+  39: func VerifyEmailToken(plaintext string, store EmailVerificationStore) (userID string, err error) {
+## auth\email_verification_store_bbolt.go
+  14: type BoltEmailVerificationStore struct {
+  18: func NewBoltEmailVerificationStore(db *bolt.DB) (*BoltEmailVerificationStore, error) {
+  32: func (s *BoltEmailVerificationStore) Save(record *EmailVerificationRecord) error {
+  55: func (s *BoltEmailVerificationStore) FindByHash(tokenHash string) (*EmailVerificationRecord, error) {
+  84: func (s *BoltEmailVerificationStore) MarkUsed(tokenHash string) (*EmailVerificationRecord, error) {
+## auth\jwt.go
+  22: type contextKey string
+  30: type Claims struct {
+  49: func GenerateAccessToken(userID, tenantID, roleID string, signingKey []byte) (string, error) {
+  75: func ValidateAccessToken(tokenString string, signingKey []byte) (*Claims, error) {
+  101: type RefreshTokenRecord struct {
+  109: type RefreshTokenStore interface {
+  123: type InMemoryRefreshTokenStore struct {
+  128: func NewInMemoryRefreshTokenStore() *InMemoryRefreshTokenStore {
+  132: func (s *InMemoryRefreshTokenStore) Save(record *RefreshTokenRecord) error {
+  139: func (s *InMemoryRefreshTokenStore) FindByHash(tokenHash string) (*RefreshTokenRecord, error) {
+  149: func (s *InMemoryRefreshTokenStore) Rotate(tokenHash string) (*RefreshTokenRecord, error) {
+  172: func (s *InMemoryRefreshTokenStore) RevokeAllForUser(userID string) error {
+  187: func GenerateRefreshToken(userID string, store RefreshTokenStore) (plaintext string, err error) {
+  207: func RotateRefreshToken(
+  250: func RotateRefreshTokenForAnyUser(
+  281: func hashToken(plaintext string) string {
+  286: func newRandomID() string {
+  296: func WithClaims(ctx context.Context, claims *Claims) context.Context {
+  300: func ClaimsFromContext(ctx context.Context) (*Claims, bool) {
+## auth\login_attempt_limiter.go
+  14: type LoginAttemptLimiter struct {
+  19: type loginAttemptRecord struct {
+  24: func NewLoginAttemptLimiter() *LoginAttemptLimiter {
+  36: func (l *LoginAttemptLimiter) Allow(ip, email string) bool {
+  57: func (l *LoginAttemptLimiter) RecordFailure(ip, email string) {
+  78: func (l *LoginAttemptLimiter) Reset(ip, email string) {
+  87: func loginAttemptKey(ip, email string) string {
+## auth\login_security.go
+  26: type CredentialStuffingLimiter struct {
+  31: type credentialStuffingRecord struct {
+  36: func NewCredentialStuffingLimiter() *CredentialStuffingLimiter {
+  43: func (l *CredentialStuffingLimiter) Allow(ip string) bool {
+  64: func (l *CredentialStuffingLimiter) RecordAttempt(ip string) {
+  105: type AccountLockout struct {
+  110: type accountLockoutRecord struct {
+  116: func NewAccountLockout() *AccountLockout {
+  122: func (l *AccountLockout) IsLocked(email string) bool {
+  155: func (l *AccountLockout) RecordFailure(email string) {
+  184: func (l *AccountLockout) Reset(email string) {
+  209: type SessionRefreshLimiter struct {
+  214: type sessionRefreshRecord struct {
+  219: func NewSessionRefreshLimiter() *SessionRefreshLimiter {
+  225: func (l *SessionRefreshLimiter) Allow(ip, userID string) bool {
+  245: func (l *SessionRefreshLimiter) Record(ip, userID string) {
+  265: func normalizeSecurityEmail(email string) string {
+  269: func sessionRefreshKey(ip, userID string) string {
+## auth\mailer.go
+  8: type Mailer interface {
+  19: type LoggingMailer struct{ BaseURL string }
+  21: func (m *LoggingMailer) SendVerificationEmail(toEmail, rawToken string) error {
+  27: func (m *LoggingMailer) SendPasswordResetEmail(toEmail, rawToken string) error {
+  33: func NewMailerFromEnv() Mailer {
+## auth\oauth_account.go
+  19: type UserPutStore interface {
+  26: type NewTenantFunc func(ownerEmail string) (tenantID string, ownerRoleID string, err error)
+  30: func ResolveOAuthUser(
+## auth\oauth_config.go
+  8: type OAuthConfig struct {
+  15: func LoadOAuthConfigFromEnv() *OAuthConfig {
+  24: func (c *OAuthConfig) Enabled(provider string) bool {
+## auth\oauth_provider.go
+  16: type OAuthProvider interface {
+  26: type GithubProvider struct {
+  31: func (p *GithubProvider) AuthURL(state, redirectURI string) string {
+  40: func (p *GithubProvider) Exchange(code, redirectURI string) (string, error) {
+  84: func (p *GithubProvider) FetchEmail(accessToken string) (string, error) {
+  137: type GoogleProvider struct {
+  142: func (p *GoogleProvider) AuthURL(state, redirectURI string) string {
+  153: func (p *GoogleProvider) Exchange(code, redirectURI string) (string, error) {
+  191: func (p *GoogleProvider) FetchEmail(accessToken string) (string, error) {
+  228: func NewProviders(cfg *OAuthConfig) map[string]OAuthProvider {
+## auth\oauth_state.go
+  11: type OAuthStateStore struct {
+  17: type oauthStateEntry struct {
+  22: func NewOAuthStateStore() *OAuthStateStore {
+  29: func (s *OAuthStateStore) Generate(provider string) (string, error) {
+  44: func (s *OAuthStateStore) Consume(provider, state string) bool {
+  56: func (s *OAuthStateStore) cleanupLocked() {
+## auth\password.go
+  27: func init() {
+  51: func HashPassword(plaintext string) (string, error) {
+  61: func VerifyPassword(hash, plaintext string) error {
+## auth\password_login.go
+  10: func VerifyPasswordForLogin(hash, plaintext string) error {
+## auth\password_reset.go
+  10: type PasswordResetRecord struct {
+  19: type PasswordResetStore interface {
+  31: func GeneratePasswordResetToken(userID, requestedIP string, store PasswordResetStore) (plaintext string, err e
+  49: func ConsumePasswordResetToken(plaintext string, store PasswordResetStore) (userID string, err error) {
+## auth\password_reset_store_bbolt.go
+  14: type BoltPasswordResetStore struct {
+  18: func NewBoltPasswordResetStore(db *bolt.DB) (*BoltPasswordResetStore, error) {
+  32: func (s *BoltPasswordResetStore) Save(record *PasswordResetRecord) error {
+  55: func (s *BoltPasswordResetStore) FindByHash(tokenHash string) (*PasswordResetRecord, error) {
+  82: func (s *BoltPasswordResetStore) MarkUsed(tokenHash string) (*PasswordResetRecord, error) {
+## auth\prod_mailer.go
+  16: type ProdMailer struct {
+  23: func NewProdMailer(apiKey, from, baseURL string) *ProdMailer {
+  28: type resendAuthPayload struct {
+  36: func (m *ProdMailer) deliver(kind, to, subject, text, html string) {
+  60: func (m *ProdMailer) SendVerificationEmail(toEmail, rawToken string) error {
+  66: func (m *ProdMailer) SendPasswordResetEmail(toEmail, rawToken string) error {
+## auth\refresh_token_store_bbolt.go
+  26: type BoltRefreshTokenStore struct {
+  31: func NewBoltRefreshTokenStore(db *bolt.DB) (*BoltRefreshTokenStore, error) {
+  56: func (s *BoltRefreshTokenStore) Save(
+  98: func (s *BoltRefreshTokenStore) FindByHash(
+  153: func (s *BoltRefreshTokenStore) Rotate(
+  217: func (s *BoltRefreshTokenStore) Revoke(id string) error {
+  269: func (s *BoltRefreshTokenStore) RevokeAllForUser(userID string) error {
+  308: func errorsRefreshTokenNotFound() error {
+  312: func errorsRefreshTokenAlreadyUsed() error {
+  316: func errorsRefreshTokenExpired() error {
+## auth\store_interfaces.go
+  7: type UserAdminStore interface {
+## auth\user.go
+  14: type UserStatus string
+  37: type User struct {
+  48: type UserStore interface {
+  54: type InMemoryUserStore struct {
+  59: func NewInMemoryUserStore() *InMemoryUserStore {
+  63: func (s *InMemoryUserStore) Put(user *User) error {
+  73: func (s *InMemoryUserStore) GetByID(userID string) (*User, error) {
+  99: func CheckUserActive(store UserStore, userID string) error {
+## auth\user_store_admin.go
+  15: func (s *InMemoryUserStore) DeleteAllForTenant(tenantID string) int {
+  31: func (s *InMemoryUserStore) CountForTenant(tenantID string) int {
+## auth\user_store_bbolt.go
+  18: type BoltUserStore struct {
+  25: func NewBoltUserStore(db *bolt.DB) (*BoltUserStore, error) {
+  36: func (s *BoltUserStore) Put(user *User) error {
+  50: func (s *BoltUserStore) GetByID(userID string) (*User, error) {
+  77: func (s *BoltUserStore) GetByIDIncludingDeleted(userID string) (*User, error) {
+  100: func (s *BoltUserStore) ListAllForTenant(tenantID string) ([]*User, error) {
+  125: func (s *BoltUserStore) ListDeletedForTenant(tenantID string) ([]*User, error) {
+  149: func (s *BoltUserStore) DeleteAllForTenant(tenantID string) int {
+  181: func (s *BoltUserStore) CountForTenant(tenantID string) int {
+## auth\user_store_email.go
+  23: type UserEmailLookupStore interface {
+  29: func (s *InMemoryUserStore) FindByEmail(email string) (*User, error) {
+  43: func (s *BoltUserStore) FindByEmail(email string) (*User, error) {
+## auth\user_store_list.go
+  7: func (s *InMemoryUserStore) ListByTenant(tenantID string) []*User {
+## auth\user_store_owner_lookup.go
+  20: func (s *InMemoryUserStore) HasOwner(tenantID string) bool {
+  32: func (s *BoltUserStore) HasOwner(tenantID string) bool {
+  64: func (s *BoltUserStore) OwnerEmail(tenantID string) (string, error) {
+## billing\grace_period_sweep.go
+  22: func (s *Service) SweepExpiredGracePeriods(ctx context.Context) (int, error) {
+## billing\plans.go
+  9: type PlanTier string
+  17: type PlanConfig struct {
+  46: type Registry struct {
+  54: func NewRegistry(proPriceID, businessPriceID string) *Registry {
+  87: func (r *Registry) Get(tier PlanTier) (PlanConfig, bool) {
+  92: func (r *Registry) ResolveByPriceID(priceID string) (PlanConfig, bool) {
+  100: func (r *Registry) Free() PlanConfig {
+  107: func GetMonthlyEventLimit(tier PlanTier) int64 {
+  125: type Tenant struct {
+  148: func (s *PostgresStore) ApplyPlanToTenant(ctx context.Context, tenantID string, monthlyEventLimit int64, reten
+## billing\plans_alias.go
+  20: type BillingInterval string
+  28: func ParseBillingInterval(s string) (BillingInterval, bool) {
+  41: func (r *Registry) AddPriceAlias(priceID string, tier PlanTier) error {
+  61: func (r *Registry) SetAnnualPriceID(tier PlanTier, priceID string) error {
+  79: func (r *Registry) PriceIDFor(tier PlanTier, interval BillingInterval) (string, bool) {
+## billing\plans_custom_roles.go
+  6: func PlanAllowsCustomRoles(planTier string) bool {
+## billing\plans_seats.go
+  6: func PlanAllowsTeamSeats(planTier string) bool {
+## billing\service.go
+  32: type ProjectPlanApplier interface {
+  40: type WebhookEventClaimer interface {
+  50: type AuditLogger interface {
+  57: type RoleProvisioner interface {
+  67: func (s *Service) SetRoleStore(store RoleProvisioner) {
+  73: type RoleDeleter interface {
+  79: func (s *Service) revokePaidRoles(tenantID string) {
+  108: func (s *Service) provisionRolesForPlan(tenantID string, tier PlanTier) {
+  176: func newAuditEventID() string {
+  184: func (s *Service) lockTenant(tenantID string) func() {
+  191: type Service struct {
+  216: func NewService(
+  238: func (s *Service) SetPortalReturnURL(url string) {
+  247: func (s *Service) SetAuditLogger(a AuditLogger) {
+  251: func (s *Service) logBillingEvent(tenantID, action, resource string, outcome audit.Outcome, metadata map[strin
+  276: func (s *Service) CreateCheckoutSession(tenantID string, planTier PlanTier) (string, error) {
+  282: func (s *Service) CreateCheckoutSessionInterval(tenantID string, planTier PlanTier, interval BillingInterval) 
+  332: func (s *Service) CreatePortalSession(tenantID string) (string, error) {
+  363: func (s *Service) CreateCheckoutHandler() fiber.Handler {
+  407: func (s *Service) CreatePortalHandler() fiber.Handler {
+  444: type checkoutSessionPayload struct {
+  450: type subscriptionPayload struct {
+  463: type invoicePayload struct {
+  477: func (s *Service) WebhookHandler() fiber.Handler {
+  581: func (s *Service) handleCheckoutCompleted(ctx context.Context, sess checkoutSessionPayload) error {
+  609: func (s *Service) handleSubscriptionUpdated(ctx context.Context, sub subscriptionPayload) error {
+  679: func (s *Service) handleSubscriptionDeleted(ctx context.Context, sub subscriptionPayload) error {
+  710: func (s *Service) handleInvoicePaymentFailed(ctx context.Context, inv invoicePayload) error {
+## billing\webhook_event_store.go
+  23: type WebhookEventStore struct {
+  27: func NewWebhookEventStore(pool *pgxpool.Pool) *WebhookEventStore {
+  43: func (s *WebhookEventStore) Claim(
+  85: func (s *WebhookEventStore) Exists(
+  124: func (s *WebhookEventStore) GetByEventID(
+## cmd\apply-test-migrations\main.go
+  24: func main() {
+## cmd\migrate-verify-existing-users\main.go
+  28: type userPatch struct {
+  32: func main() {
+## cmd\notify-worker\main.go
+  24: func main() {
+  73: func resolveNotificationEmail(tenantStore *tenant.BoltTenantStore, userStore *auth.BoltUserStore) func(tenantI
+## cmd\perf-history-test\main.go
+  45: func main() {
+  122: func memDeltaMB(before, after runtime.MemStats) string {
+  142: func seedUsageEvents(db *bolt.DB, tenantID string, total int) error {
+  215: func reverseTimestampKeyLocal(tenantID string, ts time.Time, eventID string) []byte {
+## cmd\perf-verify-incremental-test\main.go
+  32: func memDeltaMB(before, after runtime.MemStats) string {
+  37: func main() {
+## cmd\perf-verify-test\main.go
+  56: func main() {
+  160: func memDeltaMB(before, after runtime.MemStats) string {
+  165: func createProject(ctx context.Context, pool *pgxpool.Pool, tenantID string, monthlyLimit int64) (string, erro
+  182: func lookupTenantID(ctx context.Context, pool *pgxpool.Pool, projectID string) (string, error) {
+  192: type chainRows struct {
+  201: func (r *chainRows) Next() bool { return r.i < r.total }
+  203: func (r *chainRows) Values() ([]interface{}, error) {
+  233: func (r *chainRows) Err() error { return nil }
+  235: func seedChain(ctx context.Context, pool *pgxpool.Pool, projectID string, total int) error {
+  275: type limitedSource struct {
+  280: func (l *limitedSource) Next() bool {
+  287: func (l *limitedSource) Values() ([]interface{}, error) { return l.inner.Values() }
+  288: func (l *limitedSource) Err() error                     { return l.inner.Err() }
+## cmd\playground\main.go
+  13: func main() {
+## cmd\purge-verify\main.go
+  40: func main() {
+  82: func runBackdate(tenantStore *tenant.BoltTenantStore, tenantID string) {
+  103: func runVerify(
+## cmd\retention-job\main.go
+  13: func main() {
+## cmd\saas-api\agent_handlers.go
+  18: func CreateAgentHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  74: func ListAgentsHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  106: func GetAgentHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  137: func UpdateAgentStatusHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  186: func DeleteAgentHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  220: func CreateToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  281: func ListToolsHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  313: func GetToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  344: func DeleteToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  374: func ExecuteToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  436: func executeToolByType(tool *agent.Tool, params map[string]interface{}) (interface{}, error) {
+## cmd\saas-api\api_key_plan_gate.go
+  10: type oldestKeyChecker interface {
+  18: func newAPIKeyPlanGate(checker oldestKeyChecker, resolve apikey.KeyLimitResolver) middleware.APIKeyGate {
+## cmd\saas-api\app.go
+  46: func newUserID() string {
+  62: func slugifyCompanyName(name string) string {
+  90: func randomTenantSuffix() string {
+  107: func BuildApp(
+## cmd\saas-api\audit_handlers.go
+  21: func TenantAuditHandler(auditStore audit.Store) fiber.Handler {
+  74: func ExportAuditHandler(auditStore audit.Store, capResolver ...func(tenantID string) int) fiber.Handler {
+  140: func AdminAuditHandler(
+  190: func AdminPlatformAuditHandler(auditStore audit.Store) fiber.Handler {
+## cmd\saas-api\audit_retention_handlers.go
+  33: func resolvePlanRetentionDays(tenantID string, resolvePlan project.PlanResolver) int {
+  43: func GetRetentionPolicyHandler(retentionStore *audit.RetentionStore, resolvePlan project.PlanResolver) fiber.H
+  77: func UpdateRetentionPolicyHandler(retentionStore *audit.RetentionStore, resolvePlan project.PlanResolver) fibe
+  133: func TriggerCleanupHandler(
+## cmd\saas-api\audit_verify_handlers.go
+  28: type auditVerifyCacheRow struct {
+  39: func readAuditVerifyCache(
+  65: func cacheRowToResult(tenantID string, row *auditVerifyCacheRow) *events.TenantVerifyResult {
+  88: func writeAuditVerifyCache(
+  132: func tryForceAuditVerify(
+  167: func maybeAlertChainBroken(
+  207: func AuditVerifyHandler(
+## cmd\saas-api\auth_cookies.go
+  23: func setAccessCookie(c *fiber.Ctx, token string, ttl time.Duration) {
+  31: func setRefreshCookie(c *fiber.Ctx, token string, ttl time.Duration) {
+  39: func clearRefreshCookie(c *fiber.Ctx) {
+  50: func clearLegacyRefreshCookie(c *fiber.Ctx) {
+## cmd\saas-api\compliance_handlers.go
+  27: func gracePeriodDaysFor(planTier string) int {
+  35: func SoftDeleteTenantHandler(
+  89: func RestoreTenantHandler(
+  129: func PurgeTenantHandler(
+  192: func TenantDeletionStatusHandler(
+  242: func AdminSoftDeleteTenantHandler(
+  283: func AdminPurgeTenantHandler(
+## cmd\saas-api\custom_roles.go
+  58: func isCustomRoleID(id string) bool { return strings.HasPrefix(id, customRolePrefix) }
+  60: func customRoleSlug(name string) string {
+  65: func customRoleGrants(tenantID string, caps []string) (grants []string, unknown string) {
+  85: func customRoleView(r *rbac.Role) fiber.Map {
+  94: func customRoleErr(c *fiber.Ctx, status int, code string) error {
+  98: func customRoleUpgradeErr(c *fiber.Ctx) error {
+  111: type customRoleTenantReader interface {
+  115: type planAwareRoleStore struct {
+  120: func newPlanAwareRoleStore(inner rbac.RoleStore, tenants customRoleTenantReader) *planAwareRoleStore {
+  124: func (s *planAwareRoleStore) PutRole(role *rbac.Role) error { return s.inner.PutRole(role) }
+  126: func (s *planAwareRoleStore) GetRole(tenantID, roleID string) (*rbac.Role, error) {
+  149: type customRoleStore interface {
+  156: type customRoleUserLister interface {
+  160: type customRoleHandlers struct {
+  166: func newCustomRoleHandlers(tenants customRoleTenantReader, roles customRoleStore, users customRoleUserLister) 
+  171: func (h *customRoleHandlers) List(c *fiber.Ctx) error {
+  197: func (h *customRoleHandlers) Create(c *fiber.Ctx) error {
+  259: func (h *customRoleHandlers) Update(c *fiber.Ctx) error {
+  302: func (h *customRoleHandlers) Delete(c *fiber.Ctx) error {
+## cmd\saas-api\main.go
+  19: func main() {
+## cmd\saas-api\mcp_handlers.go
+  18: func MCPQueryHandler(gateway *mcp.Gateway) fiber.Handler {
+  76: func writeMCPError(
+## cmd\saas-api\notification_settings_handlers.go
+  16: func GetNotificationSettingsHandler(tenantStore *tenant.BoltTenantStore) fiber.Handler {
+  36: func UpdateNotificationSettingsHandler(tenantStore *tenant.BoltTenantStore) fiber.Handler {
+## cmd\saas-api\notify_scheduler.go
+  36: func notifyRecipientResolver(tenantStore *tenant.BoltTenantStore, userStore *auth.BoltUserStore) func(tenantID
+  57: func drainNotifyOnce(queue *notify.BoltEmailQueue, sender notify.EmailSender) (sent int, failed int) {
+  76: func startNotifyScheduler(db *bolt.DB) (func(), error) {
+## cmd\saas-api\oauth_handlers.go
+  19: func getFrontendBaseURL() string {
+  26: func oauthRedirectURI(c *fiber.Ctx, provider string) string {
+  31: func OAuthStartHandler(providers map[string]auth.OAuthProvider, states *auth.OAuthStateStore) fiber.Handler {
+  50: func OAuthCallbackHandler(
+  138: func OAuthRateLimit(limiter *auth.CredentialStuffingLimiter) fiber.Handler {
+## cmd\saas-api\portal_apikey_limit.go
+  7: func (s PortalStores) apiKeyLimit(tenantID string) int {
+## cmd\saas-api\portal_handlers.go
+  52: type PortalStores struct {
+  62: func RegisterPortalRoutes(
+  91: func portalTenantID(c *fiber.Ctx) (string, error) {
+  99: func (s PortalStores) loadTenant(tenantID string) *tenant.Tenant {
+  107: func (s PortalStores) resolveProject(
+  136: func baseData(page string, t *tenant.Tenant) map[string]interface{} {
+  146: func renderPortal(c *fiber.Ctx, data map[string]interface{}) error {
+  164: func (s PortalStores) handleOverview(c *fiber.Ctx) error {
+  252: func (s PortalStores) handleAgents(c *fiber.Ctx) error {
+  263: func (s PortalStores) handleOperations(c *fiber.Ctx) error {
+  274: func (s PortalStores) handleAudit(c *fiber.Ctx) error {
+  285: func (s PortalStores) handleProjects(c *fiber.Ctx) error {
+  304: func (s PortalStores) handleProjectCreate(c *fiber.Ctx) error {
+  327: func (s PortalStores) handleAPIKeys(c *fiber.Ctx) error {
+  365: func (s PortalStores) handleAPIKeyGenerate(c *fiber.Ctx) error {
+  435: func (s PortalStores) handleAPIKeyRevoke(c *fiber.Ctx) error {
+  464: func quotaLimitForPlan(planTier string) int {
+  475: func (s PortalStores) sumQuotaUsedSafely(c *fiber.Ctx, tenantID, period string) (total int) {
+  498: type dailyCount struct {
+  504: func nextMonthlyResetDate(now time.Time) time.Time {
+  509: func buildDailySeries(events []*usage.UsageEvent, days int) []dailyCount {
+  538: type eventTypeBreakdown struct {
+  544: func buildEventTypeBreakdown(typeCounts map[string]int, total int) []eventTypeBreakdown {
+  561: func quotaWarningTier(percent int) string {
+  578: type EventsStore interface {
+  582: func (s PortalStores) handleUsage(c *fiber.Ctx) error {
+## cmd\saas-api\prod_config.go
+  11: func validateProductionEnv() error {
+## cmd\saas-api\retention_scheduler.go
+  48: type retentionSweeper struct {
+  63: func newRetentionSweeper(db *bolt.DB, pool *pgxpool.Pool) (*retentionSweeper, error) {
+  118: func (r *retentionSweeper) cleanupAudit(ctx context.Context) {
+  149: func (r *retentionSweeper) runOnce(ctx context.Context) {
+  182: func startRetentionScheduler(db *bolt.DB, pool *pgxpool.Pool) (func(), error) {
+## cmd\saas-api\roles_handler.go
+  22: func TenantRolesHandler(roleStore rbac.RoleStore) fiber.Handler {
+## cmd\saas-api\security_events_handlers.go
+  28: func SecurityEventsHandler(auditStore audit.Store) fiber.Handler {
+## cmd\saas-api\usage_handlers.go
+  30: func nextMonthlyResetDateForUsage(now time.Time) time.Time {
+  38: func currentMonthStartForUsage(now time.Time) time.Time {
+  48: func quotaTierForUsage(percent int) string {
+  84: func TenantUsageHandler(eventStore usage.EventStore, tenantStore *tenant.BoltTenantStore) fiber.Handler {
+  207: func AdminUsageHandler(
+## cmd\saas-api\usage_history_handlers.go
+  34: type usageHistoryCacheEntry struct {
+  44: func usageHistoryCacheKey(tenantID string, days int) string {
+  48: type usageBreakdownItem struct {
+  57: func sortBreakdown(totals map[string]int, labels map[string]string) []usageBreakdownItem {
+  83: func TenantUsageHistoryHandler(
+## compliance\deletion.go
+  30: type DeletionConfig struct {
+  35: func DefaultDeletionConfig() *DeletionConfig {
+  44: func gracePeriodFor(planTier string) time.Duration {
+  55: func SoftDeleteTenant(
+  91: func softDeleteUsers(userStore *auth.BoltUserStore, tenantID string) error {
+  106: func softDeleteAgents(agentStore *agent.BoltAgentStore, tenantID string) error {
+  121: func softDeleteTools(agentStore *agent.BoltAgentStore, tenantID string) error {
+  140: func RestoreTenant(
+  175: func restoreUsers(userStore *auth.BoltUserStore, tenantID string) error {
+  189: func restoreAgents(agentStore *agent.BoltAgentStore, tenantID string) error {
+  203: func restoreTools(agentStore *agent.BoltAgentStore, tenantID string) error {
+  230: func PurgeTenant(
+## compliance\sweep.go
+  29: func SweepExpiredTenants(
+## core\config.go
+  16: type BeaconConfig struct {
+  76: func DefaultBeaconConfig() *BeaconConfig {
+  118: type Config struct {
+  136: func DefaultConfig() *Config {
+  156: func (c *Config) GetModuleConfig() map[string]interface{} {
+  165: func LoadConfigFromFile(path string) (*Config, error) {
+  184: func LoadBeaconConfigFromFile(path string) (*BeaconConfig, error) {
+## core\dependency.go
+  7: type DependencyAware interface {
+## core\eventbus.go
+  16: type EventType string
+  18: type Event struct {
+  25: type EventHandler func(ctx context.Context, event Event) error
+  31: type EventBus struct {
+  42: type Subscription struct {
+  55: func NewEventBus() *EventBus {
+  79: func (eb *EventBus) Subscribe(module string, eventType EventType, handler EventHandler) string {
+  108: func (eb *EventBus) Publish(ctx context.Context, event Event) error {
+  131: func (eb *EventBus) Unsubscribe(subID string) error {
+  160: func (eb *EventBus) processEvents() {
+  176: func (eb *EventBus) processEvent(event Event) {
+  216: func (eb *EventBus) getSubscribers(eventType EventType) []*Subscription {
+  226: func (eb *EventBus) GetStats() map[string]interface{} {
+  246: func (eb *EventBus) Close() {
+  259: func (eb *EventBus) PublishString(ctx context.Context, eventType string, source string, data map[string]interf
+  268: func (eb *EventBus) SubscribeString(module string, eventType string, handler func(ctx context.Context, event E
+## core\health.go
+## core\logger.go
+  17: type Logger interface {
+  30: type LogConfig struct {
+  41: func DefaultLogConfig() *LogConfig {
+  58: type loggerImpl struct {
+  63: func NewLogger(config *LogConfig) (*slog.Logger, error) {
+  128: func NewSDKLogger() Logger {
+  135: func NewSDKLoggerWithConfig(config *LogConfig) (Logger, error) {
+  145: func (l *loggerImpl) Debug(msg string, args ...interface{}) {
+  149: func (l *loggerImpl) Info(msg string, args ...interface{}) {
+  153: func (l *loggerImpl) Warn(msg string, args ...interface{}) {
+  157: func (l *loggerImpl) Error(msg string, args ...interface{}) {
+  161: func (l *loggerImpl) With(fields map[string]interface{}) Logger {
+  173: func (l *loggerImpl) WithField(key string, value interface{}) Logger {
+  185: func GetLogConfigFromEnv() *LogConfig {
+## core\metrics.go
+  13: type MetricsManager struct {
+  33: func NewMetricsManager() *MetricsManager {
+  119: func (m *MetricsManager) StartServer(port string) {
+## core\module.go
+  16: type ModuleState string
+  29: func (s ModuleState) String() string { return string(s) }
+  35: type ModuleVersion struct {
+  44: func (v ModuleVersion) String() string {
+  55: type ModuleMetadata struct {
+  74: type ModuleHealth struct {
+  89: type Module interface {
+  111: type BaseModule struct {
+  121: func NewBaseModule(name string, version ModuleVersion, metadata ModuleMetadata) *BaseModule {
+  135: func (m *BaseModule) Name() string                    { return m.name }
+  136: func (m *BaseModule) Version() ModuleVersion          { return m.version }
+  137: func (m *BaseModule) Metadata() ModuleMetadata        { return m.metadata }
+  138: func (m *BaseModule) Priority() int                   { return m.metadata.Priority }
+  140: func (m *BaseModule) Dependencies() []string {
+  144: func (m *BaseModule) GetState() ModuleState {
+  150: func (m *BaseModule) SetState(state ModuleState) {
+  156: func (m *BaseModule) GetHealth() ModuleHealth {
+  162: func (m *BaseModule) CanReload() bool {
+  166: func (m *BaseModule) Reload(ctx context.Context, config map[string]interface{}) error {
+  176: func (m *BaseModule) Init(config map[string]interface{}) error {
+  181: func (m *BaseModule) Validate() error {
+  185: func (m *BaseModule) Start(ctx context.Context) error {
+  193: func (m *BaseModule) Stop() error {
+  198: func (m *BaseModule) HealthCheck(ctx context.Context) error {
+  206: type ModuleRegistry struct {
+  212: type RegisteredModule struct {
+  221: func NewModuleRegistry(eventBus *EventBus) *ModuleRegistry {
+  228: func (r *ModuleRegistry) Register(module Module) error {
+  265: func (r *ModuleRegistry) Unregister(name string) error {
+  291: func (r *ModuleRegistry) Get(name string) (Module, bool) {
+  302: func (r *ModuleRegistry) List() []string {
+  313: func (r *ModuleRegistry) ListWithMetadata() []ModuleMetadata {
+  324: func (r *ModuleRegistry) GetStats() map[string]interface{} {
+  353: type ModuleManager struct {
+  359: func NewModuleManager(registry *ModuleRegistry, eventBus *EventBus, logger *slog.Logger) *ModuleManager {
+  370: func (m *ModuleManager) Register(module Module) error {
+  374: func (m *ModuleManager) Get(name string) (Module, bool) {
+  378: func (m *ModuleManager) List() []string {
+  382: func (m *ModuleManager) StartModule(name string) error {
+  399: func (m *ModuleManager) StopModule(name string) error {
+  413: func (m *ModuleManager) ReloadModule(name string, config map[string]interface{}) error {
+## core\permission.go
+  5: type Permission int
+  23: func (p Permission) String() string {
+  43: func HasPermission(permissions []Permission, target Permission) bool {
+  53: type PermissionSet struct {
+  57: func NewPermissionSet(perms ...Permission) *PermissionSet {
+  63: func (ps *PermissionSet) Add(p Permission) {
+  67: func (ps *PermissionSet) Has(p Permission) bool {
+  71: func (ps *PermissionSet) List() []Permission {
+  75: func (ps *PermissionSet) String() string {
+## core\registry.go
+  17: func RegisterPlugin(name string, factory func(sdk.Container) sdk.Plugin) {
+  24: func RegisterManifest(name string, manifest sdk.Manifest) {
+  31: func GetPlugin(name string) (func(sdk.Container) sdk.Plugin, bool) {
+  39: func GetManifest(name string) (sdk.Manifest, bool) {
+  47: func ListPlugins() []string {
+  58: func ListManifests() []sdk.Manifest {
+## core\status.go
+  4: type ModuleStatus string
+## core\storage.go
+  21: type Storage interface {
+  33: type BoltStorage struct {
+  41: func NewBoltStorage(path string, logger *slog.Logger) (*BoltStorage, error) {
+  75: func (s *BoltStorage) initBuckets() error {
+  95: func (s *BoltStorage) Save(bucket string, key string, value interface{}) error {
+  114: func (s *BoltStorage) Load(bucket string, key string, value interface{}) error {
+  134: func (s *BoltStorage) Delete(bucket string, key string) error {
+  148: func (s *BoltStorage) List(bucket string) ([]string, error) {
+  170: func (s *BoltStorage) Close() error {
+## core\version.go
+## core\adapter\config_adapter.go
+  13: type ConfigAdapter struct {
+  18: func NewConfigAdapter(configPath string) sdk.Config {
+  33: func (c *ConfigAdapter) Get(key string) interface{} {
+  37: func (c *ConfigAdapter) GetString(key string) string {
+  44: func (c *ConfigAdapter) GetInt(key string) int {
+  54: func (c *ConfigAdapter) GetBool(key string) bool {
+  61: func (c *ConfigAdapter) GetDuration(key string) time.Duration {
+  73: func (c *ConfigAdapter) GetStringSlice(key string) []string {
+  86: func (c *ConfigAdapter) Set(key string, value interface{}) {
+  90: func (c *ConfigAdapter) Unset(key string) {
+  94: func (c *ConfigAdapter) All() map[string]interface{} {
+## core\adapter\crypto_adapter.go
+  17: type CryptoAdapter struct {
+  22: func NewCryptoAdapter(key []byte) sdk.Crypto {
+  33: func (a *CryptoAdapter) Encrypt(data []byte) ([]byte, error) {
+  54: func (a *CryptoAdapter) Decrypt(data []byte) ([]byte, error) {
+  75: func (a *CryptoAdapter) Sign(data []byte) ([]byte, error) {
+  81: func (a *CryptoAdapter) Verify(data []byte, signature []byte) bool {
+  87: func (a *CryptoAdapter) Hash(data []byte) []byte {
+  93: func (a *CryptoAdapter) GenerateKey() ([]byte, error) {
+## core\adapter\eventbus_adapter.go
+  13: type subscriber struct {
+  20: type EventBusAdapter struct {
+  32: func NewEventBusAdapter() sdk.EventBus {
+  53: func (a *EventBusAdapter) processEvents() {
+  66: func (a *EventBusAdapter) Publish(event sdk.Event) {
+  74: func (a *EventBusAdapter) PublishAsync(event sdk.Event) {
+  95: func (a *EventBusAdapter) publishSync(event sdk.Event) {
+  130: func (a *EventBusAdapter) Subscribe(eventType string, handler func(sdk.Event)) {
+  135: func (a *EventBusAdapter) SubscribeWithPriority(eventType string, priority int, handler func(sdk.Event)) {
+  148: func (a *EventBusAdapter) Unsubscribe(eventType string, handler func(sdk.Event)) {
+  177: func (a *EventBusAdapter) GetSubscribersCount(eventType string) int {
+  184: func (a *EventBusAdapter) GetStats() sdk.EventBusStats {
+  191: func (a *EventBusAdapter) GetEventHistory(limit int) []sdk.Event {
+  203: func (a *EventBusAdapter) Close() {
+## core\adapter\logger_adapter.go
+  15: type LoggerAdapter struct {
+  20: type LoggerConfig struct {
+  31: func DefaultLoggerConfig() *LoggerConfig {
+  44: func NewLoggerAdapter(config *LoggerConfig) sdk.Logger {
+  93: func (a *LoggerAdapter) Debug(msg string, args ...interface{}) {
+  99: func (a *LoggerAdapter) Info(msg string, args ...interface{}) {
+  105: func (a *LoggerAdapter) Warn(msg string, args ...interface{}) {
+  111: func (a *LoggerAdapter) Error(msg string, args ...interface{}) {
+  117: func (a *LoggerAdapter) With(fields map[string]interface{}) sdk.Logger {
+  129: func (a *LoggerAdapter) WithField(key string, value interface{}) sdk.Logger {
+## core\adapter\registry_adapter.go
+  12: type RegistryAdapter struct {
+  19: func NewRegistryAdapter() sdk.Registry {
+  29: func (r *RegistryAdapter) Register(name string, factory func(sdk.Container) sdk.Plugin) error {
+  41: func (r *RegistryAdapter) RegisterManifest(name string, manifest sdk.Manifest) error {
+  57: func (r *RegistryAdapter) Get(name string) (func(sdk.Container) sdk.Plugin, bool) {
+  65: func (r *RegistryAdapter) GetManifest(name string) (sdk.Manifest, bool) {
+  77: func (r *RegistryAdapter) List() []string {
+  88: func (r *RegistryAdapter) ListManifests() []sdk.Manifest {
+  104: func (r *RegistryAdapter) ListByCategory(category string) []sdk.Manifest {
+  108: func (r *RegistryAdapter) ListByCapability(pattern string) []sdk.Manifest {
+  112: func (r *RegistryAdapter) ListByPermission(permission string) []sdk.Manifest {
+  116: func (r *RegistryAdapter) ListByRequirement(req string) []sdk.Manifest {
+  120: func (r *RegistryAdapter) Stats() sdk.RegistryStats {
+  134: func (r *RegistryAdapter) Unregister(name string) error {
+  148: func (r *RegistryAdapter) Has(name string) bool {
+  160: func (r *RegistryAdapter) HasCapability(name string, pattern string) bool {
+  164: func (r *RegistryAdapter) GetCapabilities(name string) []string {
+  172: func (r *RegistryAdapter) HasPermission(name string, permission string) bool {
+## core\adapter\scheduler_adapter.go
+  14: type SchedulerAdapter struct {
+  23: type scheduledTask struct {
+  32: func NewSchedulerAdapter() sdk.Scheduler {
+  47: func (a *SchedulerAdapter) Schedule(name string, interval string, handler func(ctx context.Context)) error {
+  82: func (a *SchedulerAdapter) ScheduleOnce(name string, delay string, handler func(ctx context.Context)) error {
+  107: func (a *SchedulerAdapter) Cancel(name string) error {
+  128: func (a *SchedulerAdapter) List() []sdk.Executable {
+  133: func (a *SchedulerAdapter) ListLegacy() ([]string, error) {
+  145: func (a *SchedulerAdapter) Status(name string) (sdk.ExecutableStatus, error) {
+  161: func (a *SchedulerAdapter) StatusLegacy(name string) (string, error) {
+  177: func (a *SchedulerAdapter) Register(executable sdk.Executable) error {
+  182: func (a *SchedulerAdapter) Unregister(name string) error {
+  187: func (a *SchedulerAdapter) Get(name string) (sdk.Executable, bool) {
+  192: func (a *SchedulerAdapter) ListByPlugin(pluginName string) []sdk.Executable {
+  197: func (a *SchedulerAdapter) Trigger(name string) error {
+  215: func (a *SchedulerAdapter) Stats() sdk.SchedulerStats {
+  241: func (a *SchedulerAdapter) Start(ctx context.Context) error {
+  247: func (a *SchedulerAdapter) Stop() error {
+  256: func (a *SchedulerAdapter) runTask(task *scheduledTask) {
+  273: func (a *SchedulerAdapter) Close() {
+## core\adapter\storage_adapter.go
+  15: type StorageAdapter struct {
+  22: func NewStorageAdapter(storageDir string) sdk.Storage {
+  35: func (a *StorageAdapter) Save(key string, value interface{}) error {
+  50: func (a *StorageAdapter) Load(key string, value interface{}) error {
+  70: func (a *StorageAdapter) Delete(key string) error {
+  85: func (a *StorageAdapter) List(prefix string) ([]string, error) {
+  99: func (a *StorageAdapter) Exists(key string) bool {
+  106: func (a *StorageAdapter) saveToFile(key string, value interface{}) error {
+  115: func (a *StorageAdapter) loadFromFile(key string, value interface{}) error {
+## core\bootstrap\test_modules\multitenant\multi_tenant.go
+  12: type TenantModule struct {
+  18: func NewTenantModule(
+  30: func (m *TenantModule) Name() string {
+  34: func (m *TenantModule) Version() string {
+  38: func (m *TenantModule) Manifest() sdk.Manifest {
+  53: func (m *TenantModule) Init(config sdk.Config) error {
+  57: func (m *TenantModule) Start(ctx context.Context) error {
+  73: func (m *TenantModule) Stop() error {
+  77: func (m *TenantModule) Health() error {
+  81: func (m *TenantModule) SetStorage(storage sdk.Storage) {
+## core\bootstrap\test_modules\stateful\stateful.go
+  16: type StatefulModule struct {
+  37: type StatefulExecutable struct {
+  51: func NewStatefulModule(
+  65: func (m *StatefulModule) Name() string {
+  70: func (m *StatefulModule) Version() string {
+  75: func (m *StatefulModule) Manifest() sdk.Manifest {
+  95: func (m *StatefulModule) Init(config sdk.Config) error {
+  107: func (m *StatefulModule) Start(ctx context.Context) error {
+  145: func (m *StatefulModule) Stop() error {
+  171: func (m *StatefulModule) Health() error {
+  183: func (m *StatefulModule) State() map[string]interface{} {
+  197: func (m *StatefulModule) SetState(key string, value interface{}) {
+  209: func NewStatefulExecutable(
+  224: func (e *StatefulExecutable) Name() string {
+  229: func (e *StatefulExecutable) Description() string {
+  236: func (e *StatefulExecutable) Execute(
+  318: func (e *StatefulExecutable) Cancel() error {
+  335: func (e *StatefulExecutable) Status() sdk.ExecutableStatus {
+  343: func (e *StatefulExecutable) setStatus(
+## core\bootstrap\test_modules\throughput\throughput.go
+  13: type ThroughputModule struct {
+  19: func NewThroughputModule(
+  31: func (m *ThroughputModule) Name() string {
+  35: func (m *ThroughputModule) Version() string {
+  39: func (m *ThroughputModule) Manifest() sdk.Manifest {
+  54: func (m *ThroughputModule) Init(config sdk.Config) error {
+  58: func (m *ThroughputModule) Start(ctx context.Context) error {
+  87: func (m *ThroughputModule) Stop() error {
+  91: func (m *ThroughputModule) Health() error {
+  95: func (m *ThroughputModule) SetEventBus(eventBus sdk.EventBus) {
+  99: func (m *ThroughputModule) SetLogger(logger sdk.Logger) {
+## core\capability\engine.go
+  11: type Engine struct {
+  17: func NewEngine() *Engine {
+  24: func (e *Engine) SetMatcher(matcher sdk.CapabilityMatcher) {
+  31: func (e *Engine) HasCapability(manifest sdk.Manifest, pattern string) bool {
+  39: func (e *Engine) MatchCapability(capability, pattern string) bool {
+  46: func (e *Engine) MatchAnyCapability(capabilities []string, patterns []string) bool {
+  58: func (e *Engine) FilterCapabilities(capabilities []string, pattern string) []string {
+  65: func (e *Engine) GetMatcher() sdk.CapabilityMatcher {
+## core\capability\matcher.go
+  16: type WildcardMatcher struct{}
+  19: func NewWildcardMatcher() sdk.CapabilityMatcher {
+  24: func (m *WildcardMatcher) Match(capability, pattern string) bool {
+  77: func (m *WildcardMatcher) MatchAny(capability string, patterns []string) bool {
+  87: func (m *WildcardMatcher) Filter(capabilities []string, pattern string) []string {
+## core\container\container.go
+  12: type containerImpl struct {
+  21: func NewContainer() sdk.Container {
+  35: func (c *containerImpl) Get(name string) interface{} {
+  51: func (c *containerImpl) Register(name string, service interface{}) {
+  56: func (c *containerImpl) RegisterWithScope(name string, service interface{}, scope sdk.ContainerScope) {
+  71: func (c *containerImpl) RegisterFactory(name string, factory func(sdk.Container) interface{}, scope sdk.Contai
+  89: func (c *containerImpl) GetLogger() sdk.Logger {
+  98: func (c *containerImpl) GetEventBus() sdk.EventBus {
+  107: func (c *containerImpl) GetStorage() sdk.Storage {
+  116: func (c *containerImpl) GetCrypto() sdk.Crypto {
+  125: func (c *containerImpl) GetScheduler() sdk.Scheduler {
+  134: func (c *containerImpl) GetConfig() sdk.Config {
+  148: func (c *containerImpl) Has(name string) bool {
+  159: func (c *containerImpl) GetDefinition(name string) (sdk.ServiceDefinition, bool) {
+  167: func (c *containerImpl) Stats() sdk.ContainerStats {
+  232: func (c *containerImpl) IsReady() bool {
+  239: func (c *containerImpl) SetReady() {
+  246: func (c *containerImpl) Validate() error {
+## core\contract\gate.go
+  9: type ContractGate struct {
+  15: func NewContractGate(publicKey string) *ContractGate {
+  23: func (g *ContractGate) VerifyPlugin(plugin sdk.Plugin) sdk.ContractTestResult {
+  59: func (g *ContractGate) GetVerifier() *Verifier {
+  64: func (g *ContractGate) GetHighAssuranceManager() *HighAssuranceManager {
+## core\contract\high_assurance.go
+  16: type HighAssuranceManager struct {
+  24: func NewHighAssuranceManager(publicKey string) *HighAssuranceManager {
+  33: func (m *HighAssuranceManager) RequiresHighAssurance(manifest sdk.Manifest) bool {
+  43: func (m *HighAssuranceManager) RequestReview(pluginName string) {
+  50: func (m *HighAssuranceManager) ApproveReview(pluginName, approver string, notes []string) error {
+  70: func (m *HighAssuranceManager) IsApproved(pluginName string) bool {
+  81: func (m *HighAssuranceManager) GetReviewNotes(pluginName string) []string {
+  89: func (m *HighAssuranceManager) VerifyHighAssuranceSignature(manifest sdk.Manifest) bool {
+  105: func (m *HighAssuranceManager) signHighAssurance(manifest sdk.Manifest) string {
+## core\contract\verifier.go
+  14: type Verifier struct {
+  19: func NewVerifier(publicKey string) *Verifier {
+  31: func (v *Verifier) VerifyPlugin(plugin sdk.Plugin) sdk.ContractTestResult {
+  78: func (v *Verifier) VerifyManifest(
+  181: func (v *Verifier) VerifySignature(
+  218: func (v *Verifier) VerifyAll(
+  270: func (v *Verifier) RequiresHighAssurance(
+  283: func (v *Verifier) signManifest(
+  309: func isValidSemver(version string) bool {
+## core\dependency\resolver.go
+  12: type Resolver struct {
+  21: func NewResolver() *Resolver {
+  32: func (r *Resolver) BuildGraph(manifests []sdk.Manifest) error {
+  71: func (r *Resolver) ResolveOrder() ([]string, error) {
+  94: func (r *Resolver) dfs(name string) error {
+  117: func (r *Resolver) getCycle(start string) []string {
+  141: func (r *Resolver) GetDependencies(name string) []string {
+  149: func (r *Resolver) GetDependents(name string) []string {
+  157: func (r *Resolver) HasCircularDependency() bool {
+  164: func (r *Resolver) GetCircularDependencies() [][]string {
+  185: func parseDependencyName(dep string) string {
+## core\health\alert_engine.go
+  12: type AlertRule struct {
+  24: type AlertEngine struct {
+  34: func NewAlertEngine(logger sdk.Logger, metricStore *MetricsCollector) *AlertEngine {
+  49: func (e *AlertEngine) loadDefaultRules() {
+  108: func (e *AlertEngine) Evaluate(metrics []sdk.HealthMetric) []sdk.HealthAlert {
+  166: func (e *AlertEngine) evaluateThreshold(value, threshold float64, operator string) bool {
+  184: func (e *AlertEngine) GetAlerts() []sdk.HealthAlert {
+  200: func (e *AlertEngine) ResolveAlert(id string) {
+## core\health\heartbeat.go
+  12: type Heartbeat struct {
+  23: func NewHeartbeat(logger sdk.Logger) *Heartbeat {
+  35: func (h *Heartbeat) Start() {
+  57: func (h *Heartbeat) Stop() {
+  72: func (h *Heartbeat) loop(stopCh <-chan struct{}, interval time.Duration) {
+  87: func (h *Heartbeat) check() {
+  105: func (h *Heartbeat) Ping() {
+  114: func (h *Heartbeat) Status() map[string]interface{} {
+  126: func (h *Heartbeat) IsAlive() bool {
+## core\health\metrics_collector.go
+  15: type MetricsCollector struct {
+  29: func NewMetricsCollector(
+  50: func (c *MetricsCollector) Collect() []sdk.HealthMetric {
+  87: func (c *MetricsCollector) collectPluginMetrics() []sdk.HealthMetric {
+  169: func (c *MetricsCollector) collectSchedulerMetrics() []sdk.HealthMetric {
+  223: func (c *MetricsCollector) collectEventBusMetrics() []sdk.HealthMetric {
+  258: func (c *MetricsCollector) collectRegistryMetrics() []sdk.HealthMetric {
+  306: func (c *MetricsCollector) storeHistory(metrics []sdk.HealthMetric) {
+  319: func (c *MetricsCollector) GetHistory(name string, limit int) []sdk.HealthMetric {
+  339: func (c *MetricsCollector) GetMetrics() []sdk.HealthMetric {
+## core\health\monitor.go
+  16: type Monitor struct {
+  39: func NewMonitor(
+  82: func (m *Monitor) Start() error {
+  104: func (m *Monitor) Stop() error {
+  121: func (m *Monitor) IsRunning() bool {
+  128: func (m *Monitor) monitorLoop() {
+  143: func (m *Monitor) doCheck() {
+  187: func (m *Monitor) buildReport(metrics []sdk.HealthMetric, alerts []sdk.HealthAlert) sdk.HealthReport {
+  236: func (m *Monitor) determineStatus(report sdk.HealthReport) sdk.HealthStatus {
+  255: func (m *Monitor) CheckAll() sdk.HealthReport {
+  271: func (m *Monitor) CheckComponent(name string) (sdk.HealthReport, bool) {
+  289: func (m *Monitor) GetStatus() sdk.HealthStatus {
+  296: func (m *Monitor) GetAlerts() []sdk.HealthAlert {
+  303: func (m *Monitor) GetMetrics() []sdk.HealthMetric {
+  310: func (m *Monitor) getSchedulerHealth() sdk.HealthStatus {
+  319: func (m *Monitor) getPluginManagerHealth() sdk.HealthStatus {
+  327: func (m *Monitor) getEventBusHealth() sdk.HealthStatus {
+  335: func (m *Monitor) getRegistryHealth() sdk.HealthStatus {
+## core\lifecycle\lifecycle.go
+  14: type State string
+  33: func (s State) String() string {
+  38: func (s State) IsActive() bool {
+  43: func (s State) IsTerminal() bool {
+  49: type Lifecycle struct {
+  66: type Config struct {
+  72: func DefaultConfig() *Config {
+  80: func NewLifecycle(
+  110: func (l *Lifecycle) State() State {
+  118: func (l *Lifecycle) IsRunning() bool {
+  123: func (l *Lifecycle) IsActive() bool {
+  128: func (l *Lifecycle) Init(ctx context.Context) error {
+  158: func (l *Lifecycle) Validate(ctx context.Context) error {
+  186: func (l *Lifecycle) Start(ctx context.Context) error {
+  276: func (l *Lifecycle) Pause(ctx context.Context) error {
+  303: func (l *Lifecycle) Resume(ctx context.Context) error {
+  334: func (l *Lifecycle) Stop(ctx context.Context) error {
+  386: func (l *Lifecycle) Destroy(ctx context.Context) error {
+  417: func (l *Lifecycle) Health() error {
+  456: func (l *Lifecycle) setState(state State) {
+  469: func (l *Lifecycle) publishEvent(eventType string) {
+  486: func (l *Lifecycle) GetInfo() map[string]interface{} {
+## core\lifecycle\lifecycle_manager.go
+  9: type LifecycleManager struct {
+  15: func NewLifecycleManager(logger sdk.Logger, eventBus sdk.EventBus) *LifecycleManager {
+## core\lifecycle\state.go
+  22: func IsTransitionAllowed(from, to State) bool {
+## core\manifest\manifest.go
+  17: type Processor struct {
+  22: func NewProcessor() *Processor {
+  29: func (p *Processor) GetAliasResolver() *AliasResolver {
+  37: func (p *Processor) ProcessManifest(raw sdk.Manifest) (sdk.Manifest, error) {
+  57: func SignManifest(manifest sdk.Manifest, secret string) string {
+  71: func VerifyManifest(manifest sdk.Manifest, secret string) bool {
+## core\manifest\validator.go
+  16: func ValidateCapability(capability string) error {
+  47: func ValidateManifest(manifest sdk.Manifest) error {
+  85: func NormalizeCapability(capability string) string {
+  90: func NormalizeManifest(manifest sdk.Manifest) sdk.Manifest {
+  112: type AliasResolver struct {
+  116: func NewAliasResolver() *AliasResolver {
+  122: func (r *AliasResolver) RegisterAlias(old, new string) error {
+  133: func (r *AliasResolver) Resolve(capability string) string {
+  140: func (r *AliasResolver) ResolveAll(manifest sdk.Manifest) sdk.Manifest {
+  152: func isValidSemver(version string) bool {
+## core\permission\config.go
+  5: type PermissionConfig struct {
+  11: func DefaultPermissionConfig() *PermissionConfig {
+## core\permission\enforcer.go
+  12: type DefaultEnforcer struct {
+  17: func NewDefaultEnforcer() *DefaultEnforcer {
+  24: func (e *DefaultEnforcer) Name() string {
+  29: func (e *DefaultEnforcer) Enforce(manifest sdk.Manifest, action string, resource string) error {
+## core\permission\engine.go
+  13: type Engine struct {
+  21: func NewEngine() *Engine {
+  26: func NewEngineWithConfig(config *PermissionConfig) *Engine {
+  38: func (e *Engine) SetConfig(config *PermissionConfig) {
+  46: func (e *Engine) SetDefaultDeny(deny bool) {
+  53: func (e *Engine) RegisterEnforcer(enforcer sdk.PermissionEnforcer) {
+  60: func (e *Engine) GetEnforcer(name string) (sdk.PermissionEnforcer, bool) {
+  68: func (e *Engine) Evaluate(manifest sdk.Manifest, permission string) (bool, string) {
+  98: func (e *Engine) EvaluateAll(manifest sdk.Manifest) []string {
+  113: func (e *Engine) IsAllowed(manifest sdk.Manifest, permission string) bool {
+  119: func (e *Engine) ValidateManifestPermissions(manifest sdk.Manifest) error {
+  149: func (e *Engine) GetValidPermissions() []string {
+## core\plugin\manager.go
+  18: type Manager struct {
+  40: type PluginInstance struct {
+  53: type Status string
+  70: func NewManager(
+  106: func (m *Manager) SetLifecycleConfig(cfg *lifecycle.Config) {
+  113: func (m *Manager) SetShutdownTimeout(timeout time.Duration) {
+  120: func (m *Manager) GetPermissionEngine() *permission.Engine {
+  125: func (m *Manager) GetDependencyResolver() *dependency.Resolver {
+  130: func (m *Manager) GetScheduler() sdk.Scheduler {
+  142: func (m *Manager) LoadAll() error {
+  216: func (m *Manager) ValidateAll() error {
+  249: func (m *Manager) validatePlugin(instance *PluginInstance) error {
+  279: func (m *Manager) StartAll() error {
+  303: func (m *Manager) startPlugin(instance *PluginInstance) error {
+  343: func (m *Manager) StopAll() error {
+  369: func (m *Manager) stopPlugin(ctx context.Context, instance *PluginInstance) error {
+  404: func (m *Manager) HealthCheck() map[string]error {
+  419: func (m *Manager) GetPlugin(name string) (interface{}, bool) {
+  430: func (m *Manager) GetPluginInstance(name string) (*PluginInstance, bool) {
+  438: func (m *Manager) GetPluginState(name string) (lifecycle.State, bool) {
+  449: func (m *Manager) ListPlugins() []string {
+  461: func (m *Manager) ListRunning() []string {
+  475: func (m *Manager) GetLoadOrder() []string {
+  482: func (m *Manager) GetPluginInfo(name string) map[string]interface{} {
+  513: func (m *Manager) EnablePlugin(name string) error {
+  530: func (m *Manager) DisablePlugin(name string) error {
+  550: func (m *Manager) IsEnabled(name string) bool {
+  562: func (m *Manager) RegisterExecutable(executable sdk.Executable) error {
+  578: func (m *Manager) UnregisterExecutable(name string) error {
+  594: func (m *Manager) TriggerExecutable(name string) error {
+## core\registry\registry.go
+  17: type registryImpl struct {
+  28: func NewRegistry() sdk.Registry {
+  43: func (r *registryImpl) GetManifestProcessor() *manifest.Processor {
+  47: func (r *registryImpl) GetCapabilityEngine() *capability.Engine {
+  51: func (r *registryImpl) GetPermissionEngine() *permission.Engine {
+  60: func (r *registryImpl) SetContractGate(gate *contract.ContractGate) {
+  67: func (r *registryImpl) GetContractGate() *contract.ContractGate {
+  77: func (r *registryImpl) Register(name string, factory func(sdk.Container) sdk.Plugin) error {
+  106: func (r *registryImpl) RegisterManifest(name string, raw sdk.Manifest) error {
+  140: func (r *registryImpl) Get(name string) (func(sdk.Container) sdk.Plugin, bool) {
+  147: func (r *registryImpl) GetManifest(name string) (sdk.Manifest, bool) {
+  158: func (r *registryImpl) List() []string {
+  168: func (r *registryImpl) ListManifests() []sdk.Manifest {
+  183: func (r *registryImpl) ListByCategory(category string) []sdk.Manifest {
+  199: func (r *registryImpl) ListByCapability(pattern string) []sdk.Manifest {
+  213: func (r *registryImpl) ListByPermission(permission string) []sdk.Manifest {
+  232: func (r *registryImpl) ListByRequirement(req string) []sdk.Manifest {
+  255: func (r *registryImpl) Stats() sdk.RegistryStats {
+  288: func (r *registryImpl) Unregister(name string) error {
+  301: func (r *registryImpl) Has(name string) bool {
+  312: func (r *registryImpl) HasCapability(name string, pattern string) bool {
+  324: func (r *registryImpl) GetCapabilities(name string) []string {
+  340: func (r *registryImpl) HasPermission(name string, permission string) bool {
+## core\runtime\di.go
+  9: type PluginDI interface {
+  18: func InjectDependencies(plugin sdk.Plugin, deps *Dependencies) {
+  39: type Dependencies struct {
+## core\runtime\runtime.go
+  23: type Runtime struct {
+  47: type Config struct {
+  55: func DefaultConfig() *Config {
+  65: func NewRuntime(
+  187: func (r *Runtime) printArchitectureVerification() {
+  295: func (r *Runtime) Start() error {
+  352: func (r *Runtime) Stop() error {
+  383: func (r *Runtime) IsRunning() bool {
+  390: func (r *Runtime) GetUptime() time.Duration {
+  403: func (r *Runtime) GetRegistry() sdk.Registry {
+  407: func (r *Runtime) GetContainer() sdk.Container {
+  411: func (r *Runtime) GetPluginManager() sdk.PluginManager {
+  415: func (r *Runtime) GetEventBus() sdk.EventBus {
+  419: func (r *Runtime) GetScheduler() sdk.Scheduler {
+  423: func (r *Runtime) GetHealthMonitor() sdk.HealthMonitor {
+  427: func (r *Runtime) GetLogger() sdk.Logger {
+## core\scheduler\config.go
+  7: type SchedulerConfig struct {
+  34: func DefaultSchedulerConfig() *SchedulerConfig {
+  48: func (c *SchedulerConfig) Validate() error {
+## core\scheduler\executable_context.go
+  12: type executableContext struct {
+  24: func NewExecutableContext(id, pluginName, triggerType string, deadline time.Time) sdk.ExecutableContext {
+  36: func (c *executableContext) ID() string {
+  41: func (c *executableContext) PluginName() string {
+  46: func (c *executableContext) TriggerType() string {
+  51: func (c *executableContext) Deadline() time.Time {
+  56: func (c *executableContext) SetValue(key string, value interface{}) {
+  63: func (c *executableContext) GetValue(key string) interface{} {
+  70: func (c *executableContext) IsCancelled() bool {
+  77: func (c *executableContext) Cancel(reason string) {
+## core\scheduler\executor.go
+  12: type Executor struct {
+  18: func NewExecutor(logger sdk.Logger, config *SchedulerConfig) *Executor {
+  26: func (e *Executor) Execute(executable sdk.Executable, ctx sdk.ExecutableContext) {
+## core\scheduler\scheduler.go
+  14: type Scheduler struct {
+  29: func NewScheduler(
+  57: func (s *Scheduler) Start(ctx context.Context) error {
+  80: func (s *Scheduler) Stop() error {
+  97: func (s *Scheduler) Register(executable sdk.Executable) error {
+  118: func (s *Scheduler) Unregister(name string) error {
+  134: func (s *Scheduler) Get(name string) (sdk.Executable, bool) {
+  142: func (s *Scheduler) List() []sdk.Executable {
+  154: func (s *Scheduler) ListByPlugin(pluginName string) []sdk.Executable {
+  160: func (s *Scheduler) Trigger(name string) error {
+  178: func (s *Scheduler) Cancel(name string) error {
+  191: func (s *Scheduler) Status(name string) (sdk.ExecutableStatus, error) {
+  204: func (s *Scheduler) Stats() sdk.SchedulerStats {
+  211: func (s *Scheduler) evaluateTriggers(ctx context.Context) {
+  228: func (s *Scheduler) checkTriggers(now time.Time) {
+## core\scheduler\task_store.go
+  11: type TaskStore struct {
+  18: func NewTaskStore() *TaskStore {
+  26: func (s *TaskStore) Add(executable sdk.Executable, pluginName string) error {
+  42: func (s *TaskStore) Remove(name string) error {
+  68: func (s *TaskStore) Get(name string) (sdk.Executable, bool) {
+  76: func (s *TaskStore) List() []sdk.Executable {
+  88: func (s *TaskStore) ListByPlugin(pluginName string) []sdk.Executable {
+  107: func (s *TaskStore) Count() int {
+  114: func (s *TaskStore) CountByPlugin(pluginName string) int {
+## core\scheduler\worker_pool.go
+  12: type WorkerPool struct {
+  23: type executionRequest struct {
+  29: func NewWorkerPool(workers int, executor *Executor) *WorkerPool {
+  40: func (p *WorkerPool) Start(ctx context.Context) {
+  56: func (p *WorkerPool) Stop() {
+  70: func (p *WorkerPool) Submit(executable sdk.Executable, ctx sdk.ExecutableContext) {
+  83: func (p *WorkerPool) worker(ctx context.Context, id int) {
+  99: func (p *WorkerPool) IsRunning() bool {
+  106: func (p *WorkerPool) QueueSize() int {
+## core\scheduler\triggers\cron.go
+  14: type CronTrigger struct {
+  22: func NewCronTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  53: func (t *CronTrigger) Type() string {
+  58: func (t *CronTrigger) Next(now time.Time) *time.Time {
+  68: func (t *CronTrigger) Match(now time.Time) bool {
+  83: func (t *CronTrigger) Name() string {
+  88: func (t *CronTrigger) Enabled() bool {
+  93: func (t *CronTrigger) SetEnabled(enabled bool) {
+## core\scheduler\triggers\event.go
+  12: type EventTrigger struct {
+  19: func NewEventTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  43: func (t *EventTrigger) Type() string {
+  51: func (t *EventTrigger) Next(now time.Time) *time.Time {
+  59: func (t *EventTrigger) Match(now time.Time) bool {
+  64: func (t *EventTrigger) Name() string {
+  69: func (t *EventTrigger) Enabled() bool {
+  74: func (t *EventTrigger) SetEnabled(enabled bool) {
+  79: func (t *EventTrigger) EventType() string {
+## core\scheduler\triggers\interval.go
+  12: type IntervalTrigger struct {
+  20: func NewIntervalTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  50: func (t *IntervalTrigger) Type() string {
+  55: func (t *IntervalTrigger) Next(now time.Time) *time.Time {
+  68: func (t *IntervalTrigger) Match(now time.Time) bool {
+  86: func (t *IntervalTrigger) Name() string {
+  91: func (t *IntervalTrigger) Enabled() bool {
+  96: func (t *IntervalTrigger) SetEnabled(enabled bool) {
+## core\scheduler\triggers\manual.go
+  11: type ManualTrigger struct {
+  17: func NewManualTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  35: func (t *ManualTrigger) Type() string {
+  40: func (t *ManualTrigger) Next(now time.Time) *time.Time {
+  46: func (t *ManualTrigger) Match(now time.Time) bool {
+  52: func (t *ManualTrigger) Name() string {
+  57: func (t *ManualTrigger) Enabled() bool {
+  62: func (t *ManualTrigger) SetEnabled(enabled bool) {
+## db\db.go
+  19: func Connect(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+## db\migrate.go
+  11: func RunMigrations(postgresURL string) error {
+## events\event.go
+  15: type Event struct {
+  33: type IngestRequest struct {
+  45: func (r *IngestRequest) Validate() error {
+  80: func canonicalJSON(payload json.RawMessage) []byte {
+  106: func ComputeHash(
+  134: func int64ToBytes(n int64) []byte {
+  142: func formatInt64(n int64) string {
+  179: func VerifyChain(
+## events\handlers.go
+  31: func recordFirstValueEvidence(usageStore usage.EventStore, auditStore audit.Store, tenantStore tenant.TenantSt
+  58: func parseRFC3339(s string) (time.Time, error) {
+  78: func IngestHandler(store *PostgresStore, usageStore usage.EventStore, auditStore audit.Store, tenantStore tena
+  121: type BatchIngestRequest struct {
+  125: type BatchEventResult struct {
+  131: func BatchIngestHandler(store *PostgresStore, usageStore usage.EventStore, auditStore audit.Store, tenantStore
+  198: func appendErrorCode(err error) string {
+  209: func handleAppendError(c *fiber.Ctx, err error, projectID, tenantID string) error {
+  231: func notifyQuotaExceeded(projectID, tenantID string) {
+  247: func QueryHandler(store *PostgresStore) fiber.Handler {
+  300: type VerifyRequest struct {
+  307: func VerifyHandler(store *PostgresStore) fiber.Handler {
+  373: type ExportCapResolver func(tenantID string) int
+  399: func ExportHandler(store *PostgresStore, capResolver ...ExportCapResolver) fiber.Handler {
+  503: func writeEventsJSON(c *fiber.Ctx, events []*Event, projectID string) error {
+  518: func writeEventsCSV(c *fiber.Ctx, events []*Event) error {
+  567: func ScopeCanIngest(s apikey.Scope) bool { return s.CanIngest() }
+  568: func ScopeCanRead(s apikey.Scope) bool   { return s.CanRead() }
+## events\retention.go
+  28: type RetentionJob struct {
+  33: func NewRetentionJob(
+  52: func (j *RetentionJob) RunOnce(ctx context.Context) error {
+  88: func (j *RetentionJob) listProjectIDs(
+  131: func (j *RetentionJob) purgeProject(
+## events\store_postgres.go
+  20: type PostgresStore struct {
+  24: func NewPostgresStore(pool *pgxpool.Pool) *PostgresStore {
+  36: func currentPeriod() string {
+  40: func (s *PostgresStore) Append(ctx context.Context, projectID, tenantID string, req *IngestRequest, idempotenc
+  252: func checkQuotaThresholds(projectID, tenantID string, usedCount, monthlyLimit int64) {
+  273: func nullIfEmpty(s string) *string {
+  280: func (s *PostgresStore) getByIDTx(ctx context.Context, tx pgx.Tx, id string) (*Event, error) {
+  302: type QueryFilter struct {
+  311: type QueryResult struct {
+  316: func encodeCursor(seq int64) string {
+  320: func decodeCursor(cursor string) (int64, error) {
+  338: func (s *PostgresStore) Query(ctx context.Context, projectID string, f QueryFilter) (*QueryResult, error) {
+  423: func (s *PostgresStore) VerifyRange(
+  601: func (s *PostgresStore) GetUsageCount(ctx context.Context, projectID, period string) (int64, error) {
+  622: func (s *PostgresStore) GetTenantUsageCount(ctx context.Context, tenantID, period string) (int64, error) {
+  641: func (s *PostgresStore) GetTenantMonthlyLimit(ctx context.Context, tenantID string) (int64, error) {
+  656: func CurrentPeriod() string {
+  663: func (s *PostgresStore) QueryLatest(ctx context.Context, projectID string, f QueryFilter, n int) ([]*Event, er
+## events\verify_incremental.go
+  36: type verifyCheckpoint struct {
+  41: func (s *PostgresStore) getVerifyCheckpoint(ctx context.Context, projectID string) (*verifyCheckpoint, error) 
+  56: func (s *PostgresStore) saveVerifyCheckpoint(ctx context.Context, projectID string, sequence int64, hash strin
+  71: func (s *PostgresStore) lastEventForProject(ctx context.Context, projectID string) (sequence int64, hash strin
+  97: func (s *PostgresStore) VerifyRangeIncremental(ctx context.Context, projectID string) (valid bool, brokenAtEve
+  146: type incrementalVerifyCall struct {
+  157: func VerifyTenantIncremental(
+  189: func doVerifyTenantIncremental(
+## events\verify_tenant.go
+  22: func (s *PostgresStore) GetByID(ctx context.Context, id string) (*Event, error) {
+  49: func (s *PostgresStore) firstExistingEvent(
+  75: type FirstBroken struct {
+  81: type TenantVerifyResult struct {
+  102: type verifyCall struct {
+  113: func VerifyTenant(
+  151: func doVerifyTenant(
+## mcp\custom_prompt_store.go
+  17: type CustomPromptStore interface {
+## mcp\custom_prompt_store_bbolt.go
+  33: type storedCustomPrompt struct {
+  42: func toStoredCustomPrompt(p MCPPromptDefinition) storedCustomPrompt {
+  53: func (s storedCustomPrompt) toDefinition() MCPPromptDefinition {
+  65: func customPromptKey(tenantID, name string) string {
+  69: type BoltCustomPromptStore struct {
+  74: func NewBoltCustomPromptStore(db *bolt.DB) (*BoltCustomPromptStore, error) {
+  85: func (s *BoltCustomPromptStore) Put(prompt MCPPromptDefinition) error {
+  103: func (s *BoltCustomPromptStore) Get(tenantID, name string) (MCPPromptDefinition, error) {
+  125: func (s *BoltCustomPromptStore) ListForTenant(tenantID string) []MCPPromptDefinition {
+  146: func (s *BoltCustomPromptStore) DeleteAllForTenant(tenantID string) int {
+  186: func (s *BoltCustomPromptStore) Delete(tenantID, name string) error {
+## mcp\discovery.go
+  18: func (g *Gateway) discoverTools(
+  47: func discoverToolDefinitions(
+## mcp\executor.go
+  29: func executeTool(
+  73: func executeHealthCheck(
+  90: func executeMetadataLookup(
+  118: func executeEcho(
+  166: func formatExecutionResult(result interface{}) string {
+  171: func executeAuditLookup(
+## mcp\gateway.go
+  16: type Gateway struct {
+  28: func NewGateway(agentStore *agent.BoltAgentStore, auditStore audit.Store) *Gateway {
+  39: func (g *Gateway) SetQuotaEnforcer(q tenant.QuotaEnforcer) {
+  43: func (g *Gateway) Query(
+  174: func cloneContext(
+## mcp\jsonrpc.go
+  26: type JSONRPCRequest struct {
+  34: type JSONRPCResponse struct {
+  42: type JSONRPCError struct {
+  49: func newJSONRPCResult(
+  61: func newJSONRPCError(
+  79: func validateJSONRPCRequest(
+  100: func decodeJSONRPCParams(
+## mcp\prompts.go
+  97: type MCPPromptDefinition struct {
+  108: type MCPPromptArgument struct {
+  115: type MCPPromptsListParams struct {
+  120: type MCPPromptsListResult struct {
+  126: type MCPPromptsGetParams struct {
+  132: type MCPPromptMessage struct {
+  139: type MCPPromptsGetResult struct {
+  147: type MCPPromptsCreateParams struct {
+  158: type MCPPromptsCreateResult struct {
+  167: type MCPPromptsDeleteParams struct {
+  173: type MCPPromptsDeleteResult struct {
+  184: type MCPPromptsUpdateParams struct {
+  193: type MCPPromptsUpdateResult struct {
+  214: type PromptRegistry struct {
+  223: func (r *PromptRegistry) SetCustomStore(store CustomPromptStore) {
+  230: func NewPromptRegistry() *PromptRegistry {
+  249: func (r *PromptRegistry) ListForTenant(tenantID string) []MCPPromptDefinition {
+  281: func (r *PromptRegistry) Get(tenantID, name string) (MCPPromptDefinition, error) {
+  304: func (r *PromptRegistry) isBuiltinName(name string) bool {
+  315: func (r *PromptRegistry) createCustom(def MCPPromptDefinition) error {
+  334: func (r *PromptRegistry) deleteCustom(tenantID, name string) error {
+  360: func (r *PromptRegistry) updateCustom(def MCPPromptDefinition) error {
+  384: func seedBuiltinPrompts() []MCPPromptDefinition {
+  457: func renderPromptMessages(def MCPPromptDefinition, args map[string]string) []MCPPromptMessage {
+  483: func missingRequiredArgument(def MCPPromptDefinition, args map[string]string) string {
+  498: func validatePromptsCreateParams(p MCPPromptsCreateParams) string {
+  518: func validatePromptsUpdateParams(p MCPPromptsUpdateParams) string {
+  535: func validatePromptsDeleteParams(p MCPPromptsDeleteParams) string {
+## mcp\protocol.go
+  19: type MCPErrorCode string
+  92: type MCPError struct {
+  98: func (e *MCPError) Error() string {
+  114: func (e *MCPError) Unwrap() error {
+  122: func newMCPError(
+  162: type MCPRequest struct {
+  184: func (r *MCPRequest) Validate() error {
+  231: type MCPResponse struct {
+  251: type MCPToolCall struct {
+  258: func (t *MCPToolCall) Validate() error {
+  303: type MCPExecutionContext struct {
+  318: func MCPErrorCodeOf(err error) MCPErrorCode {
+  333: func IsMCPErrorCode(err error, code MCPErrorCode) bool {
+  339: func InternalMCPError(err error) error {
+  357: func ensureMCPError(err error) error {
+  375: func invalidRequestError(message string) error {
+  385: func validateMCPContext(
+  422: func validateMCPParams(
+  463: func validateMCPValue(
+## mcp\resolver.go
+  24: func resolveTool(req *MCPRequest, tools []*agent.Tool) (*agent.Tool, error) {
+  62: func resolveExplicitTool(
+  106: func resolveQueryTool(
+  194: func containsKeyword(text string, keywords ...string) bool {
+## mcp\resources.go
+  29: type MCPResourceDefinition struct {
+  37: type MCPResourcesListParams struct {
+  42: type MCPResourcesListResult struct {
+  48: type MCPResourcesReadParams struct {
+  53: type MCPResourceContent struct {
+  60: type MCPResourcesReadResult struct {
+  69: func buildMCPResourcesList() MCPResourcesListResult {
+  85: func (g *Gateway) readResource(
+  138: func (g *Gateway) readAuditLogResource(
+## mcp\roots_sampling.go
+  40: func isRootsOrSamplingNotification(method string) bool {
+  48: func (s *Server) handleRootsSamplingNotification(
+  59: func (s *Server) handleRootsList(
+  71: func (s *Server) handleSamplingCreateMessage(
+## mcp\server.go
+  22: type Server struct {
+  34: func NewServer(gateway *Gateway) *Server {
+  48: func (s *Server) SetCustomPromptStore(store CustomPromptStore) {
+  71: func (s *Server) ServeHTTP(
+  225: func writeMCPResponse(
+  238: func writeSSEResponse(w http.ResponseWriter, resp *JSONRPCResponse) {
+  258: func (s *Server) handleRequest(
+  364: func (s *Server) handleInitialize(
+  389: func (s *Server) handleServerDiscover(
+  415: func (s *Server) handleToolsList(
+  457: func (s *Server) handleToolsCall(
+  543: func (s *Server) handleResourcesList(
+  568: func (s *Server) handleResourcesRead(
+  611: func (s *Server) handlePromptsList(
+  647: func (s *Server) handlePromptsGet(
+  723: func (s *Server) handlePromptsCreate(
+  826: func (s *Server) handlePromptsDelete(
+  925: func (s *Server) handlePromptsUpdate(
+  1022: func jsonRPCResponseFromMCPError(
+  1094: func writeJSONRPCResponse(
+  1109: func writeJSONRPCError(
+## mcp\session.go
+  18: type sessionInfo struct {
+  29: type SessionStore struct {
+  37: func NewSessionStore(ttl time.Duration) *SessionStore {
+  50: func (st *SessionStore) Create(tenantID, userID string) string {
+  79: func (st *SessionStore) Validate(id, tenantID, userID string) bool {
+  107: func (st *SessionStore) Delete(id string) {
+  115: func (s *Server) SetStrictSessions(strict bool) {
+## mcp\tools.go
+  13: type MCPToolDefinition struct {
+  20: type MCPToolsListParams struct {
+  25: type MCPToolsListResult struct {
+  31: type MCPToolsCallParams struct {
+  37: type MCPContentBlock struct {
+  43: type MCPToolsCallResult struct {
+  53: func buildMCPToolDefinition(
+  130: func buildMCPToolsList(
+## mcp\tracing.go
+  24: func newRequestID() string {
+## middleware\api_key_auth.go
+  18: type apiKeyContextKeyType struct{}
+  24: type APIKeyStore interface {
+  32: type APIKeyGate func(ctx context.Context, key *apikey.APIKey) (allowed bool, err error)
+  37: func RequireAPIKey(store APIKeyStore, gates ...APIKeyGate) fiber.Handler {
+  101: func APIKeyFromFiberCtx(c *fiber.Ctx) (*apikey.APIKey, bool) {
+  108: func RequireScope(need func(apikey.Scope) bool) fiber.Handler {
+## middleware\audit_middleware.go
+  19: func AuditLogger(auditStore audit.Store) fiber.Handler {
+## middleware\auth_middleware.go
+  48: func extractAccessToken(c *fiber.Ctx) (string, bool) {
+  61: func RequireAuth(
+  208: func RequireAuthAllowDeletedUser(
+  318: func ClaimsFromFiberCtx(c *fiber.Ctx) (*auth.Claims, bool) {
+  349: func RequireCapability(
+## middleware\grace_period_guard.go
+  17: func RequirePaymentCurrent(tenantStore tenant.TenantStore) fiber.Handler {
+## middleware\mcp_identity_bridge.go
+  27: func InjectMCPIdentityFromAPIKey() fiber.Handler {
+## middleware\mcp_usage_middleware.go
+  29: type mcpJSONRPCEnvelope struct {
+  48: func MCPUsageMetering(eventStore usage.EventStore) fiber.Handler {
+  128: func MCPUsageMeteringDashboard(eventStore usage.EventStore) fiber.Handler {
+## middleware\rate_limit.go
+  64: type RateLimitPriority string
+  103: func StopAllRateLimiterCleanups() {
+  114: func registerCleanupStop(stop chan struct{}) {
+  125: type RateLimiterConfig struct {
+  135: func DefaultRateLimiterConfig(db *bolt.DB) *RateLimiterConfig {
+  160: func resolveRateLimitPriority(path string) RateLimitPriority {
+  172: func limitForPriority(
+  191: type rateCounter struct {
+  225: func NewRateLimiter(config *RateLimiterConfig) fiber.Handler {
+  356: func limitForTenant(
+  376: func getOrCreateCounter(
+  473: func (r *rateCounter) Allow() (
+  589: func startCleanup(
+  637: func cleanupExpiredWindows(
+## middleware\root_auth.go
+  45: func NewRequireRoot(rootKey string) fiber.Handler {
+## middleware\tenant_scope.go
+  28: func RequireTenantScope(paramName string) fiber.Handler {
+## middleware\usage_middleware.go
+  28: func UsageMetering(eventStore usage.EventStore) fiber.Handler {
+## notify\email.go
+  34: type Template string
+  43: type EmailJob struct {
+  60: type EmailSender interface {
+  67: type LoggingSender struct{}
+  69: func (LoggingSender) Send(job *EmailJob) error {
+  86: type BoltEmailQueue struct {
+  90: func NewBoltEmailQueue(db *bolt.DB) (*BoltEmailQueue, error) {
+  108: func currentPeriod() string {
+  112: func dedupeKey(tenantID string, tmpl Template, period string) []byte {
+  124: func (q *BoltEmailQueue) EnqueueQuotaThreshold(tenantID, projectID string, tmpl Template, data map[string]stri
+  174: func (q *BoltEmailQueue) EnqueueChainBroken(tenantID, eventID string) (enqueued bool, err error) {
+  179: func EnqueueChainBroken(tenantID, eventID string) {
+  191: func (q *BoltEmailQueue) Pending(limit int) ([]*EmailJob, error) {
+  224: func (q *BoltEmailQueue) MarkSent(jobID string) error {
+  232: func (q *BoltEmailQueue) MarkFailed(jobID string, sendErr error) error {
+  269: func SetQueue(q *BoltEmailQueue) {
+  276: func EnqueueQuotaThreshold(tenantID, projectID string, tmpl Template, data map[string]string) {
+  295: func DrainOnce(q *BoltEmailQueue, sender EmailSender, batchSize int) (sent int, failed int, err error) {
+## notify\resend_sender.go
+  16: type ResendSender struct {
+  24: func NewResendSender(apiKey, from string, resolve func(tenantID string) (string, error)) *ResendSender {
+  34: type resendPayload struct {
+  41: func (s *ResendSender) Send(job *EmailJob) error {
+  96: func defaultTemplates() map[Template]func(job *EmailJob) (string, string) {
+## observability\middleware.go
+  25: func ErrorReporting(onCritical func(title, message string, fields map[string]string)) fiber.Handler {
+## observability\sentry.go
+  41: type dsn struct {
+  47: func parseDSN(raw string) (*dsn, error) {
+  74: type Client struct {
+  91: func Init() {
+  97: func InitWithDSN(rawDSN string) {
+  129: func envOrDefault(key, def string) string {
+  136: func newEventID() string {
+  144: type sentryEvent struct {
+  158: type sentryException struct {
+  162: type sentryExceptionValue struct {
+  170: type sentryFrame struct {
+  182: func CaptureError(err error, tags map[string]string) {
+  193: func CapturePanic(recovered any, stack []byte, tags map[string]string) {
+  198: func stackFrames(raw []byte) []sentryFrame {
+  205: func stackFramesFromTrace(raw []byte) []sentryFrame {
+  230: func captureMessage(level, message string, frames []sentryFrame, tags map[string]string) {
+  309: func (c *Client) send(evt *sentryEvent) {
+  346: func Enabled() bool {
+## pkg\utils\utils.go
+  16: func GenerateRandomKey(length int) (string, error) {
+  25: func SHA256Hash(data []byte) string {
+  31: func GetLocalIP() string {
+  47: func GetHostname() string {
+  56: func GetOS() string {
+  61: func RandomDelay(min, max int) time.Duration {
+## project\handlers.go
+  20: type PlanResolver func(tenantID string) (monthlyEventLimit int64, retentionDays int)
+  28: func CreateProjectHandler(
+  98: func ListProjectsHandler(store *PostgresStore) fiber.Handler {
+  116: func GetProjectHandler(store *PostgresStore) fiber.Handler {
+  140: func DeleteProjectHandler(store *PostgresStore) fiber.Handler {
+## project\project.go
+  17: type ProjectStatus string
+  25: type Project struct {
+  52: func NewProject(tenantID, name string) (*Project, error) {
+## project\store_postgres.go
+  16: type PostgresStore struct {
+  20: func NewPostgresStore(pool DBQuerier) *PostgresStore {
+  27: type DBQuerier interface {
+  47: func (s *PostgresStore) Create(ctx context.Context, p *Project) error {
+  104: func (s *PostgresStore) SetRetentionDays(
+  146: func (s *PostgresStore) Get(
+  199: func (s *PostgresStore) ListByTenant(
+  271: func (s *PostgresStore) SoftDelete(
+  328: func (s *PostgresStore) ApplyPlanToTenant(
+  388: func (s *PostgresStore) DeleteAllForTenant(ctx context.Context, tenantID string) error {
+## project\store_postgres_audit.go
+  25: func (s *PostgresStore) ListByTenantIncludingDeleted(
+## rbac\role.go
+  17: type Role struct {
+  30: type RoleStore interface {
+  39: type InMemoryRoleStore struct {
+  44: func NewInMemoryRoleStore() *InMemoryRoleStore {
+  50: func roleKey(tenantID, roleID string) string {
+  54: func (s *InMemoryRoleStore) PutRole(role *Role) error {
+  64: func (s *InMemoryRoleStore) GetRole(tenantID, roleID string) (*Role, error) {
+  87: type RoleResolver struct {
+  91: func NewRoleResolver(store RoleStore) *RoleResolver {
+  101: func (r *RoleResolver) ResolveCapabilities(tenantID, roleID string) ([]string, error) {
+## rbac\role_store_admin.go
+  18: func (s *InMemoryRoleStore) DeleteAllForTenant(tenantID string) int {
+  34: func (s *InMemoryRoleStore) CountForTenant(tenantID string) int {
+## rbac\role_store_bbolt.go
+  25: func (s *BoltRoleStore) DeleteRole(tenantID, roleID string) error {
+  34: type BoltRoleStore struct {
+  38: func NewBoltRoleStore(db *bolt.DB) (*BoltRoleStore, error) {
+  49: func (s *BoltRoleStore) PutRole(role *Role) error {
+  64: func (s *BoltRoleStore) GetRole(tenantID, roleID string) (*Role, error) {
+  89: func (s *BoltRoleStore) DeleteAllForTenant(tenantID string) int {
+  124: func (s *BoltRoleStore) CountForTenant(tenantID string) int {
+## rbac\role_store_bbolt_list.go
+  14: func (s *BoltRoleStore) ListRolesForTenant(tenantID string) ([]*Role, error) {
+## rbac\store_interfaces.go
+  10: type RoleAdminStore interface {
+## rbac\tenant_boundary.go
+  24: type AccessDenialReason string
+  31: type AccessError struct {
+  36: func (e *AccessError) Error() string {
+  72: func CheckTenantBoundary(
+  111: func CheckCapabilityGrant(
+  135: func CheckAccess(
+  151: func extractTenantIDFromCapability(cap string) (string, error) {
+## Saas-Agent\agent\agent.go
+  9: type AgentStatus string
+  17: type Agent struct {
+## Saas-Agent\agent\registry.go
+  14: func NewAgentID() string {
+  20: func NewToolID() string {
+  27: func RegisterAgent(
+  61: func UpdateAgentStatus(
+  82: func RegisterTool(
+## Saas-Agent\agent\store_bbolt.go
+  20: type BoltAgentStore struct {
+  24: func NewBoltAgentStore(db *bolt.DB) (*BoltAgentStore, error) {
+  44: func (s *BoltAgentStore) SaveAgent(agent *Agent) error {
+  68: func (s *BoltAgentStore) GetAgent(tenantID, agentID string) (*Agent, error) {
+  80: func (s *BoltAgentStore) GetAgentIncludingDeleted(tenantID, agentID string) (*Agent, error) {
+  103: func (s *BoltAgentStore) ListAgents(tenantID string) ([]*Agent, error) {
+  130: func (s *BoltAgentStore) ListDeletedAgents(tenantID string) ([]*Agent, error) {
+  155: func (s *BoltAgentStore) DeleteAgent(tenantID, agentID string) error {
+  164: func (s *BoltAgentStore) DeleteAllAgentsForTenant(tenantID string) error {
+  187: func (s *BoltAgentStore) ListAllAgents() ([]*Agent, error) {
+  216: func (s *BoltAgentStore) SaveTool(tool *Tool) error {
+  240: func (s *BoltAgentStore) GetTool(tenantID, toolID string) (*Tool, error) {
+  252: func (s *BoltAgentStore) GetToolIncludingDeleted(tenantID, toolID string) (*Tool, error) {
+  275: func (s *BoltAgentStore) ListTools(tenantID string) ([]*Tool, error) {
+  301: func (s *BoltAgentStore) ListDeletedTools(tenantID string) ([]*Tool, error) {
+  326: func (s *BoltAgentStore) DeleteTool(tenantID, toolID string) error {
+  335: func (s *BoltAgentStore) DeleteAllToolsForTenant(tenantID string) error {
+  358: func (s *BoltAgentStore) ListAllTools() ([]*Tool, error) {
+## Saas-Agent\agent\tool.go
+  9: type ToolType string
+  18: type Tool struct {
+  31: type ToolExecutionRequest struct {
+  39: type ToolExecutionResult struct {
+## Saas-Agent\alerts\alerts.go
+  34: type Provider string
+  45: type notifier struct {
+  73: func Init() {
+  80: func InitWithConfig(webhookURL, providerRaw string) {
+  110: func parseCooldownEnv() time.Duration {
+  133: func NotifyCritical(dedupeKey, title, message string, fields map[string]string) {
+  154: func (n *notifier) isCooling(key string) bool {
+  166: func (n *notifier) send(title, message string, fields map[string]string) {
+  196: func sortedFieldLines(fields map[string]string) []string {
+  210: func slackPayload(title, message string, fields map[string]string) map[string]any {
+  223: func discordPayload(title, message string, fields map[string]string) map[string]any {
+  241: func Enabled() bool {
+## Saas-Agent\apikey\apikey.go
+  24: type Scope string
+  32: func (s Scope) Valid() bool {
+  43: func (s Scope) CanIngest() bool { return s == ScopeIngest || s == ScopeAdmin }
+  44: func (s Scope) CanRead() bool   { return s == ScopeRead || s == ScopeAdmin }
+  46: type APIKey struct {
+  67: type GeneratedKey struct {
+  75: func GenerateAPIKey(tenantID, projectID, name string, scope Scope) (*GeneratedKey, error) {
+  112: func HashKey(plaintext string) string {
+## Saas-Agent\apikey\handlers.go
+  21: type KeyLimitResolver func(tenantID string) int
+  23: func CreateAPIKeyHandler(apiStore *PostgresStore, projectStore *project.PostgresStore, limitResolver ...KeyLim
+  97: func ListAPIKeysHandler(apiStore *PostgresStore) fiber.Handler {
+  116: func RevokeAPIKeyHandler(apiStore *PostgresStore) fiber.Handler {
+## Saas-Agent\apikey\store_postgres.go
+  20: type DBQuerier interface {
+  26: type PostgresStore struct {
+  30: func NewPostgresStore(pool DBQuerier) *PostgresStore {
+  34: func (s *PostgresStore) Create(ctx context.Context, k *APIKey) error {
+  57: func (s *PostgresStore) FindByPlaintext(ctx context.Context, plaintext string) (*APIKey, error) {
+  81: func (s *PostgresStore) ListByProject(ctx context.Context, tenantID, projectID string) ([]*APIKey, error) {
+  104: func (s *PostgresStore) Revoke(ctx context.Context, tenantID, projectID, keyID string) error {
+  128: func (s *PostgresStore) UpdateLastUsed(ctx context.Context, keyID string) error {
+  140: func (s *PostgresStore) DeleteAllForTenant(ctx context.Context, tenantID string) error {
+  154: func (s *PostgresStore) CountActiveByTenant(ctx context.Context, tenantID string) (int, error) {
+  171: func (s *PostgresStore) CreateWithLimit(ctx context.Context, k *APIKey, limit int) error {
+## Saas-Agent\apikey\store_postgres_allowed.go
+  11: func (s *PostgresStore) IsAmongOldestActive(ctx context.Context, tenantID, keyID string, limit int) (bool, err
+## Saas-Agent\audit\anonymize.go
+  19: type AnonymizedAuditEvent struct {
+  31: func hashUserID(userID string) string {
+  40: func sanitizeMetadata(metadata map[string]string) map[string]string {
+  66: func AnonymizeEvent(event *AuditEvent) *AnonymizedAuditEvent {
+  80: func StoreAnonymizedEvent(db *bolt.DB, event *AnonymizedAuditEvent) error {
+## Saas-Agent\audit\event.go
+  10: type EventType string
+  25: type Outcome string
+  34: type AuditEvent struct {
+  46: type Store interface {
+## Saas-Agent\audit\platform_login.go
+  27: type platformThrottleState struct {
+  36: func (t *platformThrottleState) allow(ip string, now time.Time) bool {
+  68: func truncate(s string, n int) string {
+  75: func emailHash(email string) string {
+  85: func RecordPlatformLoginAttempt(store Store, ip, email, userAgent, reason string) {
+  110: func RecordLoginBlocked(store Store, tenantID, userID, ip, userAgent, reason string) {
+## Saas-Agent\audit\record.go
+  10: func RecordEvent(
+## Saas-Agent\audit\retention.go
+  42: type RetentionPolicy struct {
+  52: func DefaultRetentionPolicy() *RetentionPolicy {
+  61: type RetentionStore struct {
+  67: func retentionPolicyKey(tenantID string) []byte {
+  72: func NewRetentionStore(db *bolt.DB) (*RetentionStore, error) {
+  91: func (s *RetentionStore) GetPolicy(tenantID string, planRetentionDays int) (*RetentionPolicy, error) {
+  140: func (s *RetentionStore) SetPolicy(tenantID string, policy *RetentionPolicy, planRetentionDays int) error {
+## Saas-Agent\audit\security.go
+  20: func IsSecurityEvent(action string) bool {
+## Saas-Agent\audit\store_bbolt.go
+  22: type BoltAuditStore struct {
+  26: func NewBoltAuditStore(db *bolt.DB) (*BoltAuditStore, error) {
+  37: func reverseTimestampKeyAudit(tenantID string, ts time.Time, eventID string) []byte {
+  42: func (s *BoltAuditStore) Save(event *AuditEvent) error {
+  69: func (s *BoltAuditStore) ListForTenant(tenantID string, limit int) ([]*AuditEvent, error) {
+  111: func (s *BoltAuditStore) CleanupForTenant(tenantID string, policy *RetentionPolicy) (deleted int, anonymized i
+  199: func (s *BoltAuditStore) DeleteAllForTenant(tenantID string) error {
+  224: func isAnonymizedEvent(event *AuditEvent) bool {
+  233: func anonymizeEvent(event *AuditEvent) {
+## Saas-Agent\audit\store_postgres.go
+  24: type PostgresAuditStore struct {
+  31: func NewPostgresAuditStore(pool *pgxpool.Pool) (*PostgresAuditStore, error) {
+  39: func (s *PostgresAuditStore) Save(event *AuditEvent) error {
+  67: func (s *PostgresAuditStore) ListForTenant(tenantID string, limit int) ([]*AuditEvent, error) {
+  109: func (s *PostgresAuditStore) CleanupForTenant(tenantID string, policy *RetentionPolicy) (deleted int, anonymiz
+  169: func (s *PostgresAuditStore) DeleteAllForTenant(tenantID string) error {
+  186: func marshalMetadata(metadata map[string]string) ([]byte, error) {
+  195: type rowScanner interface {
+  199: func scanAuditEvent(row rowScanner) (*AuditEvent, error) {
+## Saas-Agent\auth\access_token_revocation.go
+  13: type AccessTokenRevocationStore interface {
+  19: type InMemoryAccessTokenRevocationStore struct {
+  24: func NewInMemoryAccessTokenRevocationStore() *InMemoryAccessTokenRevocationStore {
+  30: func (s *InMemoryAccessTokenRevocationStore) Revoke(
+  56: func (s *InMemoryAccessTokenRevocationStore) IsRevoked(
+## Saas-Agent\auth\access_token_revocation_store_bbolt.go
+  14: type BoltAccessTokenRevocationStore struct {
+  18: func NewBoltAccessTokenRevocationStore(
+  39: func (s *BoltAccessTokenRevocationStore) Revoke(
+  74: func (s *BoltAccessTokenRevocationStore) IsRevoked(
+## Saas-Agent\auth\email_templates.go
+  19: func BuildVerificationEmail(baseURL, rawToken string) (subject, textBody, htmlBody string) {
+  72: func BuildPasswordResetEmail(baseURL, rawToken string) (subject, textBody, htmlBody string) {
+## Saas-Agent\auth\email_verification.go
+  11: type EmailVerificationRecord struct {
+  19: type EmailVerificationStore interface {
+  25: func GenerateEmailVerificationToken(userID string, store EmailVerificationStore) (plaintext string, err error)
+  39: func VerifyEmailToken(plaintext string, store EmailVerificationStore) (userID string, err error) {
+## Saas-Agent\auth\email_verification_store_bbolt.go
+  14: type BoltEmailVerificationStore struct {
+  18: func NewBoltEmailVerificationStore(db *bolt.DB) (*BoltEmailVerificationStore, error) {
+  32: func (s *BoltEmailVerificationStore) Save(record *EmailVerificationRecord) error {
+  55: func (s *BoltEmailVerificationStore) FindByHash(tokenHash string) (*EmailVerificationRecord, error) {
+  84: func (s *BoltEmailVerificationStore) MarkUsed(tokenHash string) (*EmailVerificationRecord, error) {
+## Saas-Agent\auth\jwt.go
+  22: type contextKey string
+  30: type Claims struct {
+  49: func GenerateAccessToken(userID, tenantID, roleID string, signingKey []byte) (string, error) {
+  75: func ValidateAccessToken(tokenString string, signingKey []byte) (*Claims, error) {
+  101: type RefreshTokenRecord struct {
+  109: type RefreshTokenStore interface {
+  123: type InMemoryRefreshTokenStore struct {
+  128: func NewInMemoryRefreshTokenStore() *InMemoryRefreshTokenStore {
+  132: func (s *InMemoryRefreshTokenStore) Save(record *RefreshTokenRecord) error {
+  139: func (s *InMemoryRefreshTokenStore) FindByHash(tokenHash string) (*RefreshTokenRecord, error) {
+  149: func (s *InMemoryRefreshTokenStore) Rotate(tokenHash string) (*RefreshTokenRecord, error) {
+  172: func (s *InMemoryRefreshTokenStore) RevokeAllForUser(userID string) error {
+  187: func GenerateRefreshToken(userID string, store RefreshTokenStore) (plaintext string, err error) {
+  207: func RotateRefreshToken(
+  250: func RotateRefreshTokenForAnyUser(
+  281: func hashToken(plaintext string) string {
+  286: func newRandomID() string {
+  296: func WithClaims(ctx context.Context, claims *Claims) context.Context {
+  300: func ClaimsFromContext(ctx context.Context) (*Claims, bool) {
+## Saas-Agent\auth\login_attempt_limiter.go
+  14: type LoginAttemptLimiter struct {
+  19: type loginAttemptRecord struct {
+  24: func NewLoginAttemptLimiter() *LoginAttemptLimiter {
+  36: func (l *LoginAttemptLimiter) Allow(ip, email string) bool {
+  57: func (l *LoginAttemptLimiter) RecordFailure(ip, email string) {
+  78: func (l *LoginAttemptLimiter) Reset(ip, email string) {
+  87: func loginAttemptKey(ip, email string) string {
+## Saas-Agent\auth\login_security.go
+  26: type CredentialStuffingLimiter struct {
+  31: type credentialStuffingRecord struct {
+  36: func NewCredentialStuffingLimiter() *CredentialStuffingLimiter {
+  43: func (l *CredentialStuffingLimiter) Allow(ip string) bool {
+  64: func (l *CredentialStuffingLimiter) RecordAttempt(ip string) {
+  105: type AccountLockout struct {
+  110: type accountLockoutRecord struct {
+  116: func NewAccountLockout() *AccountLockout {
+  122: func (l *AccountLockout) IsLocked(email string) bool {
+  155: func (l *AccountLockout) RecordFailure(email string) {
+  184: func (l *AccountLockout) Reset(email string) {
+  209: type SessionRefreshLimiter struct {
+  214: type sessionRefreshRecord struct {
+  219: func NewSessionRefreshLimiter() *SessionRefreshLimiter {
+  225: func (l *SessionRefreshLimiter) Allow(ip, userID string) bool {
+  245: func (l *SessionRefreshLimiter) Record(ip, userID string) {
+  265: func normalizeSecurityEmail(email string) string {
+  269: func sessionRefreshKey(ip, userID string) string {
+## Saas-Agent\auth\mailer.go
+  8: type Mailer interface {
+  19: type LoggingMailer struct{ BaseURL string }
+  21: func (m *LoggingMailer) SendVerificationEmail(toEmail, rawToken string) error {
+  27: func (m *LoggingMailer) SendPasswordResetEmail(toEmail, rawToken string) error {
+  33: func NewMailerFromEnv() Mailer {
+## Saas-Agent\auth\oauth_account.go
+  19: type UserPutStore interface {
+  26: type NewTenantFunc func(ownerEmail string) (tenantID string, ownerRoleID string, err error)
+  30: func ResolveOAuthUser(
+## Saas-Agent\auth\oauth_config.go
+  8: type OAuthConfig struct {
+  15: func LoadOAuthConfigFromEnv() *OAuthConfig {
+  24: func (c *OAuthConfig) Enabled(provider string) bool {
+## Saas-Agent\auth\oauth_provider.go
+  16: type OAuthProvider interface {
+  26: type GithubProvider struct {
+  31: func (p *GithubProvider) AuthURL(state, redirectURI string) string {
+  40: func (p *GithubProvider) Exchange(code, redirectURI string) (string, error) {
+  84: func (p *GithubProvider) FetchEmail(accessToken string) (string, error) {
+  137: type GoogleProvider struct {
+  142: func (p *GoogleProvider) AuthURL(state, redirectURI string) string {
+  153: func (p *GoogleProvider) Exchange(code, redirectURI string) (string, error) {
+  191: func (p *GoogleProvider) FetchEmail(accessToken string) (string, error) {
+  228: func NewProviders(cfg *OAuthConfig) map[string]OAuthProvider {
+## Saas-Agent\auth\oauth_state.go
+  11: type OAuthStateStore struct {
+  17: type oauthStateEntry struct {
+  22: func NewOAuthStateStore() *OAuthStateStore {
+  29: func (s *OAuthStateStore) Generate(provider string) (string, error) {
+  44: func (s *OAuthStateStore) Consume(provider, state string) bool {
+  56: func (s *OAuthStateStore) cleanupLocked() {
+## Saas-Agent\auth\password.go
+  27: func init() {
+  51: func HashPassword(plaintext string) (string, error) {
+  61: func VerifyPassword(hash, plaintext string) error {
+## Saas-Agent\auth\password_login.go
+  10: func VerifyPasswordForLogin(hash, plaintext string) error {
+## Saas-Agent\auth\password_reset.go
+  10: type PasswordResetRecord struct {
+  19: type PasswordResetStore interface {
+  31: func GeneratePasswordResetToken(userID, requestedIP string, store PasswordResetStore) (plaintext string, err e
+  49: func ConsumePasswordResetToken(plaintext string, store PasswordResetStore) (userID string, err error) {
+## Saas-Agent\auth\password_reset_store_bbolt.go
+  14: type BoltPasswordResetStore struct {
+  18: func NewBoltPasswordResetStore(db *bolt.DB) (*BoltPasswordResetStore, error) {
+  32: func (s *BoltPasswordResetStore) Save(record *PasswordResetRecord) error {
+  55: func (s *BoltPasswordResetStore) FindByHash(tokenHash string) (*PasswordResetRecord, error) {
+  82: func (s *BoltPasswordResetStore) MarkUsed(tokenHash string) (*PasswordResetRecord, error) {
+## Saas-Agent\auth\prod_mailer.go
+  16: type ProdMailer struct {
+  23: func NewProdMailer(apiKey, from, baseURL string) *ProdMailer {
+  28: type resendAuthPayload struct {
+  36: func (m *ProdMailer) deliver(kind, to, subject, text, html string) {
+  60: func (m *ProdMailer) SendVerificationEmail(toEmail, rawToken string) error {
+  66: func (m *ProdMailer) SendPasswordResetEmail(toEmail, rawToken string) error {
+## Saas-Agent\auth\refresh_token_store_bbolt.go
+  26: type BoltRefreshTokenStore struct {
+  31: func NewBoltRefreshTokenStore(db *bolt.DB) (*BoltRefreshTokenStore, error) {
+  56: func (s *BoltRefreshTokenStore) Save(
+  98: func (s *BoltRefreshTokenStore) FindByHash(
+  153: func (s *BoltRefreshTokenStore) Rotate(
+  217: func (s *BoltRefreshTokenStore) Revoke(id string) error {
+  269: func (s *BoltRefreshTokenStore) RevokeAllForUser(userID string) error {
+  308: func errorsRefreshTokenNotFound() error {
+  312: func errorsRefreshTokenAlreadyUsed() error {
+  316: func errorsRefreshTokenExpired() error {
+## Saas-Agent\auth\store_interfaces.go
+  7: type UserAdminStore interface {
+## Saas-Agent\auth\user.go
+  14: type UserStatus string
+  37: type User struct {
+  48: type UserStore interface {
+  54: type InMemoryUserStore struct {
+  59: func NewInMemoryUserStore() *InMemoryUserStore {
+  63: func (s *InMemoryUserStore) Put(user *User) error {
+  73: func (s *InMemoryUserStore) GetByID(userID string) (*User, error) {
+  99: func CheckUserActive(store UserStore, userID string) error {
+## Saas-Agent\auth\user_store_admin.go
+  15: func (s *InMemoryUserStore) DeleteAllForTenant(tenantID string) int {
+  31: func (s *InMemoryUserStore) CountForTenant(tenantID string) int {
+## Saas-Agent\auth\user_store_bbolt.go
+  18: type BoltUserStore struct {
+  25: func NewBoltUserStore(db *bolt.DB) (*BoltUserStore, error) {
+  36: func (s *BoltUserStore) Put(user *User) error {
+  50: func (s *BoltUserStore) GetByID(userID string) (*User, error) {
+  77: func (s *BoltUserStore) GetByIDIncludingDeleted(userID string) (*User, error) {
+  100: func (s *BoltUserStore) ListAllForTenant(tenantID string) ([]*User, error) {
+  125: func (s *BoltUserStore) ListDeletedForTenant(tenantID string) ([]*User, error) {
+  149: func (s *BoltUserStore) DeleteAllForTenant(tenantID string) int {
+  181: func (s *BoltUserStore) CountForTenant(tenantID string) int {
+## Saas-Agent\auth\user_store_email.go
+  23: type UserEmailLookupStore interface {
+  29: func (s *InMemoryUserStore) FindByEmail(email string) (*User, error) {
+  43: func (s *BoltUserStore) FindByEmail(email string) (*User, error) {
+## Saas-Agent\auth\user_store_list.go
+  7: func (s *InMemoryUserStore) ListByTenant(tenantID string) []*User {
+## Saas-Agent\auth\user_store_owner_lookup.go
+  20: func (s *InMemoryUserStore) HasOwner(tenantID string) bool {
+  32: func (s *BoltUserStore) HasOwner(tenantID string) bool {
+  64: func (s *BoltUserStore) OwnerEmail(tenantID string) (string, error) {
+## Saas-Agent\billing\grace_period_sweep.go
+  22: func (s *Service) SweepExpiredGracePeriods(ctx context.Context) (int, error) {
+## Saas-Agent\billing\plans.go
+  9: type PlanTier string
+  17: type PlanConfig struct {
+  46: type Registry struct {
+  54: func NewRegistry(proPriceID, businessPriceID string) *Registry {
+  87: func (r *Registry) Get(tier PlanTier) (PlanConfig, bool) {
+  92: func (r *Registry) ResolveByPriceID(priceID string) (PlanConfig, bool) {
+  100: func (r *Registry) Free() PlanConfig {
+  107: func GetMonthlyEventLimit(tier PlanTier) int64 {
+  125: type Tenant struct {
+  148: func (s *PostgresStore) ApplyPlanToTenant(ctx context.Context, tenantID string, monthlyEventLimit int64, reten
+## Saas-Agent\billing\plans_alias.go
+  20: type BillingInterval string
+  28: func ParseBillingInterval(s string) (BillingInterval, bool) {
+  41: func (r *Registry) AddPriceAlias(priceID string, tier PlanTier) error {
+  61: func (r *Registry) SetAnnualPriceID(tier PlanTier, priceID string) error {
+  79: func (r *Registry) PriceIDFor(tier PlanTier, interval BillingInterval) (string, bool) {
+## Saas-Agent\billing\plans_custom_roles.go
+  6: func PlanAllowsCustomRoles(planTier string) bool {
+## Saas-Agent\billing\plans_seats.go
+  6: func PlanAllowsTeamSeats(planTier string) bool {
+## Saas-Agent\billing\service.go
+  32: type ProjectPlanApplier interface {
+  40: type WebhookEventClaimer interface {
+  50: type AuditLogger interface {
+  57: type RoleProvisioner interface {
+  67: func (s *Service) SetRoleStore(store RoleProvisioner) {
+  73: type RoleDeleter interface {
+  79: func (s *Service) revokePaidRoles(tenantID string) {
+  108: func (s *Service) provisionRolesForPlan(tenantID string, tier PlanTier) {
+  176: func newAuditEventID() string {
+  184: func (s *Service) lockTenant(tenantID string) func() {
+  191: type Service struct {
+  216: func NewService(
+  238: func (s *Service) SetPortalReturnURL(url string) {
+  247: func (s *Service) SetAuditLogger(a AuditLogger) {
+  251: func (s *Service) logBillingEvent(tenantID, action, resource string, outcome audit.Outcome, metadata map[strin
+  276: func (s *Service) CreateCheckoutSession(tenantID string, planTier PlanTier) (string, error) {
+  282: func (s *Service) CreateCheckoutSessionInterval(tenantID string, planTier PlanTier, interval BillingInterval) 
+  332: func (s *Service) CreatePortalSession(tenantID string) (string, error) {
+  363: func (s *Service) CreateCheckoutHandler() fiber.Handler {
+  407: func (s *Service) CreatePortalHandler() fiber.Handler {
+  444: type checkoutSessionPayload struct {
+  450: type subscriptionPayload struct {
+  463: type invoicePayload struct {
+  477: func (s *Service) WebhookHandler() fiber.Handler {
+  581: func (s *Service) handleCheckoutCompleted(ctx context.Context, sess checkoutSessionPayload) error {
+  609: func (s *Service) handleSubscriptionUpdated(ctx context.Context, sub subscriptionPayload) error {
+  679: func (s *Service) handleSubscriptionDeleted(ctx context.Context, sub subscriptionPayload) error {
+  710: func (s *Service) handleInvoicePaymentFailed(ctx context.Context, inv invoicePayload) error {
+## Saas-Agent\billing\webhook_event_store.go
+  23: type WebhookEventStore struct {
+  27: func NewWebhookEventStore(pool *pgxpool.Pool) *WebhookEventStore {
+  43: func (s *WebhookEventStore) Claim(
+  85: func (s *WebhookEventStore) Exists(
+  124: func (s *WebhookEventStore) GetByEventID(
+## Saas-Agent\cmd\apply-test-migrations\main.go
+  24: func main() {
+## Saas-Agent\cmd\migrate-verify-existing-users\main.go
+  28: type userPatch struct {
+  32: func main() {
+## Saas-Agent\cmd\notify-worker\main.go
+  24: func main() {
+  73: func resolveNotificationEmail(tenantStore *tenant.BoltTenantStore, userStore *auth.BoltUserStore) func(tenantI
+## Saas-Agent\cmd\perf-history-test\main.go
+  45: func main() {
+  122: func memDeltaMB(before, after runtime.MemStats) string {
+  142: func seedUsageEvents(db *bolt.DB, tenantID string, total int) error {
+  215: func reverseTimestampKeyLocal(tenantID string, ts time.Time, eventID string) []byte {
+## Saas-Agent\cmd\perf-verify-incremental-test\main.go
+  32: func memDeltaMB(before, after runtime.MemStats) string {
+  37: func main() {
+## Saas-Agent\cmd\perf-verify-test\main.go
+  56: func main() {
+  160: func memDeltaMB(before, after runtime.MemStats) string {
+  165: func createProject(ctx context.Context, pool *pgxpool.Pool, tenantID string, monthlyLimit int64) (string, erro
+  182: func lookupTenantID(ctx context.Context, pool *pgxpool.Pool, projectID string) (string, error) {
+  192: type chainRows struct {
+  201: func (r *chainRows) Next() bool { return r.i < r.total }
+  203: func (r *chainRows) Values() ([]interface{}, error) {
+  233: func (r *chainRows) Err() error { return nil }
+  235: func seedChain(ctx context.Context, pool *pgxpool.Pool, projectID string, total int) error {
+  275: type limitedSource struct {
+  280: func (l *limitedSource) Next() bool {
+  287: func (l *limitedSource) Values() ([]interface{}, error) { return l.inner.Values() }
+  288: func (l *limitedSource) Err() error                     { return l.inner.Err() }
+## Saas-Agent\cmd\playground\main.go
+  13: func main() {
+## Saas-Agent\cmd\purge-verify\main.go
+  40: func main() {
+  82: func runBackdate(tenantStore *tenant.BoltTenantStore, tenantID string) {
+  103: func runVerify(
+## Saas-Agent\cmd\retention-job\main.go
+  13: func main() {
+## Saas-Agent\cmd\saas-api\agent_handlers.go
+  18: func CreateAgentHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  74: func ListAgentsHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  106: func GetAgentHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  137: func UpdateAgentStatusHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  186: func DeleteAgentHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  220: func CreateToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  281: func ListToolsHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  313: func GetToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  344: func DeleteToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  374: func ExecuteToolHandler(agentStore *agent.BoltAgentStore) fiber.Handler {
+  436: func executeToolByType(tool *agent.Tool, params map[string]interface{}) (interface{}, error) {
+## Saas-Agent\cmd\saas-api\api_key_plan_gate.go
+  10: type oldestKeyChecker interface {
+  18: func newAPIKeyPlanGate(checker oldestKeyChecker, resolve apikey.KeyLimitResolver) middleware.APIKeyGate {
+## Saas-Agent\cmd\saas-api\app.go
+  46: func newUserID() string {
+  62: func slugifyCompanyName(name string) string {
+  90: func randomTenantSuffix() string {
+  107: func BuildApp(
+## Saas-Agent\cmd\saas-api\audit_handlers.go
+  21: func TenantAuditHandler(auditStore audit.Store) fiber.Handler {
+  74: func ExportAuditHandler(auditStore audit.Store, capResolver ...func(tenantID string) int) fiber.Handler {
+  140: func AdminAuditHandler(
+  190: func AdminPlatformAuditHandler(auditStore audit.Store) fiber.Handler {
+## Saas-Agent\cmd\saas-api\audit_retention_handlers.go
+  33: func resolvePlanRetentionDays(tenantID string, resolvePlan project.PlanResolver) int {
+  43: func GetRetentionPolicyHandler(retentionStore *audit.RetentionStore, resolvePlan project.PlanResolver) fiber.H
+  77: func UpdateRetentionPolicyHandler(retentionStore *audit.RetentionStore, resolvePlan project.PlanResolver) fibe
+  133: func TriggerCleanupHandler(
+## Saas-Agent\cmd\saas-api\audit_verify_handlers.go
+  28: type auditVerifyCacheRow struct {
+  39: func readAuditVerifyCache(
+  65: func cacheRowToResult(tenantID string, row *auditVerifyCacheRow) *events.TenantVerifyResult {
+  88: func writeAuditVerifyCache(
+  132: func tryForceAuditVerify(
+  167: func maybeAlertChainBroken(
+  207: func AuditVerifyHandler(
+## Saas-Agent\cmd\saas-api\auth_cookies.go
+  23: func setAccessCookie(c *fiber.Ctx, token string, ttl time.Duration) {
+  31: func setRefreshCookie(c *fiber.Ctx, token string, ttl time.Duration) {
+  39: func clearRefreshCookie(c *fiber.Ctx) {
+  50: func clearLegacyRefreshCookie(c *fiber.Ctx) {
+## Saas-Agent\cmd\saas-api\compliance_handlers.go
+  27: func gracePeriodDaysFor(planTier string) int {
+  35: func SoftDeleteTenantHandler(
+  89: func RestoreTenantHandler(
+  129: func PurgeTenantHandler(
+  192: func TenantDeletionStatusHandler(
+  242: func AdminSoftDeleteTenantHandler(
+  283: func AdminPurgeTenantHandler(
+## Saas-Agent\cmd\saas-api\custom_roles.go
+  58: func isCustomRoleID(id string) bool { return strings.HasPrefix(id, customRolePrefix) }
+  60: func customRoleSlug(name string) string {
+  65: func customRoleGrants(tenantID string, caps []string) (grants []string, unknown string) {
+  85: func customRoleView(r *rbac.Role) fiber.Map {
+  94: func customRoleErr(c *fiber.Ctx, status int, code string) error {
+  98: func customRoleUpgradeErr(c *fiber.Ctx) error {
+  111: type customRoleTenantReader interface {
+  115: type planAwareRoleStore struct {
+  120: func newPlanAwareRoleStore(inner rbac.RoleStore, tenants customRoleTenantReader) *planAwareRoleStore {
+  124: func (s *planAwareRoleStore) PutRole(role *rbac.Role) error { return s.inner.PutRole(role) }
+  126: func (s *planAwareRoleStore) GetRole(tenantID, roleID string) (*rbac.Role, error) {
+  149: type customRoleStore interface {
+  156: type customRoleUserLister interface {
+  160: type customRoleHandlers struct {
+  166: func newCustomRoleHandlers(tenants customRoleTenantReader, roles customRoleStore, users customRoleUserLister) 
+  171: func (h *customRoleHandlers) List(c *fiber.Ctx) error {
+  197: func (h *customRoleHandlers) Create(c *fiber.Ctx) error {
+  259: func (h *customRoleHandlers) Update(c *fiber.Ctx) error {
+  302: func (h *customRoleHandlers) Delete(c *fiber.Ctx) error {
+## Saas-Agent\cmd\saas-api\main.go
+  19: func main() {
+## Saas-Agent\cmd\saas-api\mcp_handlers.go
+  18: func MCPQueryHandler(gateway *mcp.Gateway) fiber.Handler {
+  76: func writeMCPError(
+## Saas-Agent\cmd\saas-api\notification_settings_handlers.go
+  16: func GetNotificationSettingsHandler(tenantStore *tenant.BoltTenantStore) fiber.Handler {
+  36: func UpdateNotificationSettingsHandler(tenantStore *tenant.BoltTenantStore) fiber.Handler {
+## Saas-Agent\cmd\saas-api\notify_scheduler.go
+  36: func notifyRecipientResolver(tenantStore *tenant.BoltTenantStore, userStore *auth.BoltUserStore) func(tenantID
+  57: func drainNotifyOnce(queue *notify.BoltEmailQueue, sender notify.EmailSender) (sent int, failed int) {
+  76: func startNotifyScheduler(db *bolt.DB) (func(), error) {
+## Saas-Agent\cmd\saas-api\oauth_handlers.go
+  19: func getFrontendBaseURL() string {
+  26: func oauthRedirectURI(c *fiber.Ctx, provider string) string {
+  31: func OAuthStartHandler(providers map[string]auth.OAuthProvider, states *auth.OAuthStateStore) fiber.Handler {
+  50: func OAuthCallbackHandler(
+  138: func OAuthRateLimit(limiter *auth.CredentialStuffingLimiter) fiber.Handler {
+## Saas-Agent\cmd\saas-api\portal_apikey_limit.go
+  7: func (s PortalStores) apiKeyLimit(tenantID string) int {
+## Saas-Agent\cmd\saas-api\portal_handlers.go
+  52: type PortalStores struct {
+  62: func RegisterPortalRoutes(
+  91: func portalTenantID(c *fiber.Ctx) (string, error) {
+  99: func (s PortalStores) loadTenant(tenantID string) *tenant.Tenant {
+  107: func (s PortalStores) resolveProject(
+  136: func baseData(page string, t *tenant.Tenant) map[string]interface{} {
+  146: func renderPortal(c *fiber.Ctx, data map[string]interface{}) error {
+  164: func (s PortalStores) handleOverview(c *fiber.Ctx) error {
+  252: func (s PortalStores) handleAgents(c *fiber.Ctx) error {
+  263: func (s PortalStores) handleOperations(c *fiber.Ctx) error {
+  274: func (s PortalStores) handleAudit(c *fiber.Ctx) error {
+  285: func (s PortalStores) handleProjects(c *fiber.Ctx) error {
+  304: func (s PortalStores) handleProjectCreate(c *fiber.Ctx) error {
+  327: func (s PortalStores) handleAPIKeys(c *fiber.Ctx) error {
+  365: func (s PortalStores) handleAPIKeyGenerate(c *fiber.Ctx) error {
+  435: func (s PortalStores) handleAPIKeyRevoke(c *fiber.Ctx) error {
+  464: func quotaLimitForPlan(planTier string) int {
+  475: func (s PortalStores) sumQuotaUsedSafely(c *fiber.Ctx, tenantID, period string) (total int) {
+  498: type dailyCount struct {
+  504: func nextMonthlyResetDate(now time.Time) time.Time {
+  509: func buildDailySeries(events []*usage.UsageEvent, days int) []dailyCount {
+  538: type eventTypeBreakdown struct {
+  544: func buildEventTypeBreakdown(typeCounts map[string]int, total int) []eventTypeBreakdown {
+  561: func quotaWarningTier(percent int) string {
+  578: type EventsStore interface {
+  582: func (s PortalStores) handleUsage(c *fiber.Ctx) error {
+## Saas-Agent\cmd\saas-api\prod_config.go
+  11: func validateProductionEnv() error {
+## Saas-Agent\cmd\saas-api\retention_scheduler.go
+  48: type retentionSweeper struct {
+  63: func newRetentionSweeper(db *bolt.DB, pool *pgxpool.Pool) (*retentionSweeper, error) {
+  118: func (r *retentionSweeper) cleanupAudit(ctx context.Context) {
+  149: func (r *retentionSweeper) runOnce(ctx context.Context) {
+  182: func startRetentionScheduler(db *bolt.DB, pool *pgxpool.Pool) (func(), error) {
+## Saas-Agent\cmd\saas-api\roles_handler.go
+  22: func TenantRolesHandler(roleStore rbac.RoleStore) fiber.Handler {
+## Saas-Agent\cmd\saas-api\security_events_handlers.go
+  28: func SecurityEventsHandler(auditStore audit.Store) fiber.Handler {
+## Saas-Agent\cmd\saas-api\usage_handlers.go
+  30: func nextMonthlyResetDateForUsage(now time.Time) time.Time {
+  38: func currentMonthStartForUsage(now time.Time) time.Time {
+  48: func quotaTierForUsage(percent int) string {
+  84: func TenantUsageHandler(eventStore usage.EventStore, tenantStore *tenant.BoltTenantStore) fiber.Handler {
+  207: func AdminUsageHandler(
+## Saas-Agent\cmd\saas-api\usage_history_handlers.go
+  34: type usageHistoryCacheEntry struct {
+  44: func usageHistoryCacheKey(tenantID string, days int) string {
+  48: type usageBreakdownItem struct {
+  57: func sortBreakdown(totals map[string]int, labels map[string]string) []usageBreakdownItem {
+  83: func TenantUsageHistoryHandler(
+## Saas-Agent\compliance\deletion.go
+  30: type DeletionConfig struct {
+  35: func DefaultDeletionConfig() *DeletionConfig {
+  44: func gracePeriodFor(planTier string) time.Duration {
+  55: func SoftDeleteTenant(
+  91: func softDeleteUsers(userStore *auth.BoltUserStore, tenantID string) error {
+  106: func softDeleteAgents(agentStore *agent.BoltAgentStore, tenantID string) error {
+  121: func softDeleteTools(agentStore *agent.BoltAgentStore, tenantID string) error {
+  140: func RestoreTenant(
+  175: func restoreUsers(userStore *auth.BoltUserStore, tenantID string) error {
+  189: func restoreAgents(agentStore *agent.BoltAgentStore, tenantID string) error {
+  203: func restoreTools(agentStore *agent.BoltAgentStore, tenantID string) error {
+  230: func PurgeTenant(
+## Saas-Agent\compliance\sweep.go
+  29: func SweepExpiredTenants(
+## Saas-Agent\core\config.go
+  16: type BeaconConfig struct {
+  76: func DefaultBeaconConfig() *BeaconConfig {
+  118: type Config struct {
+  136: func DefaultConfig() *Config {
+  156: func (c *Config) GetModuleConfig() map[string]interface{} {
+  165: func LoadConfigFromFile(path string) (*Config, error) {
+  184: func LoadBeaconConfigFromFile(path string) (*BeaconConfig, error) {
+## Saas-Agent\core\dependency.go
+  7: type DependencyAware interface {
+## Saas-Agent\core\eventbus.go
+  16: type EventType string
+  18: type Event struct {
+  25: type EventHandler func(ctx context.Context, event Event) error
+  31: type EventBus struct {
+  42: type Subscription struct {
+  55: func NewEventBus() *EventBus {
+  79: func (eb *EventBus) Subscribe(module string, eventType EventType, handler EventHandler) string {
+  108: func (eb *EventBus) Publish(ctx context.Context, event Event) error {
+  131: func (eb *EventBus) Unsubscribe(subID string) error {
+  160: func (eb *EventBus) processEvents() {
+  176: func (eb *EventBus) processEvent(event Event) {
+  216: func (eb *EventBus) getSubscribers(eventType EventType) []*Subscription {
+  226: func (eb *EventBus) GetStats() map[string]interface{} {
+  246: func (eb *EventBus) Close() {
+  259: func (eb *EventBus) PublishString(ctx context.Context, eventType string, source string, data map[string]interf
+  268: func (eb *EventBus) SubscribeString(module string, eventType string, handler func(ctx context.Context, event E
+## Saas-Agent\core\health.go
+## Saas-Agent\core\logger.go
+  17: type Logger interface {
+  30: type LogConfig struct {
+  41: func DefaultLogConfig() *LogConfig {
+  58: type loggerImpl struct {
+  63: func NewLogger(config *LogConfig) (*slog.Logger, error) {
+  128: func NewSDKLogger() Logger {
+  135: func NewSDKLoggerWithConfig(config *LogConfig) (Logger, error) {
+  145: func (l *loggerImpl) Debug(msg string, args ...interface{}) {
+  149: func (l *loggerImpl) Info(msg string, args ...interface{}) {
+  153: func (l *loggerImpl) Warn(msg string, args ...interface{}) {
+  157: func (l *loggerImpl) Error(msg string, args ...interface{}) {
+  161: func (l *loggerImpl) With(fields map[string]interface{}) Logger {
+  173: func (l *loggerImpl) WithField(key string, value interface{}) Logger {
+  185: func GetLogConfigFromEnv() *LogConfig {
+## Saas-Agent\core\metrics.go
+  13: type MetricsManager struct {
+  33: func NewMetricsManager() *MetricsManager {
+  119: func (m *MetricsManager) StartServer(port string) {
+## Saas-Agent\core\module.go
+  16: type ModuleState string
+  29: func (s ModuleState) String() string { return string(s) }
+  35: type ModuleVersion struct {
+  44: func (v ModuleVersion) String() string {
+  55: type ModuleMetadata struct {
+  74: type ModuleHealth struct {
+  89: type Module interface {
+  111: type BaseModule struct {
+  121: func NewBaseModule(name string, version ModuleVersion, metadata ModuleMetadata) *BaseModule {
+  135: func (m *BaseModule) Name() string                    { return m.name }
+  136: func (m *BaseModule) Version() ModuleVersion          { return m.version }
+  137: func (m *BaseModule) Metadata() ModuleMetadata        { return m.metadata }
+  138: func (m *BaseModule) Priority() int                   { return m.metadata.Priority }
+  140: func (m *BaseModule) Dependencies() []string {
+  144: func (m *BaseModule) GetState() ModuleState {
+  150: func (m *BaseModule) SetState(state ModuleState) {
+  156: func (m *BaseModule) GetHealth() ModuleHealth {
+  162: func (m *BaseModule) CanReload() bool {
+  166: func (m *BaseModule) Reload(ctx context.Context, config map[string]interface{}) error {
+  176: func (m *BaseModule) Init(config map[string]interface{}) error {
+  181: func (m *BaseModule) Validate() error {
+  185: func (m *BaseModule) Start(ctx context.Context) error {
+  193: func (m *BaseModule) Stop() error {
+  198: func (m *BaseModule) HealthCheck(ctx context.Context) error {
+  206: type ModuleRegistry struct {
+  212: type RegisteredModule struct {
+  221: func NewModuleRegistry(eventBus *EventBus) *ModuleRegistry {
+  228: func (r *ModuleRegistry) Register(module Module) error {
+  265: func (r *ModuleRegistry) Unregister(name string) error {
+  291: func (r *ModuleRegistry) Get(name string) (Module, bool) {
+  302: func (r *ModuleRegistry) List() []string {
+  313: func (r *ModuleRegistry) ListWithMetadata() []ModuleMetadata {
+  324: func (r *ModuleRegistry) GetStats() map[string]interface{} {
+  353: type ModuleManager struct {
+  359: func NewModuleManager(registry *ModuleRegistry, eventBus *EventBus, logger *slog.Logger) *ModuleManager {
+  370: func (m *ModuleManager) Register(module Module) error {
+  374: func (m *ModuleManager) Get(name string) (Module, bool) {
+  378: func (m *ModuleManager) List() []string {
+  382: func (m *ModuleManager) StartModule(name string) error {
+  399: func (m *ModuleManager) StopModule(name string) error {
+  413: func (m *ModuleManager) ReloadModule(name string, config map[string]interface{}) error {
+## Saas-Agent\core\permission.go
+  5: type Permission int
+  23: func (p Permission) String() string {
+  43: func HasPermission(permissions []Permission, target Permission) bool {
+  53: type PermissionSet struct {
+  57: func NewPermissionSet(perms ...Permission) *PermissionSet {
+  63: func (ps *PermissionSet) Add(p Permission) {
+  67: func (ps *PermissionSet) Has(p Permission) bool {
+  71: func (ps *PermissionSet) List() []Permission {
+  75: func (ps *PermissionSet) String() string {
+## Saas-Agent\core\registry.go
+  17: func RegisterPlugin(name string, factory func(sdk.Container) sdk.Plugin) {
+  24: func RegisterManifest(name string, manifest sdk.Manifest) {
+  31: func GetPlugin(name string) (func(sdk.Container) sdk.Plugin, bool) {
+  39: func GetManifest(name string) (sdk.Manifest, bool) {
+  47: func ListPlugins() []string {
+  58: func ListManifests() []sdk.Manifest {
+## Saas-Agent\core\status.go
+  4: type ModuleStatus string
+## Saas-Agent\core\storage.go
+  21: type Storage interface {
+  33: type BoltStorage struct {
+  41: func NewBoltStorage(path string, logger *slog.Logger) (*BoltStorage, error) {
+  75: func (s *BoltStorage) initBuckets() error {
+  95: func (s *BoltStorage) Save(bucket string, key string, value interface{}) error {
+  114: func (s *BoltStorage) Load(bucket string, key string, value interface{}) error {
+  134: func (s *BoltStorage) Delete(bucket string, key string) error {
+  148: func (s *BoltStorage) List(bucket string) ([]string, error) {
+  170: func (s *BoltStorage) Close() error {
+## Saas-Agent\core\version.go
+## Saas-Agent\core\adapter\config_adapter.go
+  13: type ConfigAdapter struct {
+  18: func NewConfigAdapter(configPath string) sdk.Config {
+  33: func (c *ConfigAdapter) Get(key string) interface{} {
+  37: func (c *ConfigAdapter) GetString(key string) string {
+  44: func (c *ConfigAdapter) GetInt(key string) int {
+  54: func (c *ConfigAdapter) GetBool(key string) bool {
+  61: func (c *ConfigAdapter) GetDuration(key string) time.Duration {
+  73: func (c *ConfigAdapter) GetStringSlice(key string) []string {
+  86: func (c *ConfigAdapter) Set(key string, value interface{}) {
+  90: func (c *ConfigAdapter) Unset(key string) {
+  94: func (c *ConfigAdapter) All() map[string]interface{} {
+## Saas-Agent\core\adapter\crypto_adapter.go
+  17: type CryptoAdapter struct {
+  22: func NewCryptoAdapter(key []byte) sdk.Crypto {
+  33: func (a *CryptoAdapter) Encrypt(data []byte) ([]byte, error) {
+  54: func (a *CryptoAdapter) Decrypt(data []byte) ([]byte, error) {
+  75: func (a *CryptoAdapter) Sign(data []byte) ([]byte, error) {
+  81: func (a *CryptoAdapter) Verify(data []byte, signature []byte) bool {
+  87: func (a *CryptoAdapter) Hash(data []byte) []byte {
+  93: func (a *CryptoAdapter) GenerateKey() ([]byte, error) {
+## Saas-Agent\core\adapter\eventbus_adapter.go
+  13: type subscriber struct {
+  20: type EventBusAdapter struct {
+  32: func NewEventBusAdapter() sdk.EventBus {
+  53: func (a *EventBusAdapter) processEvents() {
+  66: func (a *EventBusAdapter) Publish(event sdk.Event) {
+  74: func (a *EventBusAdapter) PublishAsync(event sdk.Event) {
+  95: func (a *EventBusAdapter) publishSync(event sdk.Event) {
+  130: func (a *EventBusAdapter) Subscribe(eventType string, handler func(sdk.Event)) {
+  135: func (a *EventBusAdapter) SubscribeWithPriority(eventType string, priority int, handler func(sdk.Event)) {
+  148: func (a *EventBusAdapter) Unsubscribe(eventType string, handler func(sdk.Event)) {
+  177: func (a *EventBusAdapter) GetSubscribersCount(eventType string) int {
+  184: func (a *EventBusAdapter) GetStats() sdk.EventBusStats {
+  191: func (a *EventBusAdapter) GetEventHistory(limit int) []sdk.Event {
+  203: func (a *EventBusAdapter) Close() {
+## Saas-Agent\core\adapter\logger_adapter.go
+  15: type LoggerAdapter struct {
+  20: type LoggerConfig struct {
+  31: func DefaultLoggerConfig() *LoggerConfig {
+  44: func NewLoggerAdapter(config *LoggerConfig) sdk.Logger {
+  93: func (a *LoggerAdapter) Debug(msg string, args ...interface{}) {
+  99: func (a *LoggerAdapter) Info(msg string, args ...interface{}) {
+  105: func (a *LoggerAdapter) Warn(msg string, args ...interface{}) {
+  111: func (a *LoggerAdapter) Error(msg string, args ...interface{}) {
+  117: func (a *LoggerAdapter) With(fields map[string]interface{}) sdk.Logger {
+  129: func (a *LoggerAdapter) WithField(key string, value interface{}) sdk.Logger {
+## Saas-Agent\core\adapter\registry_adapter.go
+  12: type RegistryAdapter struct {
+  19: func NewRegistryAdapter() sdk.Registry {
+  29: func (r *RegistryAdapter) Register(name string, factory func(sdk.Container) sdk.Plugin) error {
+  41: func (r *RegistryAdapter) RegisterManifest(name string, manifest sdk.Manifest) error {
+  57: func (r *RegistryAdapter) Get(name string) (func(sdk.Container) sdk.Plugin, bool) {
+  65: func (r *RegistryAdapter) GetManifest(name string) (sdk.Manifest, bool) {
+  77: func (r *RegistryAdapter) List() []string {
+  88: func (r *RegistryAdapter) ListManifests() []sdk.Manifest {
+  104: func (r *RegistryAdapter) ListByCategory(category string) []sdk.Manifest {
+  108: func (r *RegistryAdapter) ListByCapability(pattern string) []sdk.Manifest {
+  112: func (r *RegistryAdapter) ListByPermission(permission string) []sdk.Manifest {
+  116: func (r *RegistryAdapter) ListByRequirement(req string) []sdk.Manifest {
+  120: func (r *RegistryAdapter) Stats() sdk.RegistryStats {
+  134: func (r *RegistryAdapter) Unregister(name string) error {
+  148: func (r *RegistryAdapter) Has(name string) bool {
+  160: func (r *RegistryAdapter) HasCapability(name string, pattern string) bool {
+  164: func (r *RegistryAdapter) GetCapabilities(name string) []string {
+  172: func (r *RegistryAdapter) HasPermission(name string, permission string) bool {
+## Saas-Agent\core\adapter\scheduler_adapter.go
+  14: type SchedulerAdapter struct {
+  23: type scheduledTask struct {
+  32: func NewSchedulerAdapter() sdk.Scheduler {
+  47: func (a *SchedulerAdapter) Schedule(name string, interval string, handler func(ctx context.Context)) error {
+  82: func (a *SchedulerAdapter) ScheduleOnce(name string, delay string, handler func(ctx context.Context)) error {
+  107: func (a *SchedulerAdapter) Cancel(name string) error {
+  128: func (a *SchedulerAdapter) List() []sdk.Executable {
+  133: func (a *SchedulerAdapter) ListLegacy() ([]string, error) {
+  145: func (a *SchedulerAdapter) Status(name string) (sdk.ExecutableStatus, error) {
+  161: func (a *SchedulerAdapter) StatusLegacy(name string) (string, error) {
+  177: func (a *SchedulerAdapter) Register(executable sdk.Executable) error {
+  182: func (a *SchedulerAdapter) Unregister(name string) error {
+  187: func (a *SchedulerAdapter) Get(name string) (sdk.Executable, bool) {
+  192: func (a *SchedulerAdapter) ListByPlugin(pluginName string) []sdk.Executable {
+  197: func (a *SchedulerAdapter) Trigger(name string) error {
+  215: func (a *SchedulerAdapter) Stats() sdk.SchedulerStats {
+  241: func (a *SchedulerAdapter) Start(ctx context.Context) error {
+  247: func (a *SchedulerAdapter) Stop() error {
+  256: func (a *SchedulerAdapter) runTask(task *scheduledTask) {
+  273: func (a *SchedulerAdapter) Close() {
+## Saas-Agent\core\adapter\storage_adapter.go
+  15: type StorageAdapter struct {
+  22: func NewStorageAdapter(storageDir string) sdk.Storage {
+  35: func (a *StorageAdapter) Save(key string, value interface{}) error {
+  50: func (a *StorageAdapter) Load(key string, value interface{}) error {
+  70: func (a *StorageAdapter) Delete(key string) error {
+  85: func (a *StorageAdapter) List(prefix string) ([]string, error) {
+  99: func (a *StorageAdapter) Exists(key string) bool {
+  106: func (a *StorageAdapter) saveToFile(key string, value interface{}) error {
+  115: func (a *StorageAdapter) loadFromFile(key string, value interface{}) error {
+## Saas-Agent\core\bootstrap\test_modules\multitenant\multi_tenant.go
+  12: type TenantModule struct {
+  18: func NewTenantModule(
+  30: func (m *TenantModule) Name() string {
+  34: func (m *TenantModule) Version() string {
+  38: func (m *TenantModule) Manifest() sdk.Manifest {
+  53: func (m *TenantModule) Init(config sdk.Config) error {
+  57: func (m *TenantModule) Start(ctx context.Context) error {
+  73: func (m *TenantModule) Stop() error {
+  77: func (m *TenantModule) Health() error {
+  81: func (m *TenantModule) SetStorage(storage sdk.Storage) {
+## Saas-Agent\core\bootstrap\test_modules\stateful\stateful.go
+  16: type StatefulModule struct {
+  37: type StatefulExecutable struct {
+  51: func NewStatefulModule(
+  65: func (m *StatefulModule) Name() string {
+  70: func (m *StatefulModule) Version() string {
+  75: func (m *StatefulModule) Manifest() sdk.Manifest {
+  95: func (m *StatefulModule) Init(config sdk.Config) error {
+  107: func (m *StatefulModule) Start(ctx context.Context) error {
+  145: func (m *StatefulModule) Stop() error {
+  171: func (m *StatefulModule) Health() error {
+  183: func (m *StatefulModule) State() map[string]interface{} {
+  197: func (m *StatefulModule) SetState(key string, value interface{}) {
+  209: func NewStatefulExecutable(
+  224: func (e *StatefulExecutable) Name() string {
+  229: func (e *StatefulExecutable) Description() string {
+  236: func (e *StatefulExecutable) Execute(
+  318: func (e *StatefulExecutable) Cancel() error {
+  335: func (e *StatefulExecutable) Status() sdk.ExecutableStatus {
+  343: func (e *StatefulExecutable) setStatus(
+## Saas-Agent\core\bootstrap\test_modules\throughput\throughput.go
+  13: type ThroughputModule struct {
+  19: func NewThroughputModule(
+  31: func (m *ThroughputModule) Name() string {
+  35: func (m *ThroughputModule) Version() string {
+  39: func (m *ThroughputModule) Manifest() sdk.Manifest {
+  54: func (m *ThroughputModule) Init(config sdk.Config) error {
+  58: func (m *ThroughputModule) Start(ctx context.Context) error {
+  87: func (m *ThroughputModule) Stop() error {
+  91: func (m *ThroughputModule) Health() error {
+  95: func (m *ThroughputModule) SetEventBus(eventBus sdk.EventBus) {
+  99: func (m *ThroughputModule) SetLogger(logger sdk.Logger) {
+## Saas-Agent\core\capability\engine.go
+  11: type Engine struct {
+  17: func NewEngine() *Engine {
+  24: func (e *Engine) SetMatcher(matcher sdk.CapabilityMatcher) {
+  31: func (e *Engine) HasCapability(manifest sdk.Manifest, pattern string) bool {
+  39: func (e *Engine) MatchCapability(capability, pattern string) bool {
+  46: func (e *Engine) MatchAnyCapability(capabilities []string, patterns []string) bool {
+  58: func (e *Engine) FilterCapabilities(capabilities []string, pattern string) []string {
+  65: func (e *Engine) GetMatcher() sdk.CapabilityMatcher {
+## Saas-Agent\core\capability\matcher.go
+  16: type WildcardMatcher struct{}
+  19: func NewWildcardMatcher() sdk.CapabilityMatcher {
+  24: func (m *WildcardMatcher) Match(capability, pattern string) bool {
+  77: func (m *WildcardMatcher) MatchAny(capability string, patterns []string) bool {
+  87: func (m *WildcardMatcher) Filter(capabilities []string, pattern string) []string {
+## Saas-Agent\core\container\container.go
+  12: type containerImpl struct {
+  21: func NewContainer() sdk.Container {
+  35: func (c *containerImpl) Get(name string) interface{} {
+  51: func (c *containerImpl) Register(name string, service interface{}) {
+  56: func (c *containerImpl) RegisterWithScope(name string, service interface{}, scope sdk.ContainerScope) {
+  71: func (c *containerImpl) RegisterFactory(name string, factory func(sdk.Container) interface{}, scope sdk.Contai
+  89: func (c *containerImpl) GetLogger() sdk.Logger {
+  98: func (c *containerImpl) GetEventBus() sdk.EventBus {
+  107: func (c *containerImpl) GetStorage() sdk.Storage {
+  116: func (c *containerImpl) GetCrypto() sdk.Crypto {
+  125: func (c *containerImpl) GetScheduler() sdk.Scheduler {
+  134: func (c *containerImpl) GetConfig() sdk.Config {
+  148: func (c *containerImpl) Has(name string) bool {
+  159: func (c *containerImpl) GetDefinition(name string) (sdk.ServiceDefinition, bool) {
+  167: func (c *containerImpl) Stats() sdk.ContainerStats {
+  232: func (c *containerImpl) IsReady() bool {
+  239: func (c *containerImpl) SetReady() {
+  246: func (c *containerImpl) Validate() error {
+## Saas-Agent\core\contract\gate.go
+  9: type ContractGate struct {
+  15: func NewContractGate(publicKey string) *ContractGate {
+  23: func (g *ContractGate) VerifyPlugin(plugin sdk.Plugin) sdk.ContractTestResult {
+  59: func (g *ContractGate) GetVerifier() *Verifier {
+  64: func (g *ContractGate) GetHighAssuranceManager() *HighAssuranceManager {
+## Saas-Agent\core\contract\high_assurance.go
+  16: type HighAssuranceManager struct {
+  24: func NewHighAssuranceManager(publicKey string) *HighAssuranceManager {
+  33: func (m *HighAssuranceManager) RequiresHighAssurance(manifest sdk.Manifest) bool {
+  43: func (m *HighAssuranceManager) RequestReview(pluginName string) {
+  50: func (m *HighAssuranceManager) ApproveReview(pluginName, approver string, notes []string) error {
+  70: func (m *HighAssuranceManager) IsApproved(pluginName string) bool {
+  81: func (m *HighAssuranceManager) GetReviewNotes(pluginName string) []string {
+  89: func (m *HighAssuranceManager) VerifyHighAssuranceSignature(manifest sdk.Manifest) bool {
+  105: func (m *HighAssuranceManager) signHighAssurance(manifest sdk.Manifest) string {
+## Saas-Agent\core\contract\verifier.go
+  14: type Verifier struct {
+  19: func NewVerifier(publicKey string) *Verifier {
+  31: func (v *Verifier) VerifyPlugin(plugin sdk.Plugin) sdk.ContractTestResult {
+  78: func (v *Verifier) VerifyManifest(
+  181: func (v *Verifier) VerifySignature(
+  218: func (v *Verifier) VerifyAll(
+  270: func (v *Verifier) RequiresHighAssurance(
+  283: func (v *Verifier) signManifest(
+  309: func isValidSemver(version string) bool {
+## Saas-Agent\core\dependency\resolver.go
+  12: type Resolver struct {
+  21: func NewResolver() *Resolver {
+  32: func (r *Resolver) BuildGraph(manifests []sdk.Manifest) error {
+  71: func (r *Resolver) ResolveOrder() ([]string, error) {
+  94: func (r *Resolver) dfs(name string) error {
+  117: func (r *Resolver) getCycle(start string) []string {
+  141: func (r *Resolver) GetDependencies(name string) []string {
+  149: func (r *Resolver) GetDependents(name string) []string {
+  157: func (r *Resolver) HasCircularDependency() bool {
+  164: func (r *Resolver) GetCircularDependencies() [][]string {
+  185: func parseDependencyName(dep string) string {
+## Saas-Agent\core\health\alert_engine.go
+  12: type AlertRule struct {
+  24: type AlertEngine struct {
+  34: func NewAlertEngine(logger sdk.Logger, metricStore *MetricsCollector) *AlertEngine {
+  49: func (e *AlertEngine) loadDefaultRules() {
+  108: func (e *AlertEngine) Evaluate(metrics []sdk.HealthMetric) []sdk.HealthAlert {
+  166: func (e *AlertEngine) evaluateThreshold(value, threshold float64, operator string) bool {
+  184: func (e *AlertEngine) GetAlerts() []sdk.HealthAlert {
+  200: func (e *AlertEngine) ResolveAlert(id string) {
+## Saas-Agent\core\health\heartbeat.go
+  12: type Heartbeat struct {
+  23: func NewHeartbeat(logger sdk.Logger) *Heartbeat {
+  35: func (h *Heartbeat) Start() {
+  57: func (h *Heartbeat) Stop() {
+  72: func (h *Heartbeat) loop(stopCh <-chan struct{}, interval time.Duration) {
+  87: func (h *Heartbeat) check() {
+  105: func (h *Heartbeat) Ping() {
+  114: func (h *Heartbeat) Status() map[string]interface{} {
+  126: func (h *Heartbeat) IsAlive() bool {
+## Saas-Agent\core\health\metrics_collector.go
+  15: type MetricsCollector struct {
+  29: func NewMetricsCollector(
+  50: func (c *MetricsCollector) Collect() []sdk.HealthMetric {
+  87: func (c *MetricsCollector) collectPluginMetrics() []sdk.HealthMetric {
+  169: func (c *MetricsCollector) collectSchedulerMetrics() []sdk.HealthMetric {
+  223: func (c *MetricsCollector) collectEventBusMetrics() []sdk.HealthMetric {
+  258: func (c *MetricsCollector) collectRegistryMetrics() []sdk.HealthMetric {
+  306: func (c *MetricsCollector) storeHistory(metrics []sdk.HealthMetric) {
+  319: func (c *MetricsCollector) GetHistory(name string, limit int) []sdk.HealthMetric {
+  339: func (c *MetricsCollector) GetMetrics() []sdk.HealthMetric {
+## Saas-Agent\core\health\monitor.go
+  16: type Monitor struct {
+  39: func NewMonitor(
+  82: func (m *Monitor) Start() error {
+  104: func (m *Monitor) Stop() error {
+  121: func (m *Monitor) IsRunning() bool {
+  128: func (m *Monitor) monitorLoop() {
+  143: func (m *Monitor) doCheck() {
+  187: func (m *Monitor) buildReport(metrics []sdk.HealthMetric, alerts []sdk.HealthAlert) sdk.HealthReport {
+  236: func (m *Monitor) determineStatus(report sdk.HealthReport) sdk.HealthStatus {
+  255: func (m *Monitor) CheckAll() sdk.HealthReport {
+  271: func (m *Monitor) CheckComponent(name string) (sdk.HealthReport, bool) {
+  289: func (m *Monitor) GetStatus() sdk.HealthStatus {
+  296: func (m *Monitor) GetAlerts() []sdk.HealthAlert {
+  303: func (m *Monitor) GetMetrics() []sdk.HealthMetric {
+  310: func (m *Monitor) getSchedulerHealth() sdk.HealthStatus {
+  319: func (m *Monitor) getPluginManagerHealth() sdk.HealthStatus {
+  327: func (m *Monitor) getEventBusHealth() sdk.HealthStatus {
+  335: func (m *Monitor) getRegistryHealth() sdk.HealthStatus {
+## Saas-Agent\core\lifecycle\lifecycle.go
+  14: type State string
+  33: func (s State) String() string {
+  38: func (s State) IsActive() bool {
+  43: func (s State) IsTerminal() bool {
+  49: type Lifecycle struct {
+  66: type Config struct {
+  72: func DefaultConfig() *Config {
+  80: func NewLifecycle(
+  110: func (l *Lifecycle) State() State {
+  118: func (l *Lifecycle) IsRunning() bool {
+  123: func (l *Lifecycle) IsActive() bool {
+  128: func (l *Lifecycle) Init(ctx context.Context) error {
+  158: func (l *Lifecycle) Validate(ctx context.Context) error {
+  186: func (l *Lifecycle) Start(ctx context.Context) error {
+  276: func (l *Lifecycle) Pause(ctx context.Context) error {
+  303: func (l *Lifecycle) Resume(ctx context.Context) error {
+  334: func (l *Lifecycle) Stop(ctx context.Context) error {
+  386: func (l *Lifecycle) Destroy(ctx context.Context) error {
+  417: func (l *Lifecycle) Health() error {
+  456: func (l *Lifecycle) setState(state State) {
+  469: func (l *Lifecycle) publishEvent(eventType string) {
+  486: func (l *Lifecycle) GetInfo() map[string]interface{} {
+## Saas-Agent\core\lifecycle\lifecycle_manager.go
+  9: type LifecycleManager struct {
+  15: func NewLifecycleManager(logger sdk.Logger, eventBus sdk.EventBus) *LifecycleManager {
+## Saas-Agent\core\lifecycle\state.go
+  22: func IsTransitionAllowed(from, to State) bool {
+## Saas-Agent\core\manifest\manifest.go
+  17: type Processor struct {
+  22: func NewProcessor() *Processor {
+  29: func (p *Processor) GetAliasResolver() *AliasResolver {
+  37: func (p *Processor) ProcessManifest(raw sdk.Manifest) (sdk.Manifest, error) {
+  57: func SignManifest(manifest sdk.Manifest, secret string) string {
+  71: func VerifyManifest(manifest sdk.Manifest, secret string) bool {
+## Saas-Agent\core\manifest\validator.go
+  16: func ValidateCapability(capability string) error {
+  47: func ValidateManifest(manifest sdk.Manifest) error {
+  85: func NormalizeCapability(capability string) string {
+  90: func NormalizeManifest(manifest sdk.Manifest) sdk.Manifest {
+  112: type AliasResolver struct {
+  116: func NewAliasResolver() *AliasResolver {
+  122: func (r *AliasResolver) RegisterAlias(old, new string) error {
+  133: func (r *AliasResolver) Resolve(capability string) string {
+  140: func (r *AliasResolver) ResolveAll(manifest sdk.Manifest) sdk.Manifest {
+  152: func isValidSemver(version string) bool {
+## Saas-Agent\core\permission\config.go
+  5: type PermissionConfig struct {
+  11: func DefaultPermissionConfig() *PermissionConfig {
+## Saas-Agent\core\permission\enforcer.go
+  12: type DefaultEnforcer struct {
+  17: func NewDefaultEnforcer() *DefaultEnforcer {
+  24: func (e *DefaultEnforcer) Name() string {
+  29: func (e *DefaultEnforcer) Enforce(manifest sdk.Manifest, action string, resource string) error {
+## Saas-Agent\core\permission\engine.go
+  13: type Engine struct {
+  21: func NewEngine() *Engine {
+  26: func NewEngineWithConfig(config *PermissionConfig) *Engine {
+  38: func (e *Engine) SetConfig(config *PermissionConfig) {
+  46: func (e *Engine) SetDefaultDeny(deny bool) {
+  53: func (e *Engine) RegisterEnforcer(enforcer sdk.PermissionEnforcer) {
+  60: func (e *Engine) GetEnforcer(name string) (sdk.PermissionEnforcer, bool) {
+  68: func (e *Engine) Evaluate(manifest sdk.Manifest, permission string) (bool, string) {
+  98: func (e *Engine) EvaluateAll(manifest sdk.Manifest) []string {
+  113: func (e *Engine) IsAllowed(manifest sdk.Manifest, permission string) bool {
+  119: func (e *Engine) ValidateManifestPermissions(manifest sdk.Manifest) error {
+  149: func (e *Engine) GetValidPermissions() []string {
+## Saas-Agent\core\plugin\manager.go
+  18: type Manager struct {
+  40: type PluginInstance struct {
+  53: type Status string
+  70: func NewManager(
+  106: func (m *Manager) SetLifecycleConfig(cfg *lifecycle.Config) {
+  113: func (m *Manager) SetShutdownTimeout(timeout time.Duration) {
+  120: func (m *Manager) GetPermissionEngine() *permission.Engine {
+  125: func (m *Manager) GetDependencyResolver() *dependency.Resolver {
+  130: func (m *Manager) GetScheduler() sdk.Scheduler {
+  142: func (m *Manager) LoadAll() error {
+  216: func (m *Manager) ValidateAll() error {
+  249: func (m *Manager) validatePlugin(instance *PluginInstance) error {
+  279: func (m *Manager) StartAll() error {
+  303: func (m *Manager) startPlugin(instance *PluginInstance) error {
+  343: func (m *Manager) StopAll() error {
+  369: func (m *Manager) stopPlugin(ctx context.Context, instance *PluginInstance) error {
+  404: func (m *Manager) HealthCheck() map[string]error {
+  419: func (m *Manager) GetPlugin(name string) (interface{}, bool) {
+  430: func (m *Manager) GetPluginInstance(name string) (*PluginInstance, bool) {
+  438: func (m *Manager) GetPluginState(name string) (lifecycle.State, bool) {
+  449: func (m *Manager) ListPlugins() []string {
+  461: func (m *Manager) ListRunning() []string {
+  475: func (m *Manager) GetLoadOrder() []string {
+  482: func (m *Manager) GetPluginInfo(name string) map[string]interface{} {
+  513: func (m *Manager) EnablePlugin(name string) error {
+  530: func (m *Manager) DisablePlugin(name string) error {
+  550: func (m *Manager) IsEnabled(name string) bool {
+  562: func (m *Manager) RegisterExecutable(executable sdk.Executable) error {
+  578: func (m *Manager) UnregisterExecutable(name string) error {
+  594: func (m *Manager) TriggerExecutable(name string) error {
+## Saas-Agent\core\registry\registry.go
+  17: type registryImpl struct {
+  28: func NewRegistry() sdk.Registry {
+  43: func (r *registryImpl) GetManifestProcessor() *manifest.Processor {
+  47: func (r *registryImpl) GetCapabilityEngine() *capability.Engine {
+  51: func (r *registryImpl) GetPermissionEngine() *permission.Engine {
+  60: func (r *registryImpl) SetContractGate(gate *contract.ContractGate) {
+  67: func (r *registryImpl) GetContractGate() *contract.ContractGate {
+  77: func (r *registryImpl) Register(name string, factory func(sdk.Container) sdk.Plugin) error {
+  106: func (r *registryImpl) RegisterManifest(name string, raw sdk.Manifest) error {
+  140: func (r *registryImpl) Get(name string) (func(sdk.Container) sdk.Plugin, bool) {
+  147: func (r *registryImpl) GetManifest(name string) (sdk.Manifest, bool) {
+  158: func (r *registryImpl) List() []string {
+  168: func (r *registryImpl) ListManifests() []sdk.Manifest {
+  183: func (r *registryImpl) ListByCategory(category string) []sdk.Manifest {
+  199: func (r *registryImpl) ListByCapability(pattern string) []sdk.Manifest {
+  213: func (r *registryImpl) ListByPermission(permission string) []sdk.Manifest {
+  232: func (r *registryImpl) ListByRequirement(req string) []sdk.Manifest {
+  255: func (r *registryImpl) Stats() sdk.RegistryStats {
+  288: func (r *registryImpl) Unregister(name string) error {
+  301: func (r *registryImpl) Has(name string) bool {
+  312: func (r *registryImpl) HasCapability(name string, pattern string) bool {
+  324: func (r *registryImpl) GetCapabilities(name string) []string {
+  340: func (r *registryImpl) HasPermission(name string, permission string) bool {
+## Saas-Agent\core\runtime\di.go
+  9: type PluginDI interface {
+  18: func InjectDependencies(plugin sdk.Plugin, deps *Dependencies) {
+  39: type Dependencies struct {
+## Saas-Agent\core\runtime\runtime.go
+  23: type Runtime struct {
+  47: type Config struct {
+  55: func DefaultConfig() *Config {
+  65: func NewRuntime(
+  187: func (r *Runtime) printArchitectureVerification() {
+  295: func (r *Runtime) Start() error {
+  352: func (r *Runtime) Stop() error {
+  383: func (r *Runtime) IsRunning() bool {
+  390: func (r *Runtime) GetUptime() time.Duration {
+  403: func (r *Runtime) GetRegistry() sdk.Registry {
+  407: func (r *Runtime) GetContainer() sdk.Container {
+  411: func (r *Runtime) GetPluginManager() sdk.PluginManager {
+  415: func (r *Runtime) GetEventBus() sdk.EventBus {
+  419: func (r *Runtime) GetScheduler() sdk.Scheduler {
+  423: func (r *Runtime) GetHealthMonitor() sdk.HealthMonitor {
+  427: func (r *Runtime) GetLogger() sdk.Logger {
+## Saas-Agent\core\scheduler\config.go
+  7: type SchedulerConfig struct {
+  34: func DefaultSchedulerConfig() *SchedulerConfig {
+  48: func (c *SchedulerConfig) Validate() error {
+## Saas-Agent\core\scheduler\executable_context.go
+  12: type executableContext struct {
+  24: func NewExecutableContext(id, pluginName, triggerType string, deadline time.Time) sdk.ExecutableContext {
+  36: func (c *executableContext) ID() string {
+  41: func (c *executableContext) PluginName() string {
+  46: func (c *executableContext) TriggerType() string {
+  51: func (c *executableContext) Deadline() time.Time {
+  56: func (c *executableContext) SetValue(key string, value interface{}) {
+  63: func (c *executableContext) GetValue(key string) interface{} {
+  70: func (c *executableContext) IsCancelled() bool {
+  77: func (c *executableContext) Cancel(reason string) {
+## Saas-Agent\core\scheduler\executor.go
+  12: type Executor struct {
+  18: func NewExecutor(logger sdk.Logger, config *SchedulerConfig) *Executor {
+  26: func (e *Executor) Execute(executable sdk.Executable, ctx sdk.ExecutableContext) {
+## Saas-Agent\core\scheduler\scheduler.go
+  14: type Scheduler struct {
+  29: func NewScheduler(
+  57: func (s *Scheduler) Start(ctx context.Context) error {
+  80: func (s *Scheduler) Stop() error {
+  97: func (s *Scheduler) Register(executable sdk.Executable) error {
+  118: func (s *Scheduler) Unregister(name string) error {
+  134: func (s *Scheduler) Get(name string) (sdk.Executable, bool) {
+  142: func (s *Scheduler) List() []sdk.Executable {
+  154: func (s *Scheduler) ListByPlugin(pluginName string) []sdk.Executable {
+  160: func (s *Scheduler) Trigger(name string) error {
+  178: func (s *Scheduler) Cancel(name string) error {
+  191: func (s *Scheduler) Status(name string) (sdk.ExecutableStatus, error) {
+  204: func (s *Scheduler) Stats() sdk.SchedulerStats {
+  211: func (s *Scheduler) evaluateTriggers(ctx context.Context) {
+  228: func (s *Scheduler) checkTriggers(now time.Time) {
+## Saas-Agent\core\scheduler\task_store.go
+  11: type TaskStore struct {
+  18: func NewTaskStore() *TaskStore {
+  26: func (s *TaskStore) Add(executable sdk.Executable, pluginName string) error {
+  42: func (s *TaskStore) Remove(name string) error {
+  68: func (s *TaskStore) Get(name string) (sdk.Executable, bool) {
+  76: func (s *TaskStore) List() []sdk.Executable {
+  88: func (s *TaskStore) ListByPlugin(pluginName string) []sdk.Executable {
+  107: func (s *TaskStore) Count() int {
+  114: func (s *TaskStore) CountByPlugin(pluginName string) int {
+## Saas-Agent\core\scheduler\worker_pool.go
+  12: type WorkerPool struct {
+  23: type executionRequest struct {
+  29: func NewWorkerPool(workers int, executor *Executor) *WorkerPool {
+  40: func (p *WorkerPool) Start(ctx context.Context) {
+  56: func (p *WorkerPool) Stop() {
+  70: func (p *WorkerPool) Submit(executable sdk.Executable, ctx sdk.ExecutableContext) {
+  83: func (p *WorkerPool) worker(ctx context.Context, id int) {
+  99: func (p *WorkerPool) IsRunning() bool {
+  106: func (p *WorkerPool) QueueSize() int {
+## Saas-Agent\core\scheduler\triggers\cron.go
+  14: type CronTrigger struct {
+  22: func NewCronTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  53: func (t *CronTrigger) Type() string {
+  58: func (t *CronTrigger) Next(now time.Time) *time.Time {
+  68: func (t *CronTrigger) Match(now time.Time) bool {
+  83: func (t *CronTrigger) Name() string {
+  88: func (t *CronTrigger) Enabled() bool {
+  93: func (t *CronTrigger) SetEnabled(enabled bool) {
+## Saas-Agent\core\scheduler\triggers\event.go
+  12: type EventTrigger struct {
+  19: func NewEventTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  43: func (t *EventTrigger) Type() string {
+  51: func (t *EventTrigger) Next(now time.Time) *time.Time {
+  59: func (t *EventTrigger) Match(now time.Time) bool {
+  64: func (t *EventTrigger) Name() string {
+  69: func (t *EventTrigger) Enabled() bool {
+  74: func (t *EventTrigger) SetEnabled(enabled bool) {
+  79: func (t *EventTrigger) EventType() string {
+## Saas-Agent\core\scheduler\triggers\interval.go
+  12: type IntervalTrigger struct {
+  20: func NewIntervalTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  50: func (t *IntervalTrigger) Type() string {
+  55: func (t *IntervalTrigger) Next(now time.Time) *time.Time {
+  68: func (t *IntervalTrigger) Match(now time.Time) bool {
+  86: func (t *IntervalTrigger) Name() string {
+  91: func (t *IntervalTrigger) Enabled() bool {
+  96: func (t *IntervalTrigger) SetEnabled(enabled bool) {
+## Saas-Agent\core\scheduler\triggers\manual.go
+  11: type ManualTrigger struct {
+  17: func NewManualTrigger(config map[string]interface{}) (sdk.Trigger, error) {
+  35: func (t *ManualTrigger) Type() string {
+  40: func (t *ManualTrigger) Next(now time.Time) *time.Time {
+  46: func (t *ManualTrigger) Match(now time.Time) bool {
+  52: func (t *ManualTrigger) Name() string {
+  57: func (t *ManualTrigger) Enabled() bool {
+  62: func (t *ManualTrigger) SetEnabled(enabled bool) {
+## Saas-Agent\db\db.go
+  19: func Connect(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+## Saas-Agent\db\migrate.go
+  11: func RunMigrations(postgresURL string) error {
+## Saas-Agent\events\event.go
+  15: type Event struct {
+  33: type IngestRequest struct {
+  45: func (r *IngestRequest) Validate() error {
+  80: func canonicalJSON(payload json.RawMessage) []byte {
+  106: func ComputeHash(
+  134: func int64ToBytes(n int64) []byte {
+  142: func formatInt64(n int64) string {
+  179: func VerifyChain(
+## Saas-Agent\events\handlers.go
+  31: func recordFirstValueEvidence(usageStore usage.EventStore, auditStore audit.Store, tenantStore tenant.TenantSt
+  58: func parseRFC3339(s string) (time.Time, error) {
+  78: func IngestHandler(store *PostgresStore, usageStore usage.EventStore, auditStore audit.Store, tenantStore tena
+  121: type BatchIngestRequest struct {
+  125: type BatchEventResult struct {
+  131: func BatchIngestHandler(store *PostgresStore, usageStore usage.EventStore, auditStore audit.Store, tenantStore
+  198: func appendErrorCode(err error) string {
+  209: func handleAppendError(c *fiber.Ctx, err error, projectID, tenantID string) error {
+  231: func notifyQuotaExceeded(projectID, tenantID string) {
+  247: func QueryHandler(store *PostgresStore) fiber.Handler {
+  300: type VerifyRequest struct {
+  307: func VerifyHandler(store *PostgresStore) fiber.Handler {
+  373: type ExportCapResolver func(tenantID string) int
+  399: func ExportHandler(store *PostgresStore, capResolver ...ExportCapResolver) fiber.Handler {
+  503: func writeEventsJSON(c *fiber.Ctx, events []*Event, projectID string) error {
+  518: func writeEventsCSV(c *fiber.Ctx, events []*Event) error {
+  567: func ScopeCanIngest(s apikey.Scope) bool { return s.CanIngest() }
+  568: func ScopeCanRead(s apikey.Scope) bool   { return s.CanRead() }
+## Saas-Agent\events\retention.go
+  28: type RetentionJob struct {
+  33: func NewRetentionJob(
+  52: func (j *RetentionJob) RunOnce(ctx context.Context) error {
+  88: func (j *RetentionJob) listProjectIDs(
+  131: func (j *RetentionJob) purgeProject(
+## Saas-Agent\events\store_postgres.go
+  20: type PostgresStore struct {
+  24: func NewPostgresStore(pool *pgxpool.Pool) *PostgresStore {
+  36: func currentPeriod() string {
+  40: func (s *PostgresStore) Append(ctx context.Context, projectID, tenantID string, req *IngestRequest, idempotenc
+  252: func checkQuotaThresholds(projectID, tenantID string, usedCount, monthlyLimit int64) {
+  273: func nullIfEmpty(s string) *string {
+  280: func (s *PostgresStore) getByIDTx(ctx context.Context, tx pgx.Tx, id string) (*Event, error) {
+  302: type QueryFilter struct {
+  311: type QueryResult struct {
+  316: func encodeCursor(seq int64) string {
+  320: func decodeCursor(cursor string) (int64, error) {
+  338: func (s *PostgresStore) Query(ctx context.Context, projectID string, f QueryFilter) (*QueryResult, error) {
+  423: func (s *PostgresStore) VerifyRange(
+  601: func (s *PostgresStore) GetUsageCount(ctx context.Context, projectID, period string) (int64, error) {
+  622: func (s *PostgresStore) GetTenantUsageCount(ctx context.Context, tenantID, period string) (int64, error) {
+  641: func (s *PostgresStore) GetTenantMonthlyLimit(ctx context.Context, tenantID string) (int64, error) {
+  656: func CurrentPeriod() string {
+  663: func (s *PostgresStore) QueryLatest(ctx context.Context, projectID string, f QueryFilter, n int) ([]*Event, er
+## Saas-Agent\events\verify_incremental.go
+  36: type verifyCheckpoint struct {
+  41: func (s *PostgresStore) getVerifyCheckpoint(ctx context.Context, projectID string) (*verifyCheckpoint, error) 
+  56: func (s *PostgresStore) saveVerifyCheckpoint(ctx context.Context, projectID string, sequence int64, hash strin
+  71: func (s *PostgresStore) lastEventForProject(ctx context.Context, projectID string) (sequence int64, hash strin
+  97: func (s *PostgresStore) VerifyRangeIncremental(ctx context.Context, projectID string) (valid bool, brokenAtEve
+  146: type incrementalVerifyCall struct {
+  157: func VerifyTenantIncremental(
+  189: func doVerifyTenantIncremental(
+## Saas-Agent\events\verify_tenant.go
+  22: func (s *PostgresStore) GetByID(ctx context.Context, id string) (*Event, error) {
+  49: func (s *PostgresStore) firstExistingEvent(
+  75: type FirstBroken struct {
+  81: type TenantVerifyResult struct {
+  102: type verifyCall struct {
+  113: func VerifyTenant(
+  151: func doVerifyTenant(
+## Saas-Agent\mcp\custom_prompt_store.go
+  17: type CustomPromptStore interface {
+## Saas-Agent\mcp\custom_prompt_store_bbolt.go
+  33: type storedCustomPrompt struct {
+  42: func toStoredCustomPrompt(p MCPPromptDefinition) storedCustomPrompt {
+  53: func (s storedCustomPrompt) toDefinition() MCPPromptDefinition {
+  65: func customPromptKey(tenantID, name string) string {
+  69: type BoltCustomPromptStore struct {
+  74: func NewBoltCustomPromptStore(db *bolt.DB) (*BoltCustomPromptStore, error) {
+  85: func (s *BoltCustomPromptStore) Put(prompt MCPPromptDefinition) error {
+  103: func (s *BoltCustomPromptStore) Get(tenantID, name string) (MCPPromptDefinition, error) {
+  125: func (s *BoltCustomPromptStore) ListForTenant(tenantID string) []MCPPromptDefinition {
+  146: func (s *BoltCustomPromptStore) DeleteAllForTenant(tenantID string) int {
+  186: func (s *BoltCustomPromptStore) Delete(tenantID, name string) error {
+## Saas-Agent\mcp\discovery.go
+  18: func (g *Gateway) discoverTools(
+  47: func discoverToolDefinitions(
+## Saas-Agent\mcp\executor.go
+  29: func executeTool(
+  73: func executeHealthCheck(
+  90: func executeMetadataLookup(
+  118: func executeEcho(
+  166: func formatExecutionResult(result interface{}) string {
+  171: func executeAuditLookup(
+## Saas-Agent\mcp\gateway.go
+  16: type Gateway struct {
+  28: func NewGateway(agentStore *agent.BoltAgentStore, auditStore audit.Store) *Gateway {
+  39: func (g *Gateway) SetQuotaEnforcer(q tenant.QuotaEnforcer) {
+  43: func (g *Gateway) Query(
+  174: func cloneContext(
+## Saas-Agent\mcp\jsonrpc.go
+  26: type JSONRPCRequest struct {
+  34: type JSONRPCResponse struct {
+  42: type JSONRPCError struct {
+  49: func newJSONRPCResult(
+  61: func newJSONRPCError(
+  79: func validateJSONRPCRequest(
+  100: func decodeJSONRPCParams(
+## Saas-Agent\mcp\prompts.go
+  97: type MCPPromptDefinition struct {
+  108: type MCPPromptArgument struct {
+  115: type MCPPromptsListParams struct {
+  120: type MCPPromptsListResult struct {
+  126: type MCPPromptsGetParams struct {
+  132: type MCPPromptMessage struct {
+  139: type MCPPromptsGetResult struct {
+  147: type MCPPromptsCreateParams struct {
+  158: type MCPPromptsCreateResult struct {
+  167: type MCPPromptsDeleteParams struct {
+  173: type MCPPromptsDeleteResult struct {
+  184: type MCPPromptsUpdateParams struct {
+  193: type MCPPromptsUpdateResult struct {
+  214: type PromptRegistry struct {
+  223: func (r *PromptRegistry) SetCustomStore(store CustomPromptStore) {
+  230: func NewPromptRegistry() *PromptRegistry {
+  249: func (r *PromptRegistry) ListForTenant(tenantID string) []MCPPromptDefinition {
+  281: func (r *PromptRegistry) Get(tenantID, name string) (MCPPromptDefinition, error) {
+  304: func (r *PromptRegistry) isBuiltinName(name string) bool {
+  315: func (r *PromptRegistry) createCustom(def MCPPromptDefinition) error {
+  334: func (r *PromptRegistry) deleteCustom(tenantID, name string) error {
+  360: func (r *PromptRegistry) updateCustom(def MCPPromptDefinition) error {
+  384: func seedBuiltinPrompts() []MCPPromptDefinition {
+  457: func renderPromptMessages(def MCPPromptDefinition, args map[string]string) []MCPPromptMessage {
+  483: func missingRequiredArgument(def MCPPromptDefinition, args map[string]string) string {
+  498: func validatePromptsCreateParams(p MCPPromptsCreateParams) string {
+  518: func validatePromptsUpdateParams(p MCPPromptsUpdateParams) string {
+  535: func validatePromptsDeleteParams(p MCPPromptsDeleteParams) string {
+## Saas-Agent\mcp\protocol.go
+  19: type MCPErrorCode string
+  92: type MCPError struct {
+  98: func (e *MCPError) Error() string {
+  114: func (e *MCPError) Unwrap() error {
+  122: func newMCPError(
+  162: type MCPRequest struct {
+  184: func (r *MCPRequest) Validate() error {
+  231: type MCPResponse struct {
+  251: type MCPToolCall struct {
+  258: func (t *MCPToolCall) Validate() error {
+  303: type MCPExecutionContext struct {
+  318: func MCPErrorCodeOf(err error) MCPErrorCode {
+  333: func IsMCPErrorCode(err error, code MCPErrorCode) bool {
+  339: func InternalMCPError(err error) error {
+  357: func ensureMCPError(err error) error {
+  375: func invalidRequestError(message string) error {
+  385: func validateMCPContext(
+  422: func validateMCPParams(
+  463: func validateMCPValue(
+## Saas-Agent\mcp\resolver.go
+  24: func resolveTool(req *MCPRequest, tools []*agent.Tool) (*agent.Tool, error) {
+  62: func resolveExplicitTool(
+  106: func resolveQueryTool(
+  194: func containsKeyword(text string, keywords ...string) bool {
+## Saas-Agent\mcp\resources.go
+  29: type MCPResourceDefinition struct {
+  37: type MCPResourcesListParams struct {
+  42: type MCPResourcesListResult struct {
+  48: type MCPResourcesReadParams struct {
+  53: type MCPResourceContent struct {
+  60: type MCPResourcesReadResult struct {
+  69: func buildMCPResourcesList() MCPResourcesListResult {
+  85: func (g *Gateway) readResource(
+  138: func (g *Gateway) readAuditLogResource(
+## Saas-Agent\mcp\roots_sampling.go
+  40: func isRootsOrSamplingNotification(method string) bool {
+  48: func (s *Server) handleRootsSamplingNotification(
+  59: func (s *Server) handleRootsList(
+  71: func (s *Server) handleSamplingCreateMessage(
+## Saas-Agent\mcp\server.go
+  22: type Server struct {
+  34: func NewServer(gateway *Gateway) *Server {
+  48: func (s *Server) SetCustomPromptStore(store CustomPromptStore) {
+  71: func (s *Server) ServeHTTP(
+  225: func writeMCPResponse(
+  238: func writeSSEResponse(w http.ResponseWriter, resp *JSONRPCResponse) {
+  258: func (s *Server) handleRequest(
+  364: func (s *Server) handleInitialize(
+  389: func (s *Server) handleServerDiscover(
+  415: func (s *Server) handleToolsList(
+  457: func (s *Server) handleToolsCall(
+  543: func (s *Server) handleResourcesList(
+  568: func (s *Server) handleResourcesRead(
+  611: func (s *Server) handlePromptsList(
+  647: func (s *Server) handlePromptsGet(
+  723: func (s *Server) handlePromptsCreate(
+  826: func (s *Server) handlePromptsDelete(
+  925: func (s *Server) handlePromptsUpdate(
+  1022: func jsonRPCResponseFromMCPError(
+  1094: func writeJSONRPCResponse(
+  1109: func writeJSONRPCError(
+## Saas-Agent\mcp\session.go
+  18: type sessionInfo struct {
+  29: type SessionStore struct {
+  37: func NewSessionStore(ttl time.Duration) *SessionStore {
+  50: func (st *SessionStore) Create(tenantID, userID string) string {
+  79: func (st *SessionStore) Validate(id, tenantID, userID string) bool {
+  107: func (st *SessionStore) Delete(id string) {
+  115: func (s *Server) SetStrictSessions(strict bool) {
+## Saas-Agent\mcp\tools.go
+  13: type MCPToolDefinition struct {
+  20: type MCPToolsListParams struct {
+  25: type MCPToolsListResult struct {
+  31: type MCPToolsCallParams struct {
+  37: type MCPContentBlock struct {
+  43: type MCPToolsCallResult struct {
+  53: func buildMCPToolDefinition(
+  130: func buildMCPToolsList(
+## Saas-Agent\mcp\tracing.go
+  24: func newRequestID() string {
+## Saas-Agent\middleware\api_key_auth.go
+  18: type apiKeyContextKeyType struct{}
+  24: type APIKeyStore interface {
+  32: type APIKeyGate func(ctx context.Context, key *apikey.APIKey) (allowed bool, err error)
+  37: func RequireAPIKey(store APIKeyStore, gates ...APIKeyGate) fiber.Handler {
+  101: func APIKeyFromFiberCtx(c *fiber.Ctx) (*apikey.APIKey, bool) {
+  108: func RequireScope(need func(apikey.Scope) bool) fiber.Handler {
+## Saas-Agent\middleware\audit_middleware.go
+  19: func AuditLogger(auditStore audit.Store) fiber.Handler {
+## Saas-Agent\middleware\auth_middleware.go
+  48: func extractAccessToken(c *fiber.Ctx) (string, bool) {
+  61: func RequireAuth(
+  208: func RequireAuthAllowDeletedUser(
+  318: func ClaimsFromFiberCtx(c *fiber.Ctx) (*auth.Claims, bool) {
+  349: func RequireCapability(
+## Saas-Agent\middleware\grace_period_guard.go
+  17: func RequirePaymentCurrent(tenantStore tenant.TenantStore) fiber.Handler {
+## Saas-Agent\middleware\mcp_identity_bridge.go
+  27: func InjectMCPIdentityFromAPIKey() fiber.Handler {
+## Saas-Agent\middleware\mcp_usage_middleware.go
+  29: type mcpJSONRPCEnvelope struct {
+  48: func MCPUsageMetering(eventStore usage.EventStore) fiber.Handler {
+  128: func MCPUsageMeteringDashboard(eventStore usage.EventStore) fiber.Handler {
+## Saas-Agent\middleware\rate_limit.go
+  64: type RateLimitPriority string
+  103: func StopAllRateLimiterCleanups() {
+  114: func registerCleanupStop(stop chan struct{}) {
+  125: type RateLimiterConfig struct {
+  135: func DefaultRateLimiterConfig(db *bolt.DB) *RateLimiterConfig {
+  160: func resolveRateLimitPriority(path string) RateLimitPriority {
+  172: func limitForPriority(
+  191: type rateCounter struct {
+  225: func NewRateLimiter(config *RateLimiterConfig) fiber.Handler {
+  356: func limitForTenant(
+  376: func getOrCreateCounter(
+  473: func (r *rateCounter) Allow() (
+  589: func startCleanup(
+  637: func cleanupExpiredWindows(
+## Saas-Agent\middleware\root_auth.go
+  45: func NewRequireRoot(rootKey string) fiber.Handler {
+## Saas-Agent\middleware\tenant_scope.go
+  28: func RequireTenantScope(paramName string) fiber.Handler {
+## Saas-Agent\middleware\usage_middleware.go
+  28: func UsageMetering(eventStore usage.EventStore) fiber.Handler {
+## Saas-Agent\notify\email.go
+  34: type Template string
+  43: type EmailJob struct {
+  60: type EmailSender interface {
+  67: type LoggingSender struct{}
+  69: func (LoggingSender) Send(job *EmailJob) error {
+  86: type BoltEmailQueue struct {
+  90: func NewBoltEmailQueue(db *bolt.DB) (*BoltEmailQueue, error) {
+  108: func currentPeriod() string {
+  112: func dedupeKey(tenantID string, tmpl Template, period string) []byte {
+  124: func (q *BoltEmailQueue) EnqueueQuotaThreshold(tenantID, projectID string, tmpl Template, data map[string]stri
+  174: func (q *BoltEmailQueue) EnqueueChainBroken(tenantID, eventID string) (enqueued bool, err error) {
+  179: func EnqueueChainBroken(tenantID, eventID string) {
+  191: func (q *BoltEmailQueue) Pending(limit int) ([]*EmailJob, error) {
+  224: func (q *BoltEmailQueue) MarkSent(jobID string) error {
+  232: func (q *BoltEmailQueue) MarkFailed(jobID string, sendErr error) error {
+  269: func SetQueue(q *BoltEmailQueue) {
+  276: func EnqueueQuotaThreshold(tenantID, projectID string, tmpl Template, data map[string]string) {
+  295: func DrainOnce(q *BoltEmailQueue, sender EmailSender, batchSize int) (sent int, failed int, err error) {
+## Saas-Agent\notify\resend_sender.go
+  16: type ResendSender struct {
+  24: func NewResendSender(apiKey, from string, resolve func(tenantID string) (string, error)) *ResendSender {
+  34: type resendPayload struct {
+  41: func (s *ResendSender) Send(job *EmailJob) error {
+  96: func defaultTemplates() map[Template]func(job *EmailJob) (string, string) {
+## Saas-Agent\observability\middleware.go
+  25: func ErrorReporting(onCritical func(title, message string, fields map[string]string)) fiber.Handler {
+## Saas-Agent\observability\sentry.go
+  41: type dsn struct {
+  47: func parseDSN(raw string) (*dsn, error) {
+  74: type Client struct {
+  91: func Init() {
+  97: func InitWithDSN(rawDSN string) {
+  129: func envOrDefault(key, def string) string {
+  136: func newEventID() string {
+  144: type sentryEvent struct {
+  158: type sentryException struct {
+  162: type sentryExceptionValue struct {
+  170: type sentryFrame struct {
+  182: func CaptureError(err error, tags map[string]string) {
+  193: func CapturePanic(recovered any, stack []byte, tags map[string]string) {
+  198: func stackFrames(raw []byte) []sentryFrame {
+  205: func stackFramesFromTrace(raw []byte) []sentryFrame {
+  230: func captureMessage(level, message string, frames []sentryFrame, tags map[string]string) {
+  309: func (c *Client) send(evt *sentryEvent) {
+  346: func Enabled() bool {
+## Saas-Agent\pkg\utils\utils.go
+  16: func GenerateRandomKey(length int) (string, error) {
+  25: func SHA256Hash(data []byte) string {
+  31: func GetLocalIP() string {
+  47: func GetHostname() string {
+  56: func GetOS() string {
+  61: func RandomDelay(min, max int) time.Duration {
+## Saas-Agent\project\handlers.go
+  20: type PlanResolver func(tenantID string) (monthlyEventLimit int64, retentionDays int)
+  28: func CreateProjectHandler(
+  98: func ListProjectsHandler(store *PostgresStore) fiber.Handler {
+  116: func GetProjectHandler(store *PostgresStore) fiber.Handler {
+  140: func DeleteProjectHandler(store *PostgresStore) fiber.Handler {
+## Saas-Agent\project\project.go
+  17: type ProjectStatus string
+  25: type Project struct {
+  52: func NewProject(tenantID, name string) (*Project, error) {
+## Saas-Agent\project\store_postgres.go
+  16: type PostgresStore struct {
+  20: func NewPostgresStore(pool DBQuerier) *PostgresStore {
+  27: type DBQuerier interface {
+  47: func (s *PostgresStore) Create(ctx context.Context, p *Project) error {
+  104: func (s *PostgresStore) SetRetentionDays(
+  146: func (s *PostgresStore) Get(
+  199: func (s *PostgresStore) ListByTenant(
+  271: func (s *PostgresStore) SoftDelete(
+  328: func (s *PostgresStore) ApplyPlanToTenant(
+  388: func (s *PostgresStore) DeleteAllForTenant(ctx context.Context, tenantID string) error {
+## Saas-Agent\project\store_postgres_audit.go
+  25: func (s *PostgresStore) ListByTenantIncludingDeleted(
+## Saas-Agent\rbac\role.go
+  17: type Role struct {
+  30: type RoleStore interface {
+  39: type InMemoryRoleStore struct {
+  44: func NewInMemoryRoleStore() *InMemoryRoleStore {
+  50: func roleKey(tenantID, roleID string) string {
+  54: func (s *InMemoryRoleStore) PutRole(role *Role) error {
+  64: func (s *InMemoryRoleStore) GetRole(tenantID, roleID string) (*Role, error) {
+  87: type RoleResolver struct {
+  91: func NewRoleResolver(store RoleStore) *RoleResolver {
+  101: func (r *RoleResolver) ResolveCapabilities(tenantID, roleID string) ([]string, error) {
+## Saas-Agent\rbac\role_store_admin.go
+  18: func (s *InMemoryRoleStore) DeleteAllForTenant(tenantID string) int {
+  34: func (s *InMemoryRoleStore) CountForTenant(tenantID string) int {
+## Saas-Agent\rbac\role_store_bbolt.go
+  25: func (s *BoltRoleStore) DeleteRole(tenantID, roleID string) error {
+  34: type BoltRoleStore struct {
+  38: func NewBoltRoleStore(db *bolt.DB) (*BoltRoleStore, error) {
+  49: func (s *BoltRoleStore) PutRole(role *Role) error {
+  64: func (s *BoltRoleStore) GetRole(tenantID, roleID string) (*Role, error) {
+  89: func (s *BoltRoleStore) DeleteAllForTenant(tenantID string) int {
+  124: func (s *BoltRoleStore) CountForTenant(tenantID string) int {
+## Saas-Agent\rbac\role_store_bbolt_list.go
+  14: func (s *BoltRoleStore) ListRolesForTenant(tenantID string) ([]*Role, error) {
+## Saas-Agent\rbac\store_interfaces.go
+  10: type RoleAdminStore interface {
+## Saas-Agent\rbac\tenant_boundary.go
+  24: type AccessDenialReason string
+  31: type AccessError struct {
+  36: func (e *AccessError) Error() string {
+  72: func CheckTenantBoundary(
+  111: func CheckCapabilityGrant(
+  135: func CheckAccess(
+  151: func extractTenantIDFromCapability(cap string) (string, error) {
+## Saas-Agent\sdk\capability.go
+  6: type CapabilityMatcher interface {
+## Saas-Agent\sdk\config.go
+  8: type Config interface {
+## Saas-Agent\sdk\container.go
+  5: type ContainerScope string
+  19: type ServiceDefinition struct {
+  30: type Container interface {
+  93: type ContainerStats struct {
+## Saas-Agent\sdk\contract.go
+  6: type ContractVerifier interface {
+  24: type ContractTestResult struct {
+  32: type HighAssuranceReview struct {
+## Saas-Agent\sdk\crypto.go
+  6: type Crypto interface {
+## Saas-Agent\sdk\dependency.go
+  6: type DependencyResolver interface {
+  27: type DependencyNode struct {
+## Saas-Agent\sdk\event.go
+  9: type EventBus interface {
+  36: type Event struct {
+  46: type EventBusStats struct {
+## Saas-Agent\sdk\executable.go
+  8: type Executable interface {
+  24: type ExecutableContext interface {
+  51: type ExecutableStatus string
+  63: func (s ExecutableStatus) String() string {
+  68: func (s ExecutableStatus) IsTerminal() bool {
+  73: func (s ExecutableStatus) IsActive() bool {
+## Saas-Agent\sdk\health.go
+  7: type HealthStatus string
+  17: type HealthCheckable interface {
+  22: type HealthMetric struct {
+  31: type HealthReport struct {
+  42: type HealthAlert struct {
+  56: type HealthMonitor interface {
+## Saas-Agent\sdk\lifecycle.go
+  8: type Lifecycle interface {
+  29: type LifecycleState string
+## Saas-Agent\sdk\logger.go
+  7: type Logger interface {
+## Saas-Agent\sdk\permission.go
+  20: type PermissionSet map[string]bool
+  22: func NewPermissionSet(perms []string) PermissionSet {
+  30: func (ps PermissionSet) Has(perm string) bool {
+  34: func (ps PermissionSet) HasAll(perms []string) bool {
+  46: type PermissionEvaluator interface {
+  60: type PermissionEnforcer interface {
+## Saas-Agent\sdk\plugin.go
+  9: type Plugin interface {
+  23: type Manifest struct {
+  54: type PluginFactory func(container Container) Plugin
+## Saas-Agent\sdk\plugin_manager.go
+  6: type PluginManager interface {
+## Saas-Agent\sdk\registry.go
+  5: type Registry interface {
+  56: type RegistryStats struct {
+## Saas-Agent\sdk\runtime.go
+  6: type Runtime interface {
+## Saas-Agent\sdk\scheduler.go
+  8: type Scheduler interface {
+  42: type SchedulerStats struct {
+## Saas-Agent\sdk\service.go
+  8: type Service interface {
+## Saas-Agent\sdk\storage.go
+  6: type Storage interface {
+  15: type Bucket interface {
+## Saas-Agent\sdk\trigger.go
+  8: type Trigger interface {
+  29: type TriggerDeclaration struct {
+  38: type RetryPolicy struct {
+  45: type TriggerFactory func(config map[string]interface{}) (Trigger, error)
+## Saas-Agent\sdk\go\client.go
+  56: type Client struct {
+  75: func NewClient(baseURL string, apiKey string) *Client {
+  84: type RequestOptions struct {
+  92: func (c *Client) do(opts RequestOptions) (*http.Response, error) {
+  119: type LoginRequest struct {
+  125: type LoginResponse struct {
+  141: func (c *Client) Login(email, password string) (*LoginResponse, error) {
+  172: func (c *Client) RefreshToken(refreshToken string) (*LoginResponse, error) {
+  195: type Tenant struct {
+  212: func (c *Client) CreateTenant(tenantID, name string) (*Tenant, error) {
+  237: type User struct {
+  254: func (c *Client) CreateUser(tenantID, email, password, roleID string) (*User, error) {
+  279: type UsageEvent struct {
+  296: func (c *Client) GetUsage(tenantID string, limit int) ([]UsageEvent, error) {
+  325: type Agent struct {
+  346: func (c *Client) CreateAgent(tenantID, name, description string, capabilities []string, metadata map[string]st
+  386: func (c *Client) ListAgents(tenantID string) ([]Agent, error) {
+  410: type Tool struct {
+  432: func (c *Client) CreateTool(tenantID, name, description, toolType string, config map[string]string) (*Tool, er
+  472: func (c *Client) ExecuteTool(tenantID, toolID string, params map[string]interface{}) (map[string]interface{}, 
+  501: type MCPToolCall struct {
+  513: type MCPRequest struct {
+  525: type MCPResponse struct {
+  550: func (c *Client) MCPQuery(tenantID string, req *MCPRequest) (*MCPResponse, error) {
+  586: func (c *Client) MCPToolCall(tenantID string, toolName string, params map[string]interface{}) (*MCPResponse, e
+  600: type DeletionStatus struct {
+  616: func (c *Client) SoftDeleteTenant(tenantID string) (*DeletionStatus, error) {
+  646: func (c *Client) RestoreTenant(tenantID string) (*DeletionStatus, error) {
+  691: type APIError struct {
+  698: func (e *APIError) Error() string {
+  706: func apiErrorCodeForStatus(statusCode int) string {
+  726: func (c *Client) parseError(resp *http.Response) error {
+## Saas-Agent\tenant\onboarding.go
+  14: func MarkOnboardingCompleteIfUnset(store TenantStore, tenantID string) error {
+## Saas-Agent\tenant\provisioning.go
+  24: func ProvisionTenant(
+  73: type DeprovisionResult struct {
+  85: func DeprovisionTenant(
+## Saas-Agent\tenant\tenant.go
+  13: type TenantStatus string
+  37: type Tenant struct {
+  90: type QuotaEnforcer interface {
+  103: type TenantStore interface {
+  110: type InMemoryTenantStore struct {
+  115: func NewInMemoryTenantStore() *InMemoryTenantStore {
+  119: func (s *InMemoryTenantStore) Put(t *Tenant) error {
+  129: func (s *InMemoryTenantStore) Get(tenantID string) (*Tenant, error) {
+  144: func (s *InMemoryTenantStore) ListExpiredGracePeriods(now time.Time) ([]*Tenant, error) {
+  162: func (s *InMemoryTenantStore) FindByStripeCustomerID(customerID string) (*Tenant, error) {
+  182: func (s *InMemoryTenantStore) TryConsumeQuota(tenantID string, amount int64) (bool, int64, error) {
+## Saas-Agent\tenant\tenant_create_once.go
+  12: type TenantCreator interface {
+  19: func (s *InMemoryTenantStore) PutIfNotExists(t *Tenant) error {
+## Saas-Agent\tenant\tenant_lister.go
+  8: type TenantPastDueLister interface {
+## Saas-Agent\tenant\tenant_lookup.go
+  7: type TenantByStripeLookup interface {
+## Saas-Agent\tenant\tenant_store_active.go
+  14: func (s *BoltTenantStore) ListActive() ([]*Tenant, error) {
+## Saas-Agent\tenant\tenant_store_bbolt.go
+  20: type BoltTenantStore struct {
+  24: func NewBoltTenantStore(db *bolt.DB) (*BoltTenantStore, error) {
+  35: func (s *BoltTenantStore) Put(t *Tenant) error {
+  50: func (s *BoltTenantStore) Get(tenantID string) (*Tenant, error) {
+  63: func (s *BoltTenantStore) FindByStripeCustomerID(customerID string) (*Tenant, error) {
+  109: func (s *BoltTenantStore) GetIncludingDeleted(tenantID string) (*Tenant, error) {
+  132: func (s *BoltTenantStore) Delete(tenantID string) error {
+  142: func (s *BoltTenantStore) PutIfNotExists(t *Tenant) error {
+  165: func (s *BoltTenantStore) ListExpiredGracePeriods(now time.Time) ([]*Tenant, error) {
+  196: func (s *BoltTenantStore) TryConsumeQuota(tenantID string, amount int64) (bool, int64, error) {
+## Saas-Agent\tenant\tenant_store_deleted.go
+  15: func (s *BoltTenantStore) ListDeleted() ([]*Tenant, error) {
+## Saas-Agent\tests\test_modules\categories.go
+  7: type ModuleCategory struct {
+  175: func GenerateModules() []*GeneratedModule {
+  204: func TotalModules() int {
+## Saas-Agent\tests\test_modules\generator.go
+  14: type GeneratedModule struct {
+  29: func NewGeneratedModule(
+  45: func (m *GeneratedModule) Name() string {
+  49: func (m *GeneratedModule) Version() string {
+  53: func (m *GeneratedModule) Manifest() sdk.Manifest {
+  67: func (m *GeneratedModule) Init(config sdk.Config) error {
+  71: func (m *GeneratedModule) Start(ctx context.Context) error {
+  90: func (m *GeneratedModule) Stop() error {
+  95: func (m *GeneratedModule) Health() error {
+  104: func (m *GeneratedModule) SetLogger(logger sdk.Logger) {
+  109: func (m *GeneratedModule) SetEventBus(eventBus sdk.EventBus) {
+  114: func (m *GeneratedModule) SetStorage(storage sdk.Storage) {
+## Saas-Agent\tests\test_modules\malicious.go
+  16: type MaliciousType string
+  29: type MaliciousModule struct {
+  48: func NewMaliciousModule(
+  59: func (m *MaliciousModule) Name() string {
+  63: func (m *MaliciousModule) Version() string {
+  67: func (m *MaliciousModule) Manifest() sdk.Manifest {
+  95: func (m *MaliciousModule) Init(config sdk.Config) error {
+  103: func (m *MaliciousModule) Start(ctx context.Context) error {
+  154: func (m *MaliciousModule) safeGo(
+  185: func (m *MaliciousModule) Stop() error {
+  196: func (m *MaliciousModule) Health() error {
+  207: func (m *MaliciousModule) privilegeEscalation(
+  243: func (m *MaliciousModule) resourceExhaustion(
+  292: func (m *MaliciousModule) dataExfiltration(
+  328: func (m *MaliciousModule) panicAttack(
+  351: func (m *MaliciousModule) deadlockAttack(
+  379: func (m *MaliciousModule) infiniteLoop(
+  401: func (m *MaliciousModule) logError(message string) {
+  408: func (m *MaliciousModule) SetLogger(logger sdk.Logger) {
+  413: func (m *MaliciousModule) SetEventBus(eventBus sdk.EventBus) {
+  418: func (m *MaliciousModule) SetStorage(storage sdk.Storage) {
+## Saas-Agent\usage\event.go
+  12: type EventType string
+  30: type UsageEvent struct {
+  60: func IsBillableEventType(t EventType) bool {
+  69: type EventStore interface {
+## Saas-Agent\usage\event_store_bbolt.go
+  33: type BoltEventStore struct {
+  37: func NewBoltEventStore(db *bolt.DB) (*BoltEventStore, error) {
+  48: func reverseTimestampKey(tenantID string, ts time.Time, eventID string) []byte {
+  53: func (s *BoltEventStore) Save(event *UsageEvent) error {
+  80: func (s *BoltEventStore) ListForTenant(tenantID string, limit int) ([]*UsageEvent, error) {
+  122: func (s *BoltEventStore) CountBillableSinceForTenant(tenantID string, since time.Time) (int, error) {
+## Saas-Agent\usage\history.go
+  11: type HistoryPoint struct {
+  16: type HistoryBreakdownItem struct {
+  25: type UsageHistoryResult struct {
+  41: func (s *BoltEventStore) UsageHistoryForTenant(tenantID string, days int) (*UsageHistoryResult, error) {
+## Saas-Agent\usage\record.go
+  19: func RecordEvent(
+## Saas-Agent\web\embed.go
+## sdk\capability.go
+  6: type CapabilityMatcher interface {
+## sdk\config.go
+  8: type Config interface {
+## sdk\container.go
+  5: type ContainerScope string
+  19: type ServiceDefinition struct {
+  30: type Container interface {
+  93: type ContainerStats struct {
+## sdk\contract.go
+  6: type ContractVerifier interface {
+  24: type ContractTestResult struct {
+  32: type HighAssuranceReview struct {
+## sdk\crypto.go
+  6: type Crypto interface {
+## sdk\dependency.go
+  6: type DependencyResolver interface {
+  27: type DependencyNode struct {
+## sdk\event.go
+  9: type EventBus interface {
+  36: type Event struct {
+  46: type EventBusStats struct {
+## sdk\executable.go
+  8: type Executable interface {
+  24: type ExecutableContext interface {
+  51: type ExecutableStatus string
+  63: func (s ExecutableStatus) String() string {
+  68: func (s ExecutableStatus) IsTerminal() bool {
+  73: func (s ExecutableStatus) IsActive() bool {
+## sdk\health.go
+  7: type HealthStatus string
+  17: type HealthCheckable interface {
+  22: type HealthMetric struct {
+  31: type HealthReport struct {
+  42: type HealthAlert struct {
+  56: type HealthMonitor interface {
+## sdk\lifecycle.go
+  8: type Lifecycle interface {
+  29: type LifecycleState string
+## sdk\logger.go
+  7: type Logger interface {
+## sdk\permission.go
+  20: type PermissionSet map[string]bool
+  22: func NewPermissionSet(perms []string) PermissionSet {
+  30: func (ps PermissionSet) Has(perm string) bool {
+  34: func (ps PermissionSet) HasAll(perms []string) bool {
+  46: type PermissionEvaluator interface {
+  60: type PermissionEnforcer interface {
+## sdk\plugin.go
+  9: type Plugin interface {
+  23: type Manifest struct {
+  54: type PluginFactory func(container Container) Plugin
+## sdk\plugin_manager.go
+  6: type PluginManager interface {
+## sdk\registry.go
+  5: type Registry interface {
+  56: type RegistryStats struct {
+## sdk\runtime.go
+  6: type Runtime interface {
+## sdk\scheduler.go
+  8: type Scheduler interface {
+  42: type SchedulerStats struct {
+## sdk\service.go
+  8: type Service interface {
+## sdk\storage.go
+  6: type Storage interface {
+  15: type Bucket interface {
+## sdk\trigger.go
+  8: type Trigger interface {
+  29: type TriggerDeclaration struct {
+  38: type RetryPolicy struct {
+  45: type TriggerFactory func(config map[string]interface{}) (Trigger, error)
+## sdk\go\client.go
+  56: type Client struct {
+  75: func NewClient(baseURL string, apiKey string) *Client {
+  84: type RequestOptions struct {
+  92: func (c *Client) do(opts RequestOptions) (*http.Response, error) {
+  119: type LoginRequest struct {
+  125: type LoginResponse struct {
+  141: func (c *Client) Login(email, password string) (*LoginResponse, error) {
+  172: func (c *Client) RefreshToken(refreshToken string) (*LoginResponse, error) {
+  195: type Tenant struct {
+  212: func (c *Client) CreateTenant(tenantID, name string) (*Tenant, error) {
+  237: type User struct {
+  254: func (c *Client) CreateUser(tenantID, email, password, roleID string) (*User, error) {
+  279: type UsageEvent struct {
+  296: func (c *Client) GetUsage(tenantID string, limit int) ([]UsageEvent, error) {
+  325: type Agent struct {
+  346: func (c *Client) CreateAgent(tenantID, name, description string, capabilities []string, metadata map[string]st
+  386: func (c *Client) ListAgents(tenantID string) ([]Agent, error) {
+  410: type Tool struct {
+  432: func (c *Client) CreateTool(tenantID, name, description, toolType string, config map[string]string) (*Tool, er
+  472: func (c *Client) ExecuteTool(tenantID, toolID string, params map[string]interface{}) (map[string]interface{}, 
+  501: type MCPToolCall struct {
+  513: type MCPRequest struct {
+  525: type MCPResponse struct {
+  550: func (c *Client) MCPQuery(tenantID string, req *MCPRequest) (*MCPResponse, error) {
+  586: func (c *Client) MCPToolCall(tenantID string, toolName string, params map[string]interface{}) (*MCPResponse, e
+  600: type DeletionStatus struct {
+  616: func (c *Client) SoftDeleteTenant(tenantID string) (*DeletionStatus, error) {
+  646: func (c *Client) RestoreTenant(tenantID string) (*DeletionStatus, error) {
+  691: type APIError struct {
+  698: func (e *APIError) Error() string {
+  706: func apiErrorCodeForStatus(statusCode int) string {
+  726: func (c *Client) parseError(resp *http.Response) error {
+## tenant\onboarding.go
+  14: func MarkOnboardingCompleteIfUnset(store TenantStore, tenantID string) error {
+## tenant\provisioning.go
+  24: func ProvisionTenant(
+  73: type DeprovisionResult struct {
+  85: func DeprovisionTenant(
+## tenant\tenant.go
+  13: type TenantStatus string
+  37: type Tenant struct {
+  90: type QuotaEnforcer interface {
+  103: type TenantStore interface {
+  110: type InMemoryTenantStore struct {
+  115: func NewInMemoryTenantStore() *InMemoryTenantStore {
+  119: func (s *InMemoryTenantStore) Put(t *Tenant) error {
+  129: func (s *InMemoryTenantStore) Get(tenantID string) (*Tenant, error) {
+  144: func (s *InMemoryTenantStore) ListExpiredGracePeriods(now time.Time) ([]*Tenant, error) {
+  162: func (s *InMemoryTenantStore) FindByStripeCustomerID(customerID string) (*Tenant, error) {
+  182: func (s *InMemoryTenantStore) TryConsumeQuota(tenantID string, amount int64) (bool, int64, error) {
+## tenant\tenant_create_once.go
+  12: type TenantCreator interface {
+  19: func (s *InMemoryTenantStore) PutIfNotExists(t *Tenant) error {
+## tenant\tenant_lister.go
+  8: type TenantPastDueLister interface {
+## tenant\tenant_lookup.go
+  7: type TenantByStripeLookup interface {
+## tenant\tenant_store_active.go
+  14: func (s *BoltTenantStore) ListActive() ([]*Tenant, error) {
+## tenant\tenant_store_bbolt.go
+  20: type BoltTenantStore struct {
+  24: func NewBoltTenantStore(db *bolt.DB) (*BoltTenantStore, error) {
+  35: func (s *BoltTenantStore) Put(t *Tenant) error {
+  50: func (s *BoltTenantStore) Get(tenantID string) (*Tenant, error) {
+  63: func (s *BoltTenantStore) FindByStripeCustomerID(customerID string) (*Tenant, error) {
+  109: func (s *BoltTenantStore) GetIncludingDeleted(tenantID string) (*Tenant, error) {
+  132: func (s *BoltTenantStore) Delete(tenantID string) error {
+  142: func (s *BoltTenantStore) PutIfNotExists(t *Tenant) error {
+  165: func (s *BoltTenantStore) ListExpiredGracePeriods(now time.Time) ([]*Tenant, error) {
+  196: func (s *BoltTenantStore) TryConsumeQuota(tenantID string, amount int64) (bool, int64, error) {
+## tenant\tenant_store_deleted.go
+  15: func (s *BoltTenantStore) ListDeleted() ([]*Tenant, error) {
+## tests\test_modules\categories.go
+  7: type ModuleCategory struct {
+  175: func GenerateModules() []*GeneratedModule {
+  204: func TotalModules() int {
+## tests\test_modules\generator.go
+  14: type GeneratedModule struct {
+  29: func NewGeneratedModule(
+  45: func (m *GeneratedModule) Name() string {
+  49: func (m *GeneratedModule) Version() string {
+  53: func (m *GeneratedModule) Manifest() sdk.Manifest {
+  67: func (m *GeneratedModule) Init(config sdk.Config) error {
+  71: func (m *GeneratedModule) Start(ctx context.Context) error {
+  90: func (m *GeneratedModule) Stop() error {
+  95: func (m *GeneratedModule) Health() error {
+  104: func (m *GeneratedModule) SetLogger(logger sdk.Logger) {
+  109: func (m *GeneratedModule) SetEventBus(eventBus sdk.EventBus) {
+  114: func (m *GeneratedModule) SetStorage(storage sdk.Storage) {
+## tests\test_modules\malicious.go
+  16: type MaliciousType string
+  29: type MaliciousModule struct {
+  48: func NewMaliciousModule(
+  59: func (m *MaliciousModule) Name() string {
+  63: func (m *MaliciousModule) Version() string {
+  67: func (m *MaliciousModule) Manifest() sdk.Manifest {
+  95: func (m *MaliciousModule) Init(config sdk.Config) error {
+  103: func (m *MaliciousModule) Start(ctx context.Context) error {
+  154: func (m *MaliciousModule) safeGo(
+  185: func (m *MaliciousModule) Stop() error {
+  196: func (m *MaliciousModule) Health() error {
+  207: func (m *MaliciousModule) privilegeEscalation(
+  243: func (m *MaliciousModule) resourceExhaustion(
+  292: func (m *MaliciousModule) dataExfiltration(
+  328: func (m *MaliciousModule) panicAttack(
+  351: func (m *MaliciousModule) deadlockAttack(
+  379: func (m *MaliciousModule) infiniteLoop(
+  401: func (m *MaliciousModule) logError(message string) {
+  408: func (m *MaliciousModule) SetLogger(logger sdk.Logger) {
+  413: func (m *MaliciousModule) SetEventBus(eventBus sdk.EventBus) {
+  418: func (m *MaliciousModule) SetStorage(storage sdk.Storage) {
+## usage\event.go
+  12: type EventType string
+  30: type UsageEvent struct {
+  60: func IsBillableEventType(t EventType) bool {
+  69: type EventStore interface {
+## usage\event_store_bbolt.go
+  33: type BoltEventStore struct {
+  37: func NewBoltEventStore(db *bolt.DB) (*BoltEventStore, error) {
+  48: func reverseTimestampKey(tenantID string, ts time.Time, eventID string) []byte {
+  53: func (s *BoltEventStore) Save(event *UsageEvent) error {
+  80: func (s *BoltEventStore) ListForTenant(tenantID string, limit int) ([]*UsageEvent, error) {
+  122: func (s *BoltEventStore) CountBillableSinceForTenant(tenantID string, since time.Time) (int, error) {
+## usage\history.go
+  11: type HistoryPoint struct {
+  16: type HistoryBreakdownItem struct {
+  25: type UsageHistoryResult struct {
+  41: func (s *BoltEventStore) UsageHistoryForTenant(tenantID string, days int) (*UsageHistoryResult, error) {
+## usage\record.go
+  19: func RecordEvent(
+## web\embed.go
+## ROUTES (cmd/saas-api/app.go)
+  494: app.Get("/", serveEmbedded("index.html"))
+  495: app.Get("/pricing.html", serveEmbedded("pricing.html"))
+  496: app.Get("/security.html", serveEmbedded("security.html"))
+  497: app.Get("/docs.html", serveEmbedded("docs.html"))
+  498: app.Get("/api-reference.html", serveEmbedded("api-reference.html"))
+  499: app.Get("/signup", serveEmbedded("signup.html"))
+  500: app.Get("/login", serveEmbedded("login.html"))
+  501: app.Get("/forgot-password", serveEmbedded("forgot-password.html"))
+  502: app.Get("/reset-password", serveEmbedded("reset-password.html"))
+  503: app.Get("/verify-email", serveEmbedded("verify-email.html"))
+  504: app.Get("/resend-verification", serveEmbedded("resend-verification.html"))
+  509: app.Get("/dashboard", func(c *fiber.Ctx) error {
+  537: app.Get("/health", func(c *fiber.Ctx) error {
+  548: "/api/admin/tenants",
+  589: "/api/admin/tenants/:id",
+  619: "/api/admin/tenants/:id/bootstrap-owner",
+  725: "/api/admin/tenants/:id/usage",
+  738: "/api/admin/tenants/:id/audit",
+  748: "/api/admin/platform/audit",
+  758: "/api/admin/agents",
+  781: "/api/admin/tools",
+  804: "/api/tenants/:id/users",
+  954: "/api/tenants/:id/users",
+  1007: "/api/tenants/:id/roles",
+  1028: "/api/tenants/:id/custom-roles",
+  1042: "/api/tenants/:id/custom-roles",
+  1056: "/api/tenants/:id/custom-roles/:role_id",
+  1070: "/api/tenants/:id/custom-roles/:role_id",
+  1088: "/api/tenants/:id/usage",
+  1107: "/api/tenants/:id/usage/history",
+  1125: "/api/tenants/:id/audit",
+  1139: "/api/tenants/:id/security-events",
+  1156: "/api/tenants/:id/agents",
+  1170: "/api/tenants/:id/agents",
+  1184: "/api/tenants/:id/agents/:agent_id",
+  1198: "/api/tenants/:id/agents/:agent_id/status",
+  1212: "/api/tenants/:id/agents/:agent_id",
+  1230: "/api/tenants/:id/tools",
+  1244: "/api/tenants/:id/tools",
+  1258: "/api/tenants/:id/tools/:tool_id",
+  1271: "/api/tenants/:id/tools/:tool_id",
+  1284: "/api/tenants/:id/tools/:tool_id/execute",
+  1302: "/api/tenants/:id/mcp/query",
+  1327: "/api/tenants/:id/mcp/rpc",
+  1377: "/api/tenants/:id/mcp/rpc",
+  1409: "/mcp/v1/rpc",
+  1425: "/mcp/v1/rpc",
+  1443: "/api/tenants/:id/projects",
+  1456: "/api/tenants/:id/projects",
+  1469: "/api/tenants/:id/projects/:project_id",
+  1482: "/api/tenants/:id/projects/:project_id",
+  1499: "/api/tenants/:id/billing/checkout",
+  1513: "/api/tenants/:id/billing/portal",
+  1527: "/api/billing/webhook",
+  1536: "/api/tenants/:id/projects/:project_id/keys",
+  1550: "/api/tenants/:id/projects/:project_id/keys",
+  1563: "/api/tenants/:id/projects/:project_id/keys/:key_id/revoke",
+  1583: "/v1/events",
+  1590: "/v1/events/batch",
+  1597: "/v1/events",
+  1604: "/v1/events/verify",
+  1613: "/v1/events/export",
+  1624: "/api/tenants/:id/data/status",
+  1640: "/api/tenants/:id/data/delete",
+  1652: "/api/tenants/:id/data/restore",
+  1668: "/api/tenants/:id/data/purge",
+  1688: "/api/admin/tenants/:id/data/delete",
+  1694: "/api/admin/tenants/:id/data/purge",
+  1719: "/api/tenants/:id/audit/verify",
+  1731: "/api/tenants/:id/audit/verify",
+  1743: "/api/tenants/:id/audit/retention",
+  1756: "/api/tenants/:id/audit/retention",
+  1769: "/api/tenants/:id/audit/retention/cleanup",
+  1782: "/api/tenants/:id/audit/export",
+  1794: "/api/tenants/:id/notification-settings",
+  1806: "/api/tenants/:id/notification-settings",
+  1853: "/api/auth/register",
+  2030: "/api/auth/login",
+  2115: "/api/auth/login",
+  2218: app.Get("/api/auth/verify-email", func(c *fiber.Ctx) error {
+  2236: app.Post("/api/auth/resend-verification", func(c *fiber.Ctx) error {
+  2254: app.Post("/api/auth/forgot-password", func(c *fiber.Ctx) error {
+  2272: app.Post("/api/auth/reset-password", func(c *fiber.Ctx) error {
+  2335: "/api/auth/oauth/:provider/start",
+  2341: "/api/auth/oauth/:provider/callback",
+  2351: "/api/auth/refresh",
+  2437: app.Get("/api/auth/session", requireAuth, func(c *fiber.Ctx) error {
+  2466: "/api/auth/logout",

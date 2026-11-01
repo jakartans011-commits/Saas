@@ -1,0 +1,66 @@
+﻿== scripts ==
+backup-postgres.ps1
+build.ps1
+build.sh`
+restore-postgres.ps1
+test-backup-restore-e2e.ps1
+test.sh
+
+== migrations ==
+000001_init.down.sql
+000001_init.up.sql
+000002_quota.down.sql
+000002_quota.up.sql
+000003_payload_exact_bytes.down.sql
+000003_payload_exact_bytes.up.sql
+000004_event_retention.down.sql
+000004_event_retention.up.sql
+000005_stripe_webhook_events.down.sql
+000005_stripe_webhook_events.up.sql
+000006_auth_tables.down.sql
+000006_auth_tables.up.sql
+000007_tenant_quota.down.sql
+000007_tenant_quota.up.sql
+000008_audit_events.down.sql
+000008_audit_events.up.sql
+000009_audit_verify_cache.down.sql
+000009_audit_verify_cache.up.sql
+000010_audit_verify_checkpoints.down.sql
+000010_audit_verify_checkpoints.up.sql
+
+== data ==
+backend.db.lock  0 MB
+dashboard.db.lock  0 MB
+perf-history-test.db  2048 MB
+saas-api.db  8 MB
+saas-api.db.bak-20260919-022006  8 MB
+latest.json  0 MB
+
+== health/ready routes ==
+\cmd\saas-api\agent_test.go:259: "endpoint": "http://localhost:8080/health",
+\cmd\saas-api\app.go:533: app.Get("/health", func(c *fiber.Ctx) error {
+\cmd\saas-api\usage_test.go:334: status := env.doJSON(t, fiber.MethodGet, "/health",
+\core\logger.go:9: "gopkg.in/natefinch/lumberjack.v2"
+\core\logger.go:84: logWriter := &lumberjack.Logger{
+\core\metrics.go:123: http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+\core\adapter\logger_adapter.go:9: "gopkg.in/natefinch/lumberjack.v2"
+\core\adapter\logger_adapter.go:65: logWriter := &lumberjack.Logger{
+\core\health\alert_engine.go:1: // core/health/alert_engine.go
+\core\health\heartbeat.go:1: // core/health/heartbeat.go
+\core\health\metrics_collector.go:1: // core/health/metrics_collector.go
+\core\health\monitor.go:1: // core/health/monitor.go
+\core\runtime\runtime.go:13: "trailseal/core/health"
+\middleware\audit_middleware.go:51: // /health, /api/auth/*, /api/admin/*
+\middleware\audit_middleware.go:52: if path == "/health" ||
+\middleware\audit_middleware_test.go:131: app.Get("/health", func(c *fiber.Ctx) error {
+\middleware\audit_middleware_test.go:135: req := httptest.NewRequest("GET", "/health", nil)
+\middleware\audit_middleware_test.go:154: if e.Action == "GET /health" {
+\middleware\usage_middleware.go:21: //   - /health
+\middleware\usage_middleware.go:44: // /health, /api/auth/*, /api/admin/*
+\middleware\usage_middleware.go:45: if path == "/health" ||
+\middleware\usage_middleware_test.go:107: // skip. Tanpa token, /health pun akan kena 401 duluan, bukan diteruskan.
+\middleware\usage_middleware_test.go:114: app.Get("/health", func(c *fiber.Ctx) error { return c.SendString("ok") })
+\middleware\usage_middleware_test.go:116: req := authedRequest(t, "GET", "/health", "tenant-1", "user-1")
+\middleware\usage_middleware_test.go:127: t.Errorf("expected /health to be skipped (0 saves), got %d", store.saveCalls)
+\observability\sentry.go:345: // oleh /health atau startup log, BUKAN untuk gate business logic.
+\sdk\health.go:1: // sdk/health.go

@@ -1,0 +1,59 @@
+# configs/malleable.yaml
+# Malleable C2 Profile - Traffic Shaping Configuration
+
+profile:
+  name: "windows-update"
+  version: "1.0"
+  description: "Menyamar sebagai Windows Update traffic"
+
+# ============================================================================
+# TRAFFIC SHAPING
+# ============================================================================
+
+http:
+  # User-Agent rotation
+  user_agents:
+    - "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Windows Update)"
+    - "Microsoft-Windows-Update/10.0"
+    - "Windows-Update-Agent/10.0.19041"
+
+  # Header manipulation
+  headers:
+    - "Accept: */*"
+    - "Accept-Encoding: gzip, deflate, br"
+    - "Cache-Control: no-cache"
+    - "Connection: keep-alive"
+    - "Content-Type: application/octet-stream"
+    - "X-Update-ID: {random}"
+    - "X-Client-Version: 10.0.19041"
+
+  # URL path disguise
+  url_paths:
+    - "/api/update/check"
+    - "/download/update"
+    - "/service/update"
+    - "/windows/update"
+    - "/api/telemetry"
+
+# ============================================================================
+# PAYLOAD ENCRYPTION
+# ============================================================================
+
+encryption:
+  enabled: true
+  algorithm: "AES-256-GCM"
+  key_rotation: "session"
+
+# ============================================================================
+# BEHAVIOR
+# ============================================================================
+
+behavior:
+  # Delay pattern (ms)
+  delay:
+    min: 500
+    max: 5000
+    jitter: true
+
+  # Rotasi profile setiap N beacon
+  rotation_interval: 10

@@ -1,0 +1,1378 @@
+openapi: 3.0.3
+info:
+  title: TrailSeal SaaS API
+  description: |
+    Multi-tenant Audit Log & MCP Gateway Platform with:
+    - JWT Authentication
+    - Tenant Isolation
+    - RBAC + Capability-based Authorization
+    - Usage Metering
+    - Audit Logging
+    - GDPR tooling (Soft Delete, Restore, Purge)
+    - Rate Limiting (1000 req/60s per tenant; MCP traffic per plan: Free 60, Pro 300, Business 1000 req/min)
+    - MCP Gateway for LLM/Agent Integration
+  version: 1.0.0
+  contact:
+    name: TrailSeal Team
+servers:
+  - url: http://localhost:8090
+    description: Development server
+  - url: https://api.trailseal.example.com
+    description: Production server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    RootAuth:
+      type: apiKey
+      in: header
+      name: X-Root-API-Key
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Tenant ID
+        name:
+          type: string
+          description: Tenant name
+        status:
+          type: string
+          enum: [active, suspended, deprovisioned]
+        created_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          description: GDPR soft delete timestamp (omit if not deleted)
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        email:
+          type: string
+          format: email
+        role_id:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended]
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, error]
+        capabilities:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Tool:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [health_check, metadata_lookup, echo]
+        config:
+          type: object
+          additionalProperties:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UsageEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        event_type:
+          type: string
+          enum: [api_request, module_execution]
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        user_id:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        outcome:
+          type: string
+          enum: [success, failure, denied]
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    # ============================================================
+    # MCP SCHEMAS
+    # ============================================================
+    MCPQueryRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Natural language query untuk agent
+          example: "echo hello"
+        context:
+          type: object
+          additionalProperties:
+            type: string
+          description: Optional context untuk execution
+        params:
+          type: object
+          additionalProperties: true
+          description: Optional parameters
+      required:
+        - query
+
+    MCPToolCallRequest:
+      type: object
+      properties:
+        tool_call:
+          type: object
+          properties:
+            tool_name:
+              type: string
+              description: Nama tool yang akan dipanggil
+              example: "echo"
+            params:
+              type: object
+              additionalProperties: true
+              description: Parameter untuk tool
+              example:
+                message: "Hello World!"
+          required:
+            - tool_name
+      required:
+        - tool_call
+
+    MCPResponse:
+      type: object
+      properties:
+        response:
+          type: string
+          description: Hasil eksekusi tool
+        tools_used:
+          type: array
+          items:
+            type: string
+          description: Daftar tool yang digunakan
+        execution_time_ms:
+          type: integer
+          description: Waktu eksekusi dalam milidetik
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Metadata (tenant_id, tool_name, request_id)
+        error:
+          type: string
+          description: Error message jika terjadi kegagalan
+
+    RetentionPolicy:
+      type: object
+      properties:
+        retention_days:
+          type: integer
+          description: How long audit logs are kept
+        anonymization_days:
+          type: integer
+          description: How long before PII is anonymized
+        cleanup_interval_hours:
+          type: integer
+          description: How often cleanup runs
+
+    DeletionStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [soft_deleted, restored, purged]
+        tenant_id:
+          type: string
+        deleted_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ============================================================
+  # HEALTH
+  # ============================================================
+  /health:
+    get:
+      summary: Health check
+      description: Returns service status
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  # ============================================================
+  # AUTH
+  # ============================================================
+  /api/auth/login:
+    post:
+      summary: Login
+      description: Authenticate user and get access + refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Get new access token using refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+              required:
+                - refresh_token
+      responses:
+        "200":
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+
+  /api/auth/logout:
+    post:
+      summary: Logout
+      description: Revoke current access token
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: logged_out
+
+  # ============================================================
+  # ADMIN — TENANTS
+  # ============================================================
+  /api/admin/tenants:
+    post:
+      summary: Provision tenant
+      description: Create a new tenant (root only)
+      security:
+        - RootAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenant_id:
+                  type: string
+                name:
+                  type: string
+              required:
+                - tenant_id
+                - name
+      responses:
+        "200":
+          description: Tenant provisioned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant:
+                    $ref: "#/components/schemas/Tenant"
+
+  /api/admin/tenants/{id}:
+    delete:
+      summary: Deprovision tenant
+      description: Hard delete tenant and all associated data (root only)
+      security:
+        - RootAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant deprovisioned
+        "404":
+          description: Tenant not found
+
+  /api/admin/tenants/{id}/bootstrap-owner:
+    post:
+      summary: Bootstrap owner
+      description: Create first owner user for tenant (root only)
+      security:
+        - RootAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: Owner created
+        "404":
+          description: Tenant not found
+        "409":
+          description: Owner already exists
+
+  # ============================================================
+  # ADMIN — USAGE & AUDIT
+  # ============================================================
+  /api/admin/tenants/{id}/usage:
+    get:
+      summary: Get tenant usage (admin)
+      description: Root can view any tenant's usage
+      security:
+        - RootAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        "200":
+          description: Usage events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  limit:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UsageEvent"
+                  count:
+                    type: integer
+
+  /api/admin/tenants/{id}/audit:
+    get:
+      summary: Get tenant audit logs (admin)
+      security:
+        - RootAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        "200":
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  limit:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditEvent"
+                  count:
+                    type: integer
+
+  # ============================================================
+  # ADMIN — AGENTS & TOOLS
+  # ============================================================
+  /api/admin/agents:
+    get:
+      summary: List all agents (admin)
+      security:
+        - RootAuth: []
+      responses:
+        "200":
+          description: All agents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Agent"
+                  count:
+                    type: integer
+
+  /api/admin/tools:
+    get:
+      summary: List all tools (admin)
+      security:
+        - RootAuth: []
+      responses:
+        "200":
+          description: All tools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tools:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Tool"
+                  count:
+                    type: integer
+
+  # ============================================================
+  # ADMIN — COMPLIANCE
+  # ============================================================
+  /api/admin/tenants/{id}/data/delete:
+    post:
+      summary: Soft delete tenant (admin)
+      security:
+        - RootAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant soft-deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionStatus"
+
+  /api/admin/tenants/{id}/data/purge:
+    post:
+      summary: Purge tenant (admin)
+      description: Permanently delete tenant after grace period
+      security:
+        - RootAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant purged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionStatus"
+        "400":
+          description: Grace period not passed or tenant not soft-deleted
+
+  # ============================================================
+  # ADMIN — AUDIT RETENTION
+  # ============================================================
+  /api/admin/audit/retention:
+    get:
+      summary: Get audit retention policy
+      security:
+        - RootAuth: []
+      responses:
+        "200":
+          description: Retention policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetentionPolicy"
+
+    put:
+      summary: Update audit retention policy
+      security:
+        - RootAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                retention_days:
+                  type: integer
+                anonymization_days:
+                  type: integer
+      responses:
+        "200":
+          description: Policy updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetentionPolicy"
+
+  /api/admin/audit/cleanup:
+    post:
+      summary: Trigger audit cleanup
+      security:
+        - RootAuth: []
+      responses:
+        "200":
+          description: Cleanup completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: cleanup_completed
+                  events_anonymized:
+                    type: integer
+                  events_deleted:
+                    type: integer
+
+  # ============================================================
+  # TENANT — USERS
+  # ============================================================
+  /api/tenants/{id}/users:
+    post:
+      summary: Create user
+      description: Create a new user in tenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                role_id:
+                  type: string
+              required:
+                - email
+                - password
+                - role_id
+      responses:
+        "200":
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+
+  # ============================================================
+  # TENANT — AGENTS
+  # ============================================================
+  /api/tenants/{id}/agents:
+    post:
+      summary: Create agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                capabilities:
+                  type: array
+                  items:
+                    type: string
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required:
+                - name
+      responses:
+        "201":
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent:
+                    $ref: "#/components/schemas/Agent"
+
+    get:
+      summary: List agents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  agents:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Agent"
+                  count:
+                    type: integer
+
+  /api/tenants/{id}/agents/{agent_id}:
+    get:
+      summary: Get agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent:
+                    $ref: "#/components/schemas/Agent"
+        "404":
+          description: Agent not found
+
+    delete:
+      summary: Delete agent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: deleted
+
+  /api/tenants/{id}/agents/{agent_id}/status:
+    put:
+      summary: Update agent status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, inactive, error]
+              required:
+                - status
+      responses:
+        "200":
+          description: Agent status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent:
+                    $ref: "#/components/schemas/Agent"
+
+  # ============================================================
+  # TENANT — TOOLS
+  # ============================================================
+  /api/tenants/{id}/tools:
+    post:
+      summary: Create tool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                type:
+                  type: string
+                  enum: [health_check, metadata_lookup, echo]
+                config:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required:
+                - name
+                - type
+      responses:
+        "201":
+          description: Tool created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tool:
+                    $ref: "#/components/schemas/Tool"
+
+    get:
+      summary: List tools
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of tools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  tools:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Tool"
+                  count:
+                    type: integer
+
+  /api/tenants/{id}/tools/{tool_id}:
+    get:
+      summary: Get tool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tool_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tool details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tool:
+                    $ref: "#/components/schemas/Tool"
+
+    delete:
+      summary: Delete tool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tool_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tool deleted
+
+  /api/tenants/{id}/tools/{tool_id}/execute:
+    post:
+      summary: Execute tool
+      description: Execute a tool with allowlisted handlers only
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tool_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                params:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Tool execution result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  result:
+                    type: object
+                  execution_ms:
+                    type: integer
+                  tool:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      type:
+                        type: string
+
+  # ============================================================
+  # TENANT — MCP (Model Context Protocol)
+  # ============================================================
+  /api/tenants/{id}/mcp/query:
+    post:
+      summary: MCP Gateway Query
+      description: |
+        Kirim query atau tool call ke MCP Gateway.
+
+        ⚠️ **PENTING**: Jangan kirim format JSON-RPC ke endpoint ini!
+
+        ✅ **BENAR**: `{"query": "echo hello"}`
+        ✅ **BENAR**: `{"tool_call": {"tool_name": "echo", "params": {"message": "Hello!"}}}`
+        ❌ **SALAH**: `{"jsonrpc": "2.0", "method": "tools/list"}`
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Tenant ID
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/MCPQueryRequest"
+                - $ref: "#/components/schemas/MCPToolCallRequest"
+            examples:
+              query_mode:
+                summary: Query Mode (Natural Language)
+                description: Kirim natural language query ke agent
+                value:
+                  query: "echo hello"
+              toolcall_mode:
+                summary: ToolCall Mode (Explicit Tool)
+                description: Panggil tool secara eksplisit
+                value:
+                  tool_call:
+                    tool_name: "echo"
+                    params:
+                      message: "Hello World!"
+      responses:
+        "200":
+          description: MCP response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MCPResponse"
+              example:
+                response: "Echo: hello"
+                execution_time_ms: 12
+                metadata:
+                  tenant_id: "test-company"
+                  tool_name: "echo"
+                  request_id: "abc-123"
+        "400":
+          description: Bad Request - Format salah atau tool tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                no_query:
+                  value:
+                    error: "query is required"
+                tool_not_found:
+                  value:
+                    error: "tool not found"
+
+  # ============================================================
+  # TENANT — USAGE & AUDIT
+  # ============================================================
+  /api/tenants/{id}/usage:
+    get:
+      summary: Get tenant usage
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        "200":
+          description: Usage events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  limit:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UsageEvent"
+                  count:
+                    type: integer
+
+  /api/tenants/{id}/audit:
+    get:
+      summary: Get tenant audit logs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        "200":
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  limit:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditEvent"
+                  count:
+                    type: integer
+
+  /mcp/v1/rpc:
+    post:
+      summary: MCP JSON-RPC endpoint (API key)
+      description: >-
+        MCP Streamable HTTP endpoint for generic MCP clients (Claude Desktop,
+        Cursor). Authenticate with an API key that has read access, sent as
+        "Authorization: Bearer tsk_...". Requests are rate limited per tenant,
+        in the same pool as the dashboard MCP routes. Limits per minute:
+        Free 60, Pro 300, Business 1000.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: JSON-RPC response
+        "401":
+          description: Missing or invalid API key
+        "403":
+          description: API key scope is insufficient (read access required)
+        "429":
+          description: MCP rate limit for the tenant's plan exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: rate_limit_exceeded
+                  limit:
+                    type: integer
+                  priority:
+                    type: string
+                    example: mcp
+                  reset:
+                    type: integer
+    delete:
+      summary: Terminate an MCP session (API key)
+      description: >-
+        Counts toward the same per-tenant MCP rate limit as POST.
+      responses:
+        "2XX":
+          description: Session terminated
+        "401":
+          description: Missing or invalid API key
+        "403":
+          description: API key scope is insufficient (read access required)
+        "429":
+          description: MCP rate limit for the tenant's plan exceeded
+
+  /api/tenants/{id}/audit/export:
+    get:
+      summary: Export audit logs (GDPR)
+      description: Export audit logs as JSON (right to access). Free plan is capped at the latest 100 events; Pro and Business get the full export.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 1000
+            maximum: 10000
+      responses:
+        "200":
+          description: Audit export
+          headers:
+            X-Export-Capped:
+              description: '"true" when the plan cap truncated the export (Free plan).'
+              schema:
+                type: string
+            X-Export-Plan-Cap:
+              description: Maximum number of events the plan allows per export.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenant_id:
+                    type: string
+                  exported_at:
+                    type: string
+                    format: date-time
+                  total_events:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditEvent"
+
+  # ============================================================
+  # TENANT — COMPLIANCE (GDPR)
+  # ============================================================
+  /api/tenants/{id}/data/delete:
+    post:
+      summary: Soft delete tenant (GDPR)
+      description: Request deletion of all tenant data (right to erasure)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant soft-deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionStatus"
+        "404":
+          description: Tenant not found
+        "409":
+          description: Already soft-deleted
+
+  /api/tenants/{id}/data/restore:
+    post:
+      summary: Restore tenant
+      description: Restore soft-deleted tenant and all data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionStatus"
+        "400":
+          description: Not soft-deleted
+
+  /api/tenants/{id}/data/purge:
+    post:
+      summary: Purge tenant data
+      description: Permanently delete tenant data (after grace period)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tenant purged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionStatus"
+        "400":
+          description: Grace period not passed or not soft-deleted

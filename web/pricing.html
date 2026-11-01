@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — TrailSeal</title>
+  <meta name="description" content="TrailSeal pricing: Free, Pro, and Business plans for hash-chained audit logging and MCP gateway access." />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVBAR (same markup as index.html)
+       ============================================================ -->
+  <header class="tsnav">
+    <div class="tsnav-inner">
+      <a href="/" class="brand-lockup" aria-label="TrailSeal home">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </a>
+
+      <nav class="tsnav-links" aria-label="Main">
+        <div class="tsnav-dd">
+          <button type="button" class="tsnav-link" aria-expanded="false" aria-haspopup="true">Product <span class="tsnav-caret" aria-hidden="true"></span></button>
+          <div class="tsnav-menu">
+            <a href="/#how-it-works"><strong>How it works</strong><span>From agent call to provable record</span></a>
+            <a href="/#capabilities"><strong>Capabilities</strong><span>Verification, isolation, MCP gateway</span></a>
+            <a href="/pricing.html"><strong>Plans &amp; quotas</strong><span>Free tier to paid</span></a>
+          </div>
+        </div>
+        <a href="/docs.html" class="tsnav-link">Docs</a>
+        <a href="/api-reference.html" class="tsnav-link">API Reference</a>
+        <a href="/pricing.html" class="tsnav-link" aria-current="page">Pricing</a>
+        <a href="/security.html" class="tsnav-link">Security</a>
+      </nav>
+
+      <div class="tsnav-cta" id="nav-cta">
+        <a href="/login" class="btn btn-ghost btn-sm" data-auth-link>Log in</a>
+        <a href="/signup" class="btn btn-primary btn-sm">Start free</a>
+      </div>
+
+      <button type="button" class="tsnav-burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+
+    <div class="tsnav-panel">
+      <a href="/#how-it-works">How it works</a>
+      <a href="/#capabilities">Capabilities</a>
+      <a href="/docs.html">Docs</a>
+      <a href="/api-reference.html">API Reference</a>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/security.html">Security</a>
+      <div class="tsnav-panel-cta">
+        <a href="/login" class="btn btn-ghost" data-auth-link>Log in</a>
+        <a href="/signup" class="btn btn-primary">Start free</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       PRICING HEADER
+       ============================================================ -->
+  <section class="pricing-hero">
+    <div class="pricing-hero-inner">
+      <div class="eyebrow"><span class="status-dot ok"></span> Simple, usage-based pricing</div>
+      <h1>Plans that scale with your event volume</h1>
+      <p class="hero-lede">Every plan includes the full hash-chained audit log and MCP gateway. What changes is your event volume, how long events are retained, and the team features you get.</p>
+      <!-- Toggle tahunan disembunyikan sampai price ID tahunan Stripe diisi
+           (STRIPE_PRICE_PRO_ANNUAL / STRIPE_PRICE_BUSINESS_ANNUAL); lalu hapus atribut hidden. -->
+      <div class="billing-toggle" id="billing-toggle" role="group" aria-label="Billing period" hidden>
+        <button type="button" class="billing-toggle-btn active" data-interval="monthly" aria-pressed="true">Monthly</button>
+        <button type="button" class="billing-toggle-btn" data-interval="annual" aria-pressed="false">Annual <span class="billing-toggle-note">2 months free</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PRICING TABLE
+       ============================================================ -->
+  <section class="section pricing-section">
+    <div class="section-inner">
+      <div class="pricing-grid">
+
+        <!-- FREE -->
+        <div class="card pricing-card">
+          <div class="pricing-card-head">
+            <div class="pricing-tier">Free</div>
+            <div class="pricing-price"><span class="price-amount">$0</span><span class="price-period">/month</span></div>
+            <p class="pricing-blurb">For trying the chain out — enough events to see it work end to end.</p>
+          </div>
+          <div class="pricing-specs">
+            <div class="pricing-spec"><span class="text-dim">Events / month</span><span class="text-mono">5,000</span></div>
+            <div class="pricing-spec"><span class="text-dim">Retention</span><span class="text-mono">14 days</span></div>
+          </div>
+          <ul class="pricing-features">
+            <li>Hash-chained audit log</li>
+            <li>MCP gateway (evaluation, no SLA), 60 requests/min</li>
+            <li>Audit export: latest 100 events</li>
+            <li>1 active API key</li>
+            <li>Single user (Owner only)</li>
+            <li>Documentation</li>
+          </ul>
+          <a href="/signup" class="btn btn-secondary pricing-cta" data-plan="free">Start Free</a>
+        </div>
+
+        <!-- PRO (highlighted) -->
+        <div class="card pricing-card pricing-card-featured">
+          <div class="pricing-popular-badge">Most popular</div>
+          <div class="pricing-card-head">
+            <div class="pricing-tier">Pro</div>
+            <div class="pricing-price"><span class="price-amount">$99</span><span class="price-period">/month</span></div>
+            <p class="pricing-blurb">For teams running agents in production and shipping audit trails to customers or auditors.</p>
+          </div>
+          <div class="pricing-specs">
+            <div class="pricing-spec"><span class="text-dim">Events / month</span><span class="text-mono">250,000</span></div>
+            <div class="pricing-spec"><span class="text-dim">Retention</span><span class="text-mono">180 days</span></div>
+          </div>
+          <ul class="pricing-features">
+            <li>Everything in Free</li>
+            <li>MCP gateway (production access)</li>
+            <li>180-day retention &amp; full audit export</li>
+            <li>Unlimited scoped API keys, 300 MCP requests/min</li>
+            <li>Team roles: Owner, Admin, Member</li>
+            <li>Documentation</li>
+          </ul>
+          <a href="/signup" class="btn btn-primary pricing-cta" data-plan="pro">Start with Pro</a>
+        </div>
+
+        <!-- BUSINESS -->
+        <div class="card pricing-card">
+          <div class="pricing-card-head">
+            <div class="pricing-tier">Business</div>
+            <div class="pricing-price"><span class="price-amount">$299</span><span class="price-period">/month</span></div>
+            <p class="pricing-blurb">For high-volume agent fleets and compliance-driven retention requirements.</p>
+          </div>
+          <div class="pricing-specs">
+            <div class="pricing-spec"><span class="text-dim">Events / month</span><span class="text-mono">1,000,000</span></div>
+            <div class="pricing-spec"><span class="text-dim">Retention</span><span class="text-mono">365 days</span></div>
+          </div>
+          <ul class="pricing-features">
+            <li>Everything in Pro</li>
+            <li>MCP gateway (production access), 1,000 requests/min</li>
+            <li>365-day retention &amp; full audit export</li>
+            <li>Custom roles &amp; permissions</li>
+          </ul>
+          <a href="/signup" class="btn btn-secondary pricing-cta" data-plan="business">Start with Business</a>
+        </div>
+
+      </div>
+      <p class="pricing-footnote text-dim">Need a higher event limit or a longer retention window than Business offers? <a href="mailto:support@trailseal.dev" class="link">Contact us</a> for a custom plan.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FULL FEATURE COMPARISON
+       ============================================================ -->
+  <section class="section compare-section">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">Compare in detail</div>
+        <h2>Everything included in each plan</h2>
+      </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Free</th>
+              <th>Pro</th>
+              <th>Business</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Price</td><td class="text-mono">$0/month</td><td class="text-mono">$99/month</td><td class="text-mono">$299/month</td></tr>
+            <tr><td>Best for</td><td>Evaluation and experimentation</td><td>Production teams</td><td>Organizations with governance needs</td></tr>
+            <tr><td>Events per month</td><td class="text-mono">5,000</td><td class="text-mono">250,000</td><td class="text-mono">1,000,000</td></tr>
+            <tr><td>Log retention</td><td>14 days</td><td>180 days</td><td>365 days</td></tr>
+            <tr><td>Account-deletion recovery</td><td>30 days</td><td>30 days</td><td>60 days</td></tr>
+            <tr><td>MCP Gateway</td><td>Evaluation, no SLA</td><td>Production access</td><td>Production access</td></tr>
+            <tr><td>Audit logs</td><td>Included (14-day retention)</td><td>Included</td><td>Included</td></tr>
+            <tr><td>Cryptographic audit hash chain</td><td>Included</td><td>Included</td><td>Included</td></tr>
+            <tr><td>MCP audit lookup</td><td>Included</td><td>Included</td><td>Included</td></tr>
+            <tr><td>Audit export</td><td>Latest 100 events</td><td>Full</td><td>Full</td></tr>
+            <tr><td>API keys</td><td>1 active key</td><td>Unlimited</td><td>Unlimited</td></tr>
+            <tr><td>API-key scope enforcement</td><td>Included</td><td>Included</td><td>Included</td></tr>
+            <tr><td>API-key revocation</td><td>Included</td><td>Included</td><td>Included</td></tr>
+            <tr><td>RBAC</td><td>Owner-only access</td><td>Owner / Admin / Member</td><td>Custom roles and permissions</td></tr>
+            <tr><td>MCP requests / minute</td><td class="text-mono">60</td><td class="text-mono">300</td><td class="text-mono">1,000</td></tr>
+            <tr><td>Quota enforcement</td><td>Included</td><td>Included</td><td>Included</td></tr>
+            <tr><td>Usage dashboard</td><td>Included</td><td>Included</td><td>Included</td></tr>
+            <tr><td>Support</td><td>Documentation</td><td>Documentation</td><td>Documentation</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FAQ
+       ============================================================ -->
+  <section class="section section-alt">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">Questions</div>
+        <h2>Pricing FAQ</h2>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <h3>What happens if I go over my monthly event limit?</h3>
+          <p>Ingestion returns a quota-exceeded response once you hit the limit for the month — events already logged stay intact and verifiable. Upgrade at any time and the new limit applies immediately, no need to wait for the next billing cycle.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I switch plans later?</h3>
+          <p>Yes. Upgrades and downgrades take effect on your subscription right away; your event quota and retention window update to match the new plan.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I add teammates on the Free plan?</h3>
+          <p>No. Free is a single-user plan (Owner only). Upgrade to Pro to invite teammates with Admin or Member roles.</p>
+        </div>
+        <div class="faq-item">
+          <h3>What happens to my events if I cancel?</h3>
+          <p>Your tenant drops to the Free plan's quota and retention window — events beyond that retention window age out under the Free plan's schedule. Admin and Member accounts are suspended, not deleted, and become active again if you upgrade. On Free, only your oldest active API key keeps working; the others are suspended, not deleted, and work again if you upgrade.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Is retention the same as backup?</h3>
+          <p>No. Retention controls how long events stay queryable through the API before they're purged. Backups are a separate, infrastructure-level safeguard against data loss.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER (same markup as index.html)
+       ============================================================ -->
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="footer-brand">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </div>
+      <nav class="footer-links">
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs.html">Docs</a>
+        <a href="/api-reference.html">API Reference</a>
+        <a href="mailto:support@trailseal.dev">Support</a>
+        <a href="https://github.com/shadowharvest/saas-agent" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="text-dim footer-copyright">© 2026 TrailSeal. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <style>
+    .billing-toggle { display: inline-flex; gap: 4px; margin-top: 20px; padding: 4px; border: 1px solid var(--border, rgba(128,128,128,.4)); border-radius: 999px; }
+    .billing-toggle[hidden] { display: none; }
+    .billing-toggle-btn { appearance: none; border: 0; background: transparent; color: inherit; font: inherit; padding: 8px 16px; border-radius: 999px; cursor: pointer; opacity: .7; }
+    .billing-toggle-btn.active { background: var(--accent, #3b82f6); color: #fff; opacity: 1; }
+    .billing-toggle-note { font-size: .8em; opacity: .85; margin-left: 6px; }
+  </style>
+
+  <script>
+  (function () {
+    var PRICES = {
+      pro:      { monthly: ['$99', '/month'],  annual: ['$990', '/year'] },
+      business: { monthly: ['$299', '/month'], annual: ['$2,990', '/year'] }
+    };
+    function apply(interval) {
+      document.body.setAttribute('data-interval', interval);
+      document.querySelectorAll('.billing-toggle-btn').forEach(function (b) {
+        var on = b.getAttribute('data-interval') === interval;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      Object.keys(PRICES).forEach(function (plan) {
+        var cta = document.querySelector('.pricing-cta[data-plan="' + plan + '"]');
+        var card = cta && cta.closest('.pricing-card');
+        if (!card) return;
+        var amount = card.querySelector('.price-amount');
+        var period = card.querySelector('.price-period');
+        if (amount) amount.textContent = PRICES[plan][interval][0];
+        if (period) period.textContent = PRICES[plan][interval][1];
+      });
+    }
+    document.querySelectorAll('.billing-toggle-btn').forEach(function (b) {
+      b.addEventListener('click', function () { apply(b.getAttribute('data-interval')); });
+    });
+    apply('monthly');
+  })();
+  </script>
+
+  <script>
+  (async function () {
+    var tenantId;
+    try {
+      var res = await fetch('/api/auth/session', { credentials: 'include' });
+      if (!res.ok) return; // belum login — navbar & tombol tetap default
+      var data = await res.json();
+      tenantId = data.tenant_id;
+    } catch (e) { return; }
+    if (!tenantId) return;
+
+    // Sudah login — ganti "Log in" / "Get started" jadi "Dashboard" saja.
+    var navCta = document.getElementById('nav-cta');
+    if (navCta) {
+      navCta.innerHTML = '<a href="/dashboard" class="btn btn-primary btn-sm">Go to Dashboard</a>';
+    }
+
+    document.querySelectorAll('.pricing-cta[data-plan]').forEach(function (btn) {
+      btn.addEventListener('click', async function (e) {
+        e.preventDefault();
+        var plan = btn.getAttribute('data-plan');
+        if (plan === 'free') {
+          window.location.href = '/dashboard';
+          return;
+        }
+
+        btn.textContent = 'Redirecting to Stripe…';
+        try {
+          var res = await fetch('/api/tenants/' + tenantId + '/billing/checkout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan: plan, interval: document.body.getAttribute('data-interval') || 'monthly' }),
+          });
+          var data = await res.json();
+          if (res.ok && data.checkout_url) {
+            window.location.href = data.checkout_url;
+          } else if (data && data.error === 'interval_not_available') {
+            btn.textContent = 'Annual billing is not available yet';
+          } else {
+            window.location.href = '/dashboard';
+          }
+        } catch (err) {
+          window.location.href = '/dashboard';
+        }
+      });
+    });
+  })();
+  </script>
+
+  <script src="/static/nav.js" defer></script>
+</body>
+</html>

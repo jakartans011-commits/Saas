@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS audit_verify_checkpoints;

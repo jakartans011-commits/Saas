@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrailSeal — Tamper-evident audit logging for LLM agents</title>
+  <meta name="description" content="TrailSeal is an append-only, hash-chained audit log and MCP gateway for LLM agent systems. Every tool call, verifiable." />
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <!-- ============================================================
+       HOME-ONLY STYLES
+       Scoped, reuses the tokens already defined in style.css
+       (IBM Plex Sans/Mono via its own @import — no extra font link
+       needed here — plus --console-line, --status-ok-bg/fg, --card,
+       etc.) so it inherits the console's actual look exactly.
+       ============================================================ -->
+  <style>
+    /* Fraunces only for this page's display headings — everything else
+       (buttons, nav, body copy) stays on the site's existing IBM Plex
+       Sans/Mono, so the rest of the product keeps its current voice. */
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
+
+    :root {
+      /* One new accent, used only for the chain-rail / seal motif below —
+         .btn-primary etc. keep using the existing --accent blue so
+         actionable elements stay identical to every other page. */
+      --seal: #c98a2e;
+      --seal-line: rgba(201, 138, 46, 0.45);
+      --paper: #f3ede0;
+      --paper-line: #e2d6bd;
+      --paper-ink: #332b1d;
+      --font-serif: 'Fraunces', var(--font-ui);
+    }
+
+    .hero h1,
+    .section-head h2,
+    .cta-band h2 {
+      font-family: var(--font-serif);
+      font-optical-sizing: auto;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+
+    /* Local eyebrow treatment: sentence case, no tracked-out caps, no
+       middle-dot chrome — .eyebrow itself (used by other pages too) is
+       left untouched in the shared stylesheet. */
+    .hero .eyebrow {
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .live-log {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--console-text-dim);
+      background: var(--console-bg);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--console-line);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .live-log .dot { color: var(--status-ok-dot); }
+
+    @keyframes chain-reveal {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chain-card .chain-row,
+    .chain-card .chain-link {
+      animation: chain-reveal 0.5s ease both;
+    }
+    .chain-card .chain-row:nth-child(1) { animation-delay: 0.05s; }
+    .chain-card .chain-link:nth-child(2) { animation-delay: 0.25s; }
+    .chain-card .chain-row:nth-child(3) { animation-delay: 0.35s; }
+    .chain-card .chain-link:nth-child(4) { animation-delay: 0.55s; }
+    .chain-card .chain-row:nth-child(5) { animation-delay: 0.65s; }
+    @media (prefers-reduced-motion: reduce) {
+      .chain-card .chain-row, .chain-card .chain-link { animation: none; }
+    }
+
+    /* ---- Chain rail ----
+       Shared spine for "How it works" and "What's live today": each
+       entry is numbered 0001…0008, continuing the exact seq format used
+       in the hero's chain-card — the page is laid out as the same kind
+       of chain the product logs, not a generic numbered-steps list. */
+    .rail-track {
+      position: relative;
+      padding-left: 34px;
+      margin-top: 32px;
+    }
+    .rail-track::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background: var(--surface-border-2);
+    }
+    .rail-node { position: relative; padding-bottom: 36px; }
+    .rail-node:last-child { padding-bottom: 0; }
+    .rail-node::before {
+      content: "";
+      position: absolute;
+      left: -34px;
+      top: 3px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--surface-card);
+      border: 2px solid var(--seal);
+    }
+    .rail-seq {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--seal);
+      margin-bottom: 8px;
+    }
+    .rail-node h3 {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      color: var(--text-primary);
+    }
+    .rail-node p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; max-width: 560px; }
+    .rail-metric {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--status-ok-fg);
+      background: var(--status-ok-bg);
+      border-radius: 999px;
+      padding: 1px 8px;
+      margin-left: 2px;
+    }
+    @media (max-width: 700px) {
+      .rail-track { padding-left: 26px; }
+      .rail-node::before { left: -26px; }
+    }
+
+    /* ---- Sealed ledger card (replaces the fake-testimonial pattern) ---- */
+    .sealed-card {
+      max-width: 720px;
+      margin: 0 auto;
+      position: relative;
+      background: var(--paper);
+      border: 1px solid var(--paper-line);
+      color: var(--paper-ink);
+      overflow: visible;
+    }
+    .sealed-card > p { color: #5c5138; margin: 0; }
+    .seal-stamp {
+      position: absolute;
+      top: -16px;
+      right: 28px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--paper);
+      border: 2px solid var(--seal-line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(-8deg);
+    }
+    .seal-stamp::before {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border: 1px solid var(--seal-line);
+      border-radius: 50%;
+    }
+    .seal-stamp svg { width: 16px; height: 16px; stroke: var(--seal); }
+    .honesty-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
+    .honesty-list li {
+      display: flex;
+      gap: 10px;
+      font-size: 14px;
+      color: #4a4128;
+      align-items: flex-start;
+    }
+    .honesty-list .status-dot {
+      margin-top: 5px;
+      flex-shrink: 0;
+      background: var(--seal) !important;
+    }
+
+    /* Slightly asymmetric hero (was an even 1fr/1fr split) and a touch
+       more size on the serif headline now that it's carrying more
+       visual weight than the old sans-serif one did. */
+    @media (min-width: 901px) {
+      .hero-inner { grid-template-columns: 1.15fr 0.85fr; }
+    }
+    .hero h1 { font-size: 47px; }
+    @media (max-width: 500px) {
+      .hero h1 { font-size: 34px; }
+    }
+
+    /* ---- Mobile overflow fix (pre-existing bug, not from this redesign) ----
+       .hero-copy / .hero-visual are grid items with no min-width set, so
+       they default to min-width:auto — meaning they refuse to shrink
+       below the widest unbreakable content inside them. That content is
+       the fake terminal line below, which has white-space:nowrap and no
+       min-width:0, so it was forcing the whole hero (and thus the page)
+       wider than the viewport on every phone-width screen. */
+    .hero-copy, .hero-visual { min-width: 0; }
+    .live-log span:not(.dot) {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body class="home brand">
+
+  <!-- ============================================================
+       NAVBAR
+       ============================================================ -->
+  <header class="tsnav">
+    <div class="tsnav-inner">
+      <a href="/" class="brand-lockup" aria-label="TrailSeal home">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </a>
+
+      <nav class="tsnav-links" aria-label="Main">
+        <div class="tsnav-dd">
+          <button type="button" class="tsnav-link" aria-expanded="false" aria-haspopup="true">Product <span class="tsnav-caret" aria-hidden="true"></span></button>
+          <div class="tsnav-menu">
+            <a href="#how-it-works"><strong>How it works</strong><span>From agent call to provable record</span></a>
+            <a href="#capabilities"><strong>Capabilities</strong><span>Verification, isolation, MCP gateway</span></a>
+            <a href="/pricing.html"><strong>Plans &amp; quotas</strong><span>Free tier to paid</span></a>
+          </div>
+        </div>
+        <a href="/docs.html" class="tsnav-link">Docs</a>
+        <a href="/api-reference.html" class="tsnav-link">API Reference</a>
+        <a href="/pricing.html" class="tsnav-link">Pricing</a>
+        <a href="/security.html" class="tsnav-link">Security</a>
+      </nav>
+
+      <div class="tsnav-cta">
+        <a href="/login" class="btn btn-ghost btn-sm" data-auth-link>Log in</a>
+        <a href="/signup" class="btn btn-primary btn-sm">Start free</a>
+      </div>
+
+      <button type="button" class="tsnav-burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+
+    <div class="tsnav-panel">
+      <a href="#how-it-works">How it works</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="/docs.html">Docs</a>
+      <a href="/api-reference.html">API Reference</a>
+      <a href="/pricing.html">Pricing</a>
+      <a href="/security.html">Security</a>
+      <div class="tsnav-panel-cta">
+        <a href="/login" class="btn btn-ghost" data-auth-link>Log in</a>
+        <a href="/signup" class="btn btn-primary">Start free</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       HERO
+       ============================================================ -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot ok"></span> Append-only, hash-chained, and tenant-isolated by default</div>
+        <h1>Every agent action,<br>provably logged.</h1>
+        <p class="hero-lede">
+          TrailSeal sits between your LLM agents and the tools they call.
+          Every call is written once to a hash-chained log and stays
+          verifiable after the fact — so when an agent acts, you can show
+          exactly what happened, not just claim it.
+        </p>
+        <div class="hero-actions">
+          <a href="/signup" class="btn btn-primary">Get Started</a>
+          <a href="/pricing.html" class="btn btn-secondary">View Pricing</a>
+        </div>
+        <div class="hero-meta text-dim">No credit card required on the Free tier · Self-serve tenant in minutes</div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="chain-card card">
+          <div class="live-log">
+            <span class="dot">●</span>
+            <span>agent.call(tools/call, "refund_lookup") → gateway → chain</span>
+          </div>
+          <div class="chain-card-head">
+            <span class="text-dim text-mono">/v1/events/verify</span>
+            <span class="badge ok"><span class="status-dot ok"></span>valid</span>
+          </div>
+          <div class="chain-rows">
+            <div class="chain-row">
+              <span class="chain-seq text-mono">0001</span>
+              <span class="chain-type">mcp.tool_call</span>
+              <span class="chain-hash text-mono">07e385ea…93bd</span>
+            </div>
+            <div class="chain-link" aria-hidden="true"></div>
+            <div class="chain-row">
+              <span class="chain-seq text-mono">0002</span>
+              <span class="chain-type">audit.append</span>
+              <span class="chain-hash text-mono">2b88f401…c7e2</span>
+            </div>
+            <div class="chain-link" aria-hidden="true"></div>
+            <div class="chain-row">
+              <span class="chain-seq text-mono">0003</span>
+              <span class="chain-type">agent.decision</span>
+              <span class="chain-hash text-mono">9dc45e12…7a0f</span>
+            </div>
+          </div>
+          <div class="chain-card-foot text-dim">Each hash includes the previous — break one link, break the proof.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       HOW IT WORKS
+       ============================================================ -->
+  <section class="section" id="how-it-works">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">How it works</div>
+        <h2>From agent call to provable record, in one hop</h2>
+      </div>
+
+      <div class="rail-track">
+        <div class="rail-node">
+          <span class="rail-seq">0001</span>
+          <h3>Your agent calls a tool</h3>
+          <p>Claude Code, Claude Desktop, or any MCP client calls a tool, prompt, or resource — authenticated by a scoped API key, resolved straight to your tenant.</p>
+        </div>
+        <div class="rail-node">
+          <span class="rail-seq">0002</span>
+          <h3>The gateway writes the event</h3>
+          <p>The call is written once to the event chain, hash-linked to the event before it, before the result is returned to your agent.</p>
+        </div>
+        <div class="rail-node">
+          <span class="rail-seq">0003</span>
+          <h3>Anyone verifies the chain</h3>
+          <p>Check integrity via <code>/v1/events/verify</code> or the dashboard's Chain Integrity card — valid, broken (with the exact event), or empty.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CAPABILITIES — grounded in what's actually built
+       ============================================================ -->
+  <section class="section section-alt" id="capabilities">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">What's live today</div>
+        <h2>Built for systems where "trust me" isn't good enough</h2>
+      </div>
+
+      <div class="rail-track">
+        <div class="rail-node">
+          <span class="rail-seq">0004</span>
+          <h3>Hash-chained verification</h3>
+          <p>Every event chained by hash. Full recheck on manual verify; refreshes run an incremental pass against a stored checkpoint <span class="rail-metric">sub-second</span> instead of rescanning the whole chain.</p>
+        </div>
+        <div class="rail-node">
+          <span class="rail-seq">0005</span>
+          <h3>Tenant isolation</h3>
+          <p>Projects, API keys, agents, and events are scoped to a tenant at the database layer. Cross-tenant reads fail closed — not just hidden in the UI.</p>
+        </div>
+        <div class="rail-node">
+          <span class="rail-seq">0006</span>
+          <h3>MCP gateway</h3>
+          <p>Speaks Tools, Prompts, and Resources natively. Connect Claude Code or any MCP client with one command and a scoped API key.</p>
+        </div>
+        <div class="rail-node">
+          <span class="rail-seq">0007</span>
+          <h3>Role-based access</h3>
+          <p>Owner, Admin, and Member roles, auto-provisioned on upgrade. Only an Owner can touch billing, retention, or the danger zone.</p>
+        </div>
+        <div class="rail-node">
+          <span class="rail-seq">0008</span>
+          <h3>Usage &amp; self-serve billing</h3>
+          <p>Per-tenant quotas and retention by plan, enforced at ingest. Upgrade through Stripe Checkout — no sales call, no manual approval.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       HONEST EARLY-ACCESS SECTION (no fabricated testimonials)
+       ============================================================ -->
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">Where we are</div>
+        <h2>Early access, and straight about it</h2>
+      </div>
+      <div class="card card-pad sealed-card">
+        <span class="seal-stamp" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </span>
+        <p>
+          TrailSeal doesn't have case studies yet — we'd rather tell you exactly
+          what's running today than dress up placeholder quotes.
+        </p>
+        <ul class="honesty-list">
+          <li><span class="status-dot ok"></span> Core gateway, hash-chained audit log, and dashboard are live and self-serve.</li>
+          <li><span class="status-dot ok"></span> Chain verification tested against real purge and tamper scenarios, not just synthetic data.</li>
+          <li><span class="status-dot ok"></span> Free tier is unrestricted self-serve — no waitlist, no demo call required.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CTA
+       ============================================================ -->
+  <section class="cta-band">
+    <div class="cta-band-inner">
+      <h2>Start logging what your agents actually do.</h2>
+      <p>Free tier covers 5,000 events and 14 days of retention — enough to see the chain work end to end.</p>
+      <div class="hero-actions">
+        <a href="/signup" class="btn btn-primary">Get Started</a>
+        <a href="/pricing.html" class="btn btn-secondary">View Pricing</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="footer-brand">
+        <span class="mark">TS</span>
+        <span class="brand-name">TrailSeal</span>
+      </div>
+      <nav class="footer-links">
+        <a href="/pricing.html">Pricing</a>
+        <a href="/docs.html">Docs</a>
+        <a href="/api-reference.html">API Reference</a>
+        <a href="/security.html">Security</a>
+        <a href="mailto:support@trailseal.dev">Support</a>
+        <a href="https://github.com/shadowharvest/saas-agent" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div class="text-dim footer-copyright">© 2026 TrailSeal. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script src="/static/nav.js" defer></script>
+</body>
+</html>

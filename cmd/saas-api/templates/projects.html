@@ -1,0 +1,57 @@
+{{define "content"}}
+<div class="page-header">
+    <div>
+        <h1>Projects</h1>
+        <p class="lede">Manage your projects and their API access. Each project is an isolated environment for your audit logs.</p>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <div class="card-header">
+        <h2>Active Projects</h2>
+        <span class="card-meta">{{len .Projects}} total</span>
+    </div>
+    {{if .Projects}}
+    <table>
+        <thead>
+            <tr>
+                <th>Project Name</th>
+                <th>Created At</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Projects}}
+            <tr>
+                <td><strong>{{.Name}}</strong></td>
+                <td>{{.CreatedAt.Format "2006-01-02"}}</td>
+                <td><span class="badge ok">active</span></td>
+                <td class="text-right">
+                    <a href="/developer/api-keys?project={{.ID}}" class="btn btn-sm">Manage keys →</a>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <div class="empty-state">
+        <div class="empty-title">No projects yet</div>
+        <div class="empty-body">Create your first project below to start ingesting audit logs.</div>
+    </div>
+    {{end}}
+</div>
+
+<div class="card">
+    <div class="card-header"><h2>Create a New Project</h2></div>
+    <div class="card-pad">
+        <form method="post" action="/developer/projects" class="form-inline">
+            <div class="form-row" style="margin-bottom:0;">
+                <label for="name">Project name</label>
+                <input type="text" id="name" name="name" placeholder="e.g. Production, Staging, Marketing-App" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create project</button>
+        </form>
+    </div>
+</div>
+{{end}}
