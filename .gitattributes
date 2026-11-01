@@ -1,0 +1,22 @@
+﻿# Normalisasi line ending.
+#
+# Tanpa ini Git menyimpan file dengan CRLF di Windows. Dockerfile repo ini
+# membangun di Alpine Linux, dan skrip .sh ber-CRLF GAGAL dijalankan di sana
+# dengan pesan menyesatkan: "bad interpreter: no such file or directory".
+#
+# text=auto : simpan LF di repo, konversi ke native saat checkout
+* text=auto
+
+# Skrip shell WAJIB LF, bahkan di Windows — ia dijalankan di Linux.
+*.sh text eol=lf
+
+# Skrip PowerShell tetap CRLF — dijalankan di Windows.
+*.ps1 text eol=crlf
+
+# Biner: jangan pernah disentuh normalisasi.
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.exe  binary
+*.db   binary
+*.rlib binary
