@@ -94,7 +94,7 @@
           <ul class="pricing-features">
             <li>Hash-chained audit log</li>
             <li>MCP gateway (evaluation, no SLA), 60 requests/min</li>
-            <li>Audit export: latest 100 events</li>
+            <li>File export: latest 100 events (query API returns all)</li>
             <li>1 active API key</li>
             <li>Single user (Owner only)</li>
             <li>Documentation</li>
@@ -179,7 +179,8 @@
             <tr><td>Audit logs</td><td>Included (14-day retention)</td><td>Included</td><td>Included</td></tr>
             <tr><td>Cryptographic audit hash chain</td><td>Included</td><td>Included</td><td>Included</td></tr>
             <tr><td>MCP audit lookup</td><td>Included</td><td>Included</td><td>Included</td></tr>
-            <tr><td>Audit export</td><td>Latest 100 events</td><td>Full</td><td>Full</td></tr>
+            <tr><td>File export (audit &amp; events)<sup>1</sup></td><td>Latest 100 events</td><td>Full</td><td>Full</td></tr>
+            <tr><td>Paginated query API</td><td>All events</td><td>All events</td><td>All events</td></tr>
             <tr><td>API keys</td><td>1 active key</td><td>Unlimited</td><td>Unlimited</td></tr>
             <tr><td>API-key scope enforcement</td><td>Included</td><td>Included</td><td>Included</td></tr>
             <tr><td>API-key revocation</td><td>Included</td><td>Included</td><td>Included</td></tr>
@@ -190,6 +191,16 @@
             <tr><td>Support</td><td>Documentation</td><td>Documentation</td><td>Documentation</td></tr>
           </tbody>
         </table>
+        <p class="text-dim" style="margin-top:1rem;font-size:0.9rem;line-height:1.6;">
+          <sup>1</sup> File export covers both <span class="text-mono">GET /audit/export</span> and
+          <span class="text-mono">GET /v1/events/export</span>, which return a downloadable file.
+          On Free, a file export returns the newest 100 entries. On Pro and Business there is no plan
+          cap; a single request returns up to 100,000 events, so larger ranges are exported by repeating
+          the request with <span class="text-mono">since</span>/<span class="text-mono">until</span>.
+          Separately, the paginated query API (<span class="text-mono">GET /v1/events</span>) returns
+          every event you have stored, on every plan including Free — your data is never locked behind
+          a plan tier.
+        </p>
       </div>
     </div>
   </section>
