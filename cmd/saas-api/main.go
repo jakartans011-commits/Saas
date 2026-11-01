@@ -124,12 +124,22 @@ func main() {
 	}
 
 	// ============================================================
-	// 3b. GRACE PERIOD SWEEPER — background job, layer ke-2 dari
-	// enforcement invoice.payment_failed (layer 1 = middleware
-	// RequirePaymentCurrent yang cek real-time per-request).
+	// 3b. GRACE PERIOD SWEEPER — SATU-SATUNYA penegakan
+	// invoice.payment_failed.
+	//
+	// middleware.RequirePaymentCurrent ada di grace_period_guard.go tapi
+	// TIDAK dipasang di route mana pun (0 pemakaian di app.go). Jadi tidak
+	// ada pemeriksaan real-time per-request: tenant yang gagal bayar dan
+	// grace period-nya lewat tetap punya akses penuh sampai sweep berikutnya
+	// jalan — jendela paling lama 24 jam. Itu keputusan sadar, bukan
+	// kelalaian: memasangnya menambah satu pembacaan tenant store di setiap
+	// request jalur panas. Pasang kalau jendela sehari itu pernah
+	// disalahgunakan pelanggan nyata.
 	// Jalan sekali per 24 jam, downgrade tenant yang grace period-nya
 	// sudah lewat tapi belum sempat kena block middleware (mis. tenant
 	// yang tidak ada trafik sama sekali selama grace period).
+	// TIDAK DIPAKAI (per 2026-11-01): nol pemakaian di app.go. Lihat catatan di
+	// main.go bagian 3b. Dipertahankan karena siap pasang, bukan karena terlupa.
 	// ============================================================
 	sweepStop := make(chan struct{})
 	runGraceSweep := func() {

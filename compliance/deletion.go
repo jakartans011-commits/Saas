@@ -275,7 +275,12 @@ func PurgeTenant(
 		return fmt.Errorf("failed to hard delete api keys: %w", err)
 	}
 
-	if err := projectStore.DeleteAllForTenant(ctx, tenantID); err != nil {
+	// DeleteAllForTenant yang lama hanya menghapus baris projects, padahal
+	// lima tabel memegang foreign key ke projects(id) tanpa CASCADE. Untuk
+	// tenant yang pernah mengirim event, DELETE itu selalu ditolak Postgres
+	// dan seluruh purge gagal. PurgeAllForTenant menghapus dari daun ke akar
+	// dalam satu transaksi.
+	if err := projectStore.PurgeAllForTenant(ctx, tenantID); err != nil {
 		return fmt.Errorf("failed to hard delete projects: %w", err)
 	}
 

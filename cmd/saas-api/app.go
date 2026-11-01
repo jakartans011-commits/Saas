@@ -515,6 +515,10 @@ func BuildApp(
 	// DEVELOPER PORTAL ROUTES (MERGED FROM cmd/developer-portal)
 	// ============================================================
 
+	// Portal HTML lama dimatikan — lihat catatan di bawah. Struct ini
+	// dipertahankan supaya RegisterPortalRoutes tetap bisa compile kalau
+	// nanti dihidupkan lagi dengan rantai capability yang benar.
+	//nolint:staticcheck // sengaja tidak dipakai
 	portalStores := PortalStores{
 		TenantStore:   tenantStore,
 		ProjectStore:  projectStore,
@@ -525,7 +529,19 @@ func BuildApp(
 		EventsStore:   eventsStore,   // BARU — eventsStore sudah ada sbg var lokal (events.NewPostgresStore)
 	}
 
-	RegisterPortalRoutes(app, requireAuth, portalStores)
+	_ = portalStores
+	// Portal HTML lama (/overview, /developer/*) SENGAJA tidak didaftarkan.
+	//
+	// Route-nya hanya memakai requireAuth: tanpa RequireCapability, tanpa
+	// rateLimiter, tanpa AuditLogger. Akibatnya POST /developer/api-keys/generate
+	// bisa dipakai Member untuk membuat API key ber-scope admin — melewati
+	// pemisahan hak yang dijual sebagai fitur Pro/Business.
+	//
+	// Dashboard sungguhan adalah aplikasi Next.js terpisah yang memakai jalur
+	// JSON ber-capability, jadi portal ini tidak dibutuhkan siapa pun.
+	// Dihidupkan kembali HANYA setelah setiap route-nya diberi rantai yang sama
+	// dengan jalur JSON-nya.
+	_ = RegisterPortalRoutes
 
 	// ============================================================
 	// HEALTH
@@ -576,6 +592,23 @@ func BuildApp(
 				).JSON(fiber.Map{
 					"error": "invalid_body",
 				})
+			}
+
+			// Tenant ID menjadi bagian dari string capability
+			// "tenant.<id>.<resource>", dan ekstraksinya memotong di titik
+			// PERTAMA (rbac/tenant_boundary.go). Tenant ID yang mengandung
+			// titik membuat setiap pemeriksaan capability-nya gagal dengan
+			// tenant_mismatch — tenant lumpuh total, dan pesan errornya
+			// tidak menunjukkan sebabnya.
+			for _, r := range req.TenantID {
+				ok := (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
+					(r >= '0' && r <= '9') || r == '-' || r == '_'
+				if !ok {
+					return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+						"error":   "invalid_tenant_id",
+						"message": "tenant_id hanya boleh huruf, angka, '-', dan '_'",
+					})
+				}
 			}
 
 			t, err := tenant.ProvisionTenant(

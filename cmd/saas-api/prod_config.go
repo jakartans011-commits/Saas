@@ -21,6 +21,12 @@ func validateProductionEnv() error {
 		"CORS_ALLOWED_ORIGINS", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
 		"APP_BASE_URL", "FRONTEND_BASE_URL", "RESEND_API_KEY", "NOTIFY_FROM_EMAIL",
 		"ALERT_WEBHOOK_URL", "BILLING_SUCCESS_URL", "BILLING_CANCEL_URL",
+		// Tanpa kedua price ID ini, NewRegistry tidak mendaftarkan satu pun
+		// price (gagal tertutup, benar) — tapi akibatnya SETIAP webhook
+		// subscription balas "unknown Stripe price ID" dan plan pelanggan
+		// tidak pernah naik meski sudah membayar. Server menyala tanpa
+		// keluhan; kegagalannya baru terlihat dari pelanggan yang marah.
+		"STRIPE_PRICE_PRO", "STRIPE_PRICE_BUSINESS",
 	} {
 		if os.Getenv(k) == "" {
 			problems = append(problems, k+" is empty")
