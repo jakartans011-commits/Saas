@@ -1,10 +1,17 @@
 # CI TrailSeal
 #
-# TIDAK ADA RAHASIA DI SINI. Tanpa TRAILSEAL_TEST_POSTGRES_URL, test yang
-# butuh Postgres akan melewati dirinya sendiri (lihat app_test.go), dan
-# tanpa SENTRY_DSN error tracking jadi no-op. Itu disengaja: CI yang butuh
-# kredensial produksi adalah CI yang tidak bisa dijalankan dari fork, dan
-# satu kebocoran log berarti memutar ulang semua kunci.
+# TIDAK ADA RAHASIA DI SINI. Postgres di bawah lahir dan mati di dalam
+# runner GitHub: user/password-nya sengaja sepele karena ia tidak bisa
+# dijangkau dari luar job ini, dan ia TIDAK ada hubungannya dengan Neon.
+# CI yang butuh kredensial produksi adalah CI yang tidak bisa dijalankan
+# dari fork, dan satu kebocoran log berarti memutar ulang semua kunci.
+#
+# CATATAN SEJARAH: versi file ini sebelumnya mengklaim test yang butuh
+# Postgres "melewati dirinya sendiri" kalau TRAILSEAL_TEST_POSTGRES_URL
+# kosong. Itu TIDAK benar — audit/store_postgres.go:33 mengembalikan
+# "pgxpool is required" dan BuildApp gagal sebelum t.Skip sempat jalan.
+# Akibatnya ~130 test cmd/saas-api (isolasi tenant, RBAC, rate limit,
+# cross-tenant denial) merah di setiap push sejak run pertama.
 name: CI
 
 on:
@@ -19,12 +26,36 @@ jobs:
   build:
     name: build / vet / test
     runs-on: ubuntu-latest
+
+    # Postgres sekali-pakai untuk job ini saja. Dibuang begitu job selesai.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: trailseal
+          POSTGRES_PASSWORD: trailseal
+          POSTGRES_DB: trailseal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Hanya TEST. Jangan pernah tambahkan TRAILSEAL_POSTGRES_URL di sini.
+      TRAILSEAL_TEST_POSTGRES_URL: postgres://trailseal:trailseal@localhost:5432/trailseal_test?sslmode=disable
+
     steps:
       - uses: actions/checkout@v4
 
+      # 1.25 mengandung 5 kerentanan pustaka standar yang diputus oleh job
+      # govulncheck di bawah (net/http dan crypto/x509, semuanya sudah
+      # ditambal di 1.26.10). 1.27 menyamai toolchain mesin lokal.
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: "1.27"
           cache: true
 
       - name: go build
@@ -32,6 +63,11 @@ jobs:
 
       - name: go vet
         run: go vet ./...
+
+      # Lewat golang-migrate supaya schema_migrations tercatat benar,
+      # bukan psql manual. Harus SEBELUM go test.
+      - name: apply test migrations
+        run: go run ./cmd/apply-test-migrations
 
       # -short melewati TestRateLimiter_Returns429_Real (1005 request,
       # ~1 menit). Ia tetap jalan di mesin lokal lewat perintah verify
@@ -58,7 +94,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: "1.27"
           cache: true
 
       # govulncheck hanya melaporkan kerentanan pada kode yang BENAR-BENAR
