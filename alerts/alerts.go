@@ -159,6 +159,13 @@ func (n *notifier) isCooling(key string) bool {
 	if last, ok := n.lastSent[key]; ok && now.Sub(last) < n.cooldown {
 		return true
 	}
+
+	// Satu-satunya jalur yang menambah entri, jadi satu-satunya tempat
+	// yang perlu menjaga ukurannya. Lihat sweep.go.
+	if len(n.lastSent) >= alertDedupeSweepThreshold {
+		n.sweepCooledLocked(now)
+	}
+
 	n.lastSent[key] = now
 	return false
 }
