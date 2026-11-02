@@ -132,13 +132,24 @@ func (s *PostgresStore) Append(ctx context.Context, projectID, tenantID string, 
 		return nil, fmt.Errorf("failed to init tenant usage counter: %w", err)
 	}
 
+	// Pemeriksaan awal TANPA kunci — murni untuk gagal cepat, supaya
+	// tenant yang sudah penuh tidak membayar biaya menulis event lebih
+	// dulu. Kebenarannya TIDAK bergantung pada pembacaan ini: penjaga
+	// yang sesungguhnya adalah UPDATE bersyarat di akhir transaksi.
+	//
+	// Versi sebelumnya memakai SELECT ... FOR UPDATE di sini, sehingga
+	// baris kuota tenant terkunci sejak titik ini sampai COMMIT — melewati
+	// penguncian chain state, penulisan event, dan semua perjalanan ke
+	// database di antaranya. Akibatnya seluruh ingest satu pelanggan
+	// terserialisasi berapa pun jumlah project-nya: terukur 1,8x laju
+	// berurutan dengan 8 project, dibanding 6,9x dengan 8 tenant berbeda.
+	// Lihat ingest_tenant_lock_test.go.
 	var currentCount int64
 	if err := tx.QueryRow(ctx, `
 		SELECT event_count FROM tenant_usage_counters
 		WHERE tenant_id = $1 AND period = $2
-		FOR UPDATE
 	`, tenantID, period).Scan(&currentCount); err != nil {
-		return nil, fmt.Errorf("failed to lock tenant usage counter: %w", err)
+		return nil, fmt.Errorf("failed to read tenant usage counter: %w", err)
 	}
 
 	if currentCount >= monthlyLimit {
@@ -219,14 +230,34 @@ func (s *PostgresStore) Append(ctx context.Context, projectID, tenantID string, 
 		return nil, fmt.Errorf("failed to update chain state: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `
+	// Penjaga kuota yang sesungguhnya: satu pernyataan yang menambah DAN
+	// memeriksa sekaligus. Kalau tenant mencapai batasnya di sela antara
+	// pemeriksaan awal dan titik ini — karena permintaan lain
+	// menyelesaikannya lebih dulu — syarat event_count < $3 tidak
+	// terpenuhi, tidak ada baris yang berubah, dan seluruh transaksi
+	// dibatalkan bersama event yang sudah terlanjur ditulis.
+	//
+	// Kunci barisnya baru diambil di sini, satu perjalanan sebelum COMMIT,
+	// bukan di awal transaksi.
+	var newCount int64
+	err = tx.QueryRow(ctx, `
 		UPDATE tenant_usage_counters
 		SET event_count = event_count + 1, updated_at = now()
-		WHERE tenant_id = $1 AND period = $2
-	`, tenantID, period)
+		WHERE tenant_id = $1 AND period = $2 AND event_count < $3
+		RETURNING event_count
+	`, tenantID, period, monthlyLimit).Scan(&newCount)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrQuotaExceeded
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to increment tenant usage counter: %w", err)
 	}
+
+	// currentCount dipakai setelah commit untuk notifikasi ambang kuota.
+	// Sekarang nilainya pasti, bukan perkiraan dari pembacaan yang sudah
+	// basi: newCount adalah hitungan setelah event ini masuk.
+	currentCount = newCount - 1
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit event append: %w", err)
