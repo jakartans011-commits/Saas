@@ -62,6 +62,31 @@ func validateProductionEnv() error {
 		problems = append(problems, "COOKIE_SAMESITE must be Lax, None, or Strict")
 	}
 
+	// TRAILSEAL_DATA_DIR tidak punya pengganti yang aman. Kalau kosong,
+	// main.go jatuh ke "data" — path relatif, yang di container berarti
+	// disk sementara. Server menyala normal, pendaftaran berhasil, lalu
+	// SETIAP deploy menghapus seluruh tenant, user, dan refresh token.
+	// Tidak ada error di mana pun; pelanggan hanya mendapati akunnya hilang.
+	//
+	// Diwajibkan absolut karena hanya path absolut yang bisa menunjuk
+	// volume yang benar-benar dipasang. Diperiksa dengan "/" dan bukan
+	// filepath.IsAbs supaya hasilnya sama saat dijalankan dari Windows:
+	// yang dinilai adalah path di container Linux, bukan di mesin builder.
+	if dataDir := os.Getenv("TRAILSEAL_DATA_DIR"); dataDir == "" {
+		problems = append(problems,
+			"TRAILSEAL_DATA_DIR is empty (bbolt would fall back to ephemeral container storage)")
+	} else if !strings.HasPrefix(dataDir, "/") {
+		problems = append(problems, "TRAILSEAL_DATA_DIR must be an absolute path")
+	}
+
+	// Env var ini hanya ada untuk mempercepat test. Kalau ikut terbawa ke
+	// production, biaya bcrypt turun dari 12 dan setiap password pelanggan
+	// jadi jauh lebih murah dipecahkan — tanpa satu pun tanda di log.
+	if os.Getenv("SHADOWHARVEST_TEST_BCRYPT_COST") != "" {
+		problems = append(problems,
+			"SHADOWHARVEST_TEST_BCRYPT_COST must not be set in production")
+	}
+
 	if len(problems) > 0 {
 		return fmt.Errorf("invalid production config: %s", strings.Join(problems, "; "))
 	}
