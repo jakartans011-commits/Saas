@@ -271,16 +271,15 @@
   <!-- ============================================================
        HERO
        ============================================================ -->
-  <section class="hero">
+  <section class="hero hero-center">
     <div class="hero-inner">
       <div class="hero-copy">
-        <div class="eyebrow"><span class="status-dot ok"></span> Append-only, hash-chained, and tenant-isolated by default</div>
+        <div class="eyebrow"><span class="status-dot ok"></span> For teams putting LLM agents into workflows that get audited</div>
         <h1>Every agent action,<br>provably logged.</h1>
         <p class="hero-lede">
-          TrailSeal sits between your LLM agents and the tools they call.
-          Every call is written once to a hash-chained log and stays
-          verifiable after the fact — so when an agent acts, you can show
-          exactly what happened, not just claim it.
+          TrailSeal sits between your agents and the tools they call, and writes
+          every call once into a hash-chained log. When someone asks what your
+          agent did, you show them — you don't just say it.
         </p>
         <div class="hero-actions">
           <a href="/signup" class="btn btn-primary">Get Started</a>
@@ -289,12 +288,135 @@
         <div class="hero-meta text-dim">No credit card required on the Free tier · Self-serve tenant in minutes</div>
       </div>
 
-      <div class="hero-visual" aria-hidden="true">
-        <div class="chain-card card">
-          <div class="live-log">
-            <span class="dot">●</span>
-            <span>agent.call(tools/call, "refund_lookup") → gateway → chain</span>
+      <div class="hero-stage" aria-hidden="true">
+      <div class="dash-frame">
+        <div class="dash-chrome">
+          <span class="dash-dot"></span>
+          <span class="dash-dot"></span>
+          <span class="dash-dot"></span>
+          <span class="dash-url text-mono">app.trailseal.dev/dashboard</span>
+          <span class="dash-sample">SAMPLE DATA</span>
+        </div>
+
+        <div class="dash-body">
+          <aside class="dash-side" aria-hidden="true">
+            <div class="dash-brand"><span class="dash-mark">TS</span> TrailSeal</div>
+            <div class="dash-tenant">
+              <span class="dash-side-label">TENANT</span>
+              <span class="text-mono">acme-corp</span>
+            </div>
+            <nav class="dash-nav">
+              <span class="dash-nav-item is-active">Overview</span>
+              <span class="dash-side-label">BUILD</span>
+              <span class="dash-nav-item">Tools</span>
+              <span class="dash-nav-item">Agents</span>
+              <span class="dash-nav-item">Prompts</span>
+              <span class="dash-side-label">ACCESS</span>
+              <span class="dash-nav-item">Projects</span>
+              <span class="dash-nav-item">API Keys</span>
+              <span class="dash-side-label">MONITOR</span>
+              <span class="dash-nav-item">Audit</span>
+              <span class="dash-nav-item">Usage</span>
+              <span class="dash-nav-item">Retention</span>
+            </nav>
+          </aside>
+
+          <div class="dash-main">
+            <div class="dash-main-head">
+              <div>
+                <h3>Overview</h3>
+                <span class="dash-sub">Tenant <span class="text-mono">acme-corp</span> · Plan <span class="dash-plan">Pro</span></span>
+              </div>
+              <span class="dash-btn">+ New tool</span>
+            </div>
+
+            <div class="dash-stats">
+              <div class="dash-stat">
+                <span class="dash-stat-label">QUOTA CAPACITY USED</span>
+                <span class="dash-stat-value">184,207<span class="dash-stat-of"> / 250,000</span></span>
+                <div class="dash-bar"><span style="width:74%"></span></div>
+                <span class="dash-stat-foot">74% of monthly limit · resets Dec 1</span>
+              </div>
+              <div class="dash-stat">
+                <span class="dash-stat-label">EVENTS BILLED THIS MONTH</span>
+                <span class="dash-stat-value">12,480</span>
+                <span class="dash-trend">▲ 8.4% vs last month</span>
+                <span class="dash-stat-foot">Successful MCP calls only</span>
+              </div>
+              <div class="dash-stat">
+                <span class="dash-stat-label">CHAIN INTEGRITY</span>
+                <span class="dash-stat-value dash-ok">Valid</span>
+                <span class="dash-stat-foot">184,207 events verified · 0.9s ago</span>
+              </div>
+            </div>
+
+            <div class="dash-grid">
+              <div class="dash-panel">
+                <div class="dash-panel-head">
+                  <span>Usage over time</span>
+                  <span class="dash-seg"><em>7d</em><em class="on">14d</em><em>30d</em></span>
+                </div>
+                <div class="dash-chart" aria-hidden="true">
+                  <span style="height:34%"></span><span style="height:41%"></span>
+                  <span style="height:29%"></span><span style="height:52%"></span>
+                  <span style="height:47%"></span><span style="height:63%"></span>
+                  <span style="height:58%"></span><span style="height:71%"></span>
+                  <span style="height:66%"></span><span style="height:79%"></span>
+                  <span style="height:74%"></span><span style="height:88%"></span>
+                  <span style="height:83%"></span><span class="on" style="height:96%"></span>
+                </div>
+                <div class="dash-axis"><span>Oct 20</span><span>Oct 27</span><span>Nov 2</span></div>
+              </div>
+
+              <div class="dash-panel">
+                <div class="dash-panel-head"><span>Top consumers</span></div>
+                <ul class="dash-consumers">
+                  <li><span>production-eu</span><i style="width:82%"></i><b>6,142</b></li>
+                  <li><span>support-agent</span><i style="width:54%"></i><b>4,018</b></li>
+                  <li><span>billing-sync</span><i style="width:31%"></i><b>1,704</b></li>
+                  <li><span>internal-tools</span><i style="width:12%"></i><b>616</b></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="dash-panel">
+              <div class="dash-panel-head"><span>Recent activity</span><span class="dash-link">View all →</span></div>
+              <table class="dash-table">
+                <tr><td class="text-mono">14:02:11</td><td><span class="dash-m">POST</span> /mcp/v1/rpc <em>tools/call</em></td><td class="text-mono">refund_lookup</td><td><span class="dash-pill ok">success</span></td></tr>
+                <tr><td class="text-mono">14:02:09</td><td><span class="dash-m">POST</span> /v1/events</td><td class="text-mono">agent.decision</td><td><span class="dash-pill ok">chained</span></td></tr>
+                <tr><td class="text-mono">14:01:58</td><td><span class="dash-m">POST</span> /mcp/v1/rpc <em>resources/read</em></td><td class="text-mono">audit_log</td><td><span class="dash-pill ok">success</span></td></tr>
+                <tr><td class="text-mono">14:01:44</td><td><span class="dash-m">POST</span> /mcp/v1/rpc <em>tools/call</em></td><td class="text-mono">kyc_status</td><td><span class="dash-pill warn">rate limited</span></td></tr>
+                <tr><td class="text-mono">14:01:30</td><td><span class="dash-m">POST</span> /v1/events/verify</td><td class="text-mono">chain 1→184,207</td><td><span class="dash-pill ok">valid</span></td></tr>
+              </table>
+            </div>
           </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       THE DIFFERENCE — tail-truncation detection
+       This is the one claim competitors can't copy in a sprint, and it
+       is verified end to end by events/chain_truncation_test.go.
+       ============================================================ -->
+  <section class="section section-alt" id="proof">
+    <div class="section-inner">
+      <div class="section-head">
+        <div class="eyebrow">The difference</div>
+        <h2>Most audit logs catch edits.<br>Deletions walk away clean.</h2>
+        <p class="section-lede">
+          Tampering with a record breaks its hash, and any chained log will
+          notice. But deleting the most recent records breaks nothing — what
+          remains still links perfectly, end to end. That is exactly what an
+          insider covering their tracks would do, and it is the case almost
+          nobody checks for.
+        </p>
+      </div>
+
+      <div class="proof-grid">
+        <div class="chain-card card">
           <div class="chain-card-head">
             <span class="text-dim text-mono">/v1/events/verify</span>
             <span class="badge ok"><span class="status-dot ok"></span>valid</span>
@@ -318,9 +440,50 @@
               <span class="chain-hash text-mono">9dc45e12…7a0f</span>
             </div>
           </div>
-          <div class="chain-card-foot text-dim">Each hash includes the previous — break one link, break the proof.</div>
+          <div class="chain-card-foot text-dim">Three events, three links, nothing out of place.</div>
+        </div>
+
+        <div class="proof-step" aria-hidden="true">
+          <span class="proof-arrow">↓</span>
+          <span class="proof-step-text">
+            Someone with database access deletes record <strong>0003</strong>.
+            No hash is altered. Nothing is edited.
+          </span>
+        </div>
+
+        <div class="chain-card card">
+          <div class="chain-card-head">
+            <span class="text-dim text-mono">/v1/events/verify</span>
+            <span class="badge crit"><span class="status-dot crit"></span>broken</span>
+          </div>
+          <div class="chain-rows">
+            <div class="chain-row">
+              <span class="chain-seq text-mono">0001</span>
+              <span class="chain-type">mcp.tool_call</span>
+              <span class="chain-hash text-mono">07e385ea…93bd</span>
+            </div>
+            <div class="chain-link" aria-hidden="true"></div>
+            <div class="chain-row">
+              <span class="chain-seq text-mono">0002</span>
+              <span class="chain-type">audit.append</span>
+              <span class="chain-hash text-mono">2b88f401…c7e2</span>
+            </div>
+            <div class="chain-link chain-link-gone" aria-hidden="true"></div>
+            <div class="chain-row chain-row-gone">
+              <span class="chain-seq text-mono">0003</span>
+              <span class="chain-type">missing</span>
+              <span class="chain-hash text-mono">—</span>
+            </div>
+          </div>
+          <div class="chain-card-foot text-dim">The remaining links are intact. TrailSeal fails it anyway.</div>
         </div>
       </div>
+
+      <p class="proof-punch">
+        TrailSeal records how far the chain was ever written, separately from
+        the events themselves. A log that is shorter than its own history is
+        not a valid log — however clean the part that's left looks.
+      </p>
     </div>
   </section>
 
@@ -329,26 +492,72 @@
        ============================================================ -->
   <section class="section" id="how-it-works">
     <div class="section-inner">
-      <div class="section-head">
+      <div class="section-head section-head-center">
         <div class="eyebrow">How it works</div>
-        <h2>From agent call to provable record, in one hop</h2>
+        <h2>From agent call to provable record,<br>in one hop</h2>
+        <p class="section-lede">
+          No SDK to install and no change to your agent's code. You point an
+          MCP client at the gateway, and every call it makes becomes a record
+          that can be checked later by anyone holding the log.
+        </p>
       </div>
 
-      <div class="rail-track">
-        <div class="rail-node">
-          <span class="rail-seq">0001</span>
-          <h3>Your agent calls a tool</h3>
-          <p>Claude Code, Claude Desktop, or any MCP client calls a tool, prompt, or resource — authenticated by a scoped API key, resolved straight to your tenant.</p>
-        </div>
-        <div class="rail-node">
-          <span class="rail-seq">0002</span>
-          <h3>The gateway writes the event</h3>
-          <p>The call is written once to the event chain, hash-linked to the event before it, before the result is returned to your agent.</p>
-        </div>
-        <div class="rail-node">
-          <span class="rail-seq">0003</span>
-          <h3>Anyone verifies the chain</h3>
-          <p>Check integrity via <code>/v1/events/verify</code> or the dashboard's Chain Integrity card — valid, broken (with the exact event), or empty.</p>
+      <div class="flow">
+        <ol class="flow-steps">
+          <li class="flow-step">
+            <span class="flow-dot" aria-hidden="true"></span>
+            <span class="flow-seq">01</span>
+            <h3>Your agent calls a tool</h3>
+            <p>Claude Code, Claude Desktop, or any MCP client calls a tool, prompt, or resource — authenticated by a scoped API key, resolved straight to your tenant.</p>
+          </li>
+          <li class="flow-step">
+            <span class="flow-dot" aria-hidden="true"></span>
+            <span class="flow-seq">02</span>
+            <h3>The gateway writes the event</h3>
+            <p>The call is written once to the event chain, hash-linked to the event before it, <strong>before</strong> the result is returned to your agent.</p>
+          </li>
+          <li class="flow-step">
+            <span class="flow-dot" aria-hidden="true"></span>
+            <span class="flow-seq">03</span>
+            <h3>Anyone verifies the chain</h3>
+            <p>Check integrity via <code>/v1/events/verify</code> or the dashboard's Chain Integrity card — valid, broken with the exact event, or empty.</p>
+          </li>
+        </ol>
+
+        <div class="flow-console" aria-hidden="true">
+          <div class="flow-console-bar">
+            <span class="flow-console-dots"><i></i><i></i><i></i></span>
+            <span class="flow-console-title">trailseal · live gateway</span>
+          </div>
+
+          <div class="flow-console-body">
+            <div class="flow-block">
+              <span class="flow-block-tag">01</span>
+              <pre><code><span class="c-dim">$</span> claude mcp add trailseal \
+    <span class="c-str">--url</span> https://api.trailseal.io/mcp/v1/rpc \
+    <span class="c-str">--header</span> <span class="c-str">"Authorization: Bearer ts_live_••••"</span>
+
+<span class="c-ok">✓</span> connected <span class="c-dim">·</span> tools <span class="c-num">7</span> <span class="c-dim">·</span> prompts <span class="c-num">3</span> <span class="c-dim">·</span> resources <span class="c-num">2</span></code></pre>
+            </div>
+
+            <div class="flow-block">
+              <span class="flow-block-tag">02</span>
+              <pre><code><span class="c-key">POST</span> /mcp/v1/rpc <span class="c-dim">→</span> tools/call <span class="c-str">refund_lookup</span>
+<span class="c-dim">└─</span> event written <span class="c-dim">·</span> seq <span class="c-num">184207</span>
+   prev <span class="c-dim">2b88f401…c7e2</span>
+   hash <span class="c-acc">9dc45e12…7a0f</span>
+<span class="c-ok">200 OK</span> <span class="c-dim">in 41 ms</span></code></pre>
+            </div>
+
+            <div class="flow-block">
+              <span class="flow-block-tag">03</span>
+              <pre><code><span class="c-key">POST</span> /v1/events/verify
+
+{ <span class="c-str">"valid"</span>: <span class="c-ok">true</span>,
+  <span class="c-str">"checked_count"</span>: <span class="c-num">184207</span>,
+  <span class="c-str">"tail_intact"</span>: <span class="c-ok">true</span> }</code></pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -359,37 +568,46 @@
        ============================================================ -->
   <section class="section section-alt" id="capabilities">
     <div class="section-inner">
-      <div class="section-head">
+      <div class="section-head section-head-center">
         <div class="eyebrow">What's live today</div>
-        <h2>Built for systems where "trust me" isn't good enough</h2>
+        <h2>Built for systems where<br>"trust me" isn't good enough</h2>
+        <p class="section-lede">
+          Everything below is running in production today — not a roadmap.
+        </p>
       </div>
 
-      <div class="rail-track">
-        <div class="rail-node">
-          <span class="rail-seq">0004</span>
-          <h3>Hash-chained verification</h3>
-          <p>Every event chained by hash. Full recheck on manual verify; refreshes run an incremental pass against a stored checkpoint <span class="rail-metric">sub-second</span> instead of rescanning the whole chain.</p>
-        </div>
-        <div class="rail-node">
-          <span class="rail-seq">0005</span>
-          <h3>Tenant isolation</h3>
-          <p>Projects, API keys, agents, and events are scoped to a tenant at the database layer. Cross-tenant reads fail closed — not just hidden in the UI.</p>
-        </div>
-        <div class="rail-node">
-          <span class="rail-seq">0006</span>
-          <h3>MCP gateway</h3>
-          <p>Speaks Tools, Prompts, and Resources natively. Connect Claude Code or any MCP client with one command and a scoped API key.</p>
-        </div>
-        <div class="rail-node">
-          <span class="rail-seq">0007</span>
-          <h3>Role-based access</h3>
-          <p>Owner, Admin, and Member roles, auto-provisioned on upgrade. Only an Owner can touch billing, retention, or the danger zone.</p>
-        </div>
-        <div class="rail-node">
-          <span class="rail-seq">0008</span>
-          <h3>Usage &amp; self-serve billing</h3>
-          <p>Per-tenant quotas and retention by plan, enforced at ingest. Upgrade through Stripe Checkout — no sales call, no manual approval.</p>
-        </div>
+      <div class="bento">
+        <article class="bento-card bento-wide">
+          <span class="bento-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          </span>
+          <h3>One command to connect</h3>
+          <p>A native MCP gateway that speaks Tools, Prompts, and Resources. Point Claude Code, Claude Desktop, or any MCP client at it with a single command and a scoped API key — <span class="rail-metric">no SDK, no code change</span> in the agent itself.</p>
+        </article>
+
+        <article class="bento-card">
+          <span class="bento-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>
+          </span>
+          <h3>Isolation that holds under test</h3>
+          <p>Projects, API keys, agents, and events are scoped to a tenant at the database layer, and cross-tenant reads fail closed rather than being hidden in the UI. Every path — API key, session, MCP, export — is covered by its own test.</p>
+        </article>
+
+        <article class="bento-card">
+          <span class="bento-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>
+          </span>
+          <h3>Retention that keeps the proof</h3>
+          <p>Old events age out on your plan's schedule, but purging them doesn't blind the chain: a signed checkpoint takes their place, so everything that remains stays verifiable. Deleting history is normally how audit logs lose their integrity.</p>
+        </article>
+
+        <article class="bento-card bento-wide">
+          <span class="bento-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3.5"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.86"></path><path d="M16 3.1a4 4 0 0 1 0 7.75"></path></svg>
+          </span>
+          <h3>Roles, quotas, and billing</h3>
+          <p>Owner, Admin, and Member roles provisioned on upgrade, with billing and retention reserved for the Owner. Per-tenant quotas enforced at ingest, and upgrades go through checkout — no sales call, no manual approval.</p>
+        </article>
       </div>
     </div>
   </section>
@@ -413,7 +631,7 @@
         </p>
         <ul class="honesty-list">
           <li><span class="status-dot ok"></span> Core gateway, hash-chained audit log, and dashboard are live and self-serve.</li>
-          <li><span class="status-dot ok"></span> Chain verification tested against real purge and tamper scenarios, not just synthetic data.</li>
+          <li><span class="status-dot ok"></span> Chain verification is tested against real deletion and tampering — records removed straight from the database, not synthetic fixtures.</li>
           <li><span class="status-dot ok"></span> Free tier is unrestricted self-serve — no waitlist, no demo call required.</li>
         </ul>
       </div>

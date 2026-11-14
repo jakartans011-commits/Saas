@@ -1356,3 +1356,909 @@ body.brand .cta-band .btn-primary { background: var(--brand-lime); border-color:
 body.brand .cta-band .btn-primary:hover { background: var(--brand-lime-dark); }
 body.brand .hero :focus-visible { outline-color: var(--brand-lime); }
 body.brand section[id] { scroll-margin-top: 72px; }
+/* ============================================================
+   THE DIFFERENCE — tail-truncation demo (#proof)
+
+   Satu-satunya bagian halaman depan yang menunjukkan, bukan
+   menjelaskan. Dua kartu rantai bertumpuk dengan satu kalimat di
+   antaranya; pembaca melihat sendiri bahwa yang tersisa masih
+   tersambung rapi, dan TrailSeal tetap menolaknya.
+
+   Memakai variabel dan kelas yang sudah ada (.chain-card,
+   .chain-row, .badge.crit) supaya konsisten dengan sisa situs.
+   ============================================================ */
+
+.section-lede {
+  max-width: 620px;
+  margin: 14px 0 0;
+  color: var(--text-secondary);
+  font-size: 15.5px;
+  line-height: 1.65;
+}
+
+.proof-grid {
+  margin: 40px 0 0;
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 220px) 1fr;
+  align-items: center;
+  gap: 0;
+}
+
+.proof-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.proof-arrow {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--status-crit-dot);
+  transform: rotate(-90deg);
+}
+
+.proof-step-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.proof-step-text strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Baris yang hilang: digambar sebagai celah, bukan sebagai error.
+   Itu intinya — tidak ada yang rusak, ada yang TIDAK ADA. */
+.chain-row-gone {
+  opacity: 0.55;
+}
+
+.chain-row-gone .chain-type {
+  color: var(--status-crit-dot);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.chain-row-gone .chain-hash {
+  color: var(--console-text-dim);
+}
+
+.chain-link-gone {
+  border-left-style: dashed;
+  opacity: 0.5;
+}
+
+.proof-punch {
+  margin: 32px 0 0;
+  padding: 18px 22px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* Kartu berjajar membutuhkan lebar. Di layar sempit kembali bertumpuk,
+   dan panahnya berputar dari kanan menjadi ke bawah. */
+@media (max-width: 900px) {
+  .proof-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proof-step {
+    padding: 22px 16px;
+  }
+
+  .proof-arrow {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   RAIL SEBAGAI KISI
+   Varian .rail-grid mengubah daftar menurun menjadi kartu berjajar,
+   tanpa mengubah markup .rail-node sama sekali.
+   ============================================================ */
+
+.rail-track.rail-grid {
+  /* Rel aslinya didefinisikan inline di index.html; garis vertikal dan
+     padding kirinya harus dimatikan di sini, bukan sekadar ditimpa. */
+  padding-left: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 36px;
+}
+
+.rail-track.rail-grid::before {
+  display: none;
+}
+
+.rail-track.rail-grid .rail-node {
+  margin: 0;
+  padding: 22px 24px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+}
+
+.rail-track.rail-grid .rail-node::before,
+.rail-track.rail-grid .rail-node::after {
+  display: none;
+}
+
+.rail-track.rail-grid .rail-seq {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+}
+
+.rail-track.rail-grid .rail-node h3 {
+  margin: 0 0 8px;
+  font-size: 16.5px;
+}
+
+.rail-track.rail-grid .rail-node p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.62;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   DASHBOARD PREVIEW (#dashboard)
+
+   Pratinjau dasbor dengan DATA CONTOH, dirender sebagai HTML
+   bukan gambar — tajam di layar mana pun, dan tidak pernah
+   terlihat kosong seperti tangkapan layar akun yang baru dibuat.
+   Label "SAMPLE DATA" wajib tetap ada: halaman ini menjual
+   kejujuran, dan angka karangan tanpa label merusaknya.
+
+   Memakai --brand-purple dan --brand-lime dari body.brand.
+   ============================================================ */
+
+.dash-section {
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(133, 66, 168, 0.1), transparent 60%),
+    var(--surface);
+}
+
+.dash-frame {
+  margin-top: 40px;
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-card);
+  box-shadow:
+    0 1px 2px rgba(42, 22, 56, 0.05),
+    0 18px 48px -24px rgba(42, 22, 56, 0.35);
+}
+
+.dash-chrome {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 16px;
+  background: var(--surface-border-2);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.dash-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d6c9e2;
+}
+
+.dash-url {
+  flex: 1;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+.dash-sample {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--brand-purple-dark, #6b3389);
+}
+
+.dash-body {
+  display: grid;
+  grid-template-columns: 172px 1fr;
+  min-height: 420px;
+}
+
+/* ---- sidebar ---- */
+
+.dash-side {
+  padding: 16px 12px;
+  border-right: 1px solid var(--surface-border);
+  background: #fbf9fd;
+}
+
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dash-mark {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--brand-purple, #8542A8);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.dash-tenant {
+  margin: 14px 0 16px;
+  padding: 8px 10px;
+  border: 1px solid var(--surface-border);
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.dash-side-label {
+  display: block;
+  margin: 12px 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+}
+
+.dash-tenant .dash-side-label { margin: 0; }
+
+.dash-nav { display: flex; flex-direction: column; }
+
+.dash-nav-item {
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.dash-nav-item.is-active {
+  background: var(--accent-soft);
+  color: var(--brand-purple-dark, #6b3389);
+  font-weight: 600;
+}
+
+/* ---- main ---- */
+
+.dash-main { padding: 20px 22px 24px; }
+
+.dash-main-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.dash-main-head h3 {
+  margin: 0 0 3px;
+  font-size: 19px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.dash-sub { font-size: 12.5px; color: var(--text-tertiary); }
+
+.dash-plan {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--brand-purple-dark, #6b3389);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dash-btn {
+  padding: 6px 13px;
+  border-radius: 7px;
+  background: var(--brand-lime, #A9FB00);
+  color: #0c0912;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- stat cards ---- */
+
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dash-stat {
+  padding: 14px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dash-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  color: var(--text-tertiary);
+}
+
+.dash-stat-value {
+  font-size: 24px;
+  font-weight: 650;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.dash-stat-of { font-size: 13px; font-weight: 400; color: var(--text-tertiary); }
+.dash-ok { color: #4a8f16; }
+
+.dash-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-border-2);
+  overflow: hidden;
+}
+
+.dash-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-purple, #8542A8), #b06fd4);
+}
+
+.dash-trend { font-size: 11.5px; color: #4a8f16; font-weight: 600; }
+.dash-stat-foot { font-size: 11px; color: var(--text-tertiary); }
+
+/* ---- panels ---- */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dash-panel {
+  padding: 14px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: 9px;
+}
+
+.dash-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dash-link { font-size: 11.5px; font-weight: 500; color: var(--brand-purple, #8542A8); }
+
+.dash-seg { display: flex; gap: 2px; }
+
+.dash-seg em {
+  font-style: normal;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  color: var(--text-tertiary);
+}
+
+.dash-seg em.on { background: var(--accent-soft); color: var(--brand-purple-dark, #6b3389); font-weight: 600; }
+
+/* ---- chart ---- */
+
+.dash-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 168px;
+}
+
+.dash-chart span {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, rgba(133, 66, 168, 0.75), rgba(133, 66, 168, 0.3));
+}
+
+.dash-chart span.on {
+  background: linear-gradient(180deg, var(--brand-lime, #A9FB00), rgba(169, 251, 0, 0.45));
+}
+
+.dash-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+/* ---- consumers ---- */
+
+.dash-consumers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+
+.dash-consumers li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 10px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.dash-consumers b { font-weight: 600; color: var(--text-primary); font-size: 11.5px; }
+
+.dash-consumers i {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-purple, #8542A8), #c08ade);
+}
+
+/* ---- table ---- */
+
+.dash-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+
+.dash-table td {
+  padding: 7px 0;
+  border-top: 1px solid var(--surface-border-2);
+  color: var(--text-secondary);
+}
+
+.dash-table tr:first-child td { border-top: 0; }
+.dash-table td:last-child { text-align: right; }
+.dash-table em { font-style: normal; color: var(--text-tertiary); }
+
+.dash-m { font-family: var(--font-mono); font-size: 10px; color: var(--brand-purple, #8542A8); font-weight: 600; }
+
+.dash-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.dash-pill.ok { background: rgba(74, 143, 22, 0.12); color: #3d7a11; }
+.dash-pill.warn { background: var(--status-warn-bg); color: var(--status-warn-fg); }
+
+/* ---- narrow screens ---- */
+
+@media (max-width: 980px) {
+  .dash-side { display: none; }
+  .dash-body { grid-template-columns: 1fr; }
+  .dash-stats { grid-template-columns: 1fr; }
+  .dash-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   HERO TERPUSAT + PANGGUNG PRODUK
+
+   Tata letak lama (teks kiri, kartu kanan) membuat halaman terasa
+   tertinggal. Pola yang dipakai produk teknis sekarang: judul besar
+   di tengah, lalu satu artefak produk melebar penuh di bawahnya —
+   pembaca melihat produknya sebelum membaca satu fitur pun.
+   ============================================================ */
+
+.hero-center .hero-inner {
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding-bottom: 0;
+  text-align: center;
+}
+
+.hero-center .hero-copy {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.hero-center .eyebrow {
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(169, 251, 0, 0.22);
+  background: rgba(169, 251, 0, 0.07);
+}
+
+.hero-center h1 {
+  font-size: clamp(38px, 5.4vw, 64px);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  margin: 22px 0 0;
+}
+
+.hero-center .hero-lede {
+  max-width: 620px;
+  margin: 20px auto 0;
+  font-size: 17px;
+}
+
+.hero-center .hero-actions {
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.hero-center .hero-actions .btn {
+  padding: 12px 26px;
+  font-size: 15px;
+}
+
+/* Panggung: artefak produk melayang di atas batas terang/gelap,
+   setengah di dalam hero setengah keluar. Bayangan dan cahaya ungu
+   memberi kedalaman tanpa menambah elemen baru. */
+.hero-stage {
+  position: relative;
+  max-width: 1120px;
+  margin: 52px auto -120px;
+  padding: 0 4px;
+}
+
+.hero-stage::before {
+  content: "";
+  position: absolute;
+  /* jangan melebar ke luar panggung: di viewport 1120-1240px glow
+     -6% itulah yang membuat halaman bisa digeser ke samping. */
+  inset: -8% 0 12%;
+  background: radial-gradient(ellipse at 50% 40%, rgba(169, 251, 0, 0.13), transparent 64%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.hero-stage .dash-frame {
+  position: relative;
+  margin-top: 0;
+  box-shadow:
+    0 0 0 1px rgba(133, 66, 168, 0.25),
+    0 40px 90px -30px rgba(0, 0, 0, 0.75);
+}
+
+/* Ruang di bawah hero supaya panggung yang menggantung tidak menabrak
+   bagian berikutnya. */
+.hero-center + .section,
+.hero-center + section {
+  padding-top: 168px;
+}
+
+@media (max-width: 980px) {
+  .hero-stage {
+    margin: 36px auto -70px;
+  }
+
+  .hero-center + .section,
+  .hero-center + section {
+    padding-top: 110px;
+  }
+}
+
+/* ============================================================
+   MIDDLE REFRESH — section heads, #how-it-works flow, bento
+   ------------------------------------------------------------
+   Kepala section sekarang di tengah supaya satu bahasa dengan
+   hero baru. "How it works" tidak lagi tiga kotak putih datar:
+   langkahnya di rel kiri, konsol gelap di kanan memperlihatkan
+   payload sungguhan. Capabilities jadi bento 12 kolom (7/5,
+   5/7) dengan ikon — ada hierarki, bukan empat kotak seragam.
+   Semua memakai --brand-purple / --brand-lime yang sudah ada.
+   ============================================================ */
+
+.section-head-center {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  margin-bottom: 52px;
+}
+.section-head-center .section-lede {
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.section-head-center h2 { letter-spacing: -0.022em; }
+body.brand .section-head-center .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(133, 66, 168, 0.22);
+  background: rgba(133, 66, 168, 0.06);
+  color: var(--brand-purple-dark, #6b3389);
+  margin-bottom: 14px;
+}
+
+/* ---------- #how-it-works : steps rail + live console ---------- */
+
+.flow {
+  display: grid;
+  grid-template-columns: minmax(320px, 400px) 1fr;
+  gap: 56px;
+  align-items: start;
+}
+
+.flow-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+.flow-steps::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 14px;
+  bottom: 22px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    var(--brand-purple, #8542A8),
+    rgba(133, 66, 168, 0.25) 60%,
+    rgba(133, 66, 168, 0.08)
+  );
+}
+
+.flow-step {
+  position: relative;
+  padding: 0 0 34px 34px;
+}
+.flow-step:last-child { padding-bottom: 0; }
+
+.flow-dot {
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--surface-card, #fff);
+  border: 2px solid var(--brand-purple, #8542A8);
+  box-shadow: 0 0 0 4px rgba(133, 66, 168, 0.08);
+}
+.flow-step:first-child .flow-dot {
+  background: var(--brand-lime, #A9FB00);
+  border-color: var(--brand-lime, #A9FB00);
+  box-shadow: 0 0 0 4px rgba(169, 251, 0, 0.18);
+}
+
+.flow-seq {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--brand-purple, #8542A8);
+  margin-bottom: 4px;
+}
+.flow-step h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.flow-step p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+.flow-step p strong { color: var(--text-primary); font-weight: 600; }
+.flow-step code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--accent-soft, #f1e7f8);
+  color: var(--brand-purple-dark, #6b3389);
+}
+
+.flow-console {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0c0912;
+  border: 1px solid rgba(133, 66, 168, 0.3);
+  box-shadow: 0 24px 60px -28px rgba(20, 6, 32, 0.6);
+}
+
+.flow-console-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.flow-console-dots { display: inline-flex; gap: 6px; }
+.flow-console-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+}
+.flow-console-dots i:first-child { background: rgba(169, 251, 0, 0.5); }
+.flow-console-title {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: #8b809d;
+}
+
+.flow-console-body { padding: 4px 0 6px; }
+
+.flow-block {
+  position: relative;
+  padding: 16px 20px 16px 58px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.flow-block:last-child { border-bottom: 0; }
+
+.flow-block-tag {
+  position: absolute;
+  left: 18px;
+  top: 17px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #6f6382;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.flow-block pre {
+  margin: 0;
+  overflow-x: auto;
+}
+.flow-block code {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: #cfc6da;
+  white-space: pre;
+  background: none;
+  padding: 0;
+}
+.flow-block .c-dim { color: #6f6382; }
+.flow-block .c-str { color: #c9a6e4; }
+.flow-block .c-key { color: #A9FB00; font-weight: 600; }
+.flow-block .c-num { color: #f0ead6; }
+.flow-block .c-acc { color: #A9FB00; }
+.flow-block .c-ok  { color: #A9FB00; font-weight: 600; }
+
+/* ---------- #capabilities : bento ---------- */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+
+.bento-card {
+  grid-column: span 5;
+  position: relative;
+  padding: 26px 26px 28px;
+  border-radius: 14px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--surface-border, #e6dcef);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.bento-card.bento-wide { grid-column: span 7; }
+
+.bento-card::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand-purple, #8542A8), var(--brand-lime, #A9FB00));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.bento-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(133, 66, 168, 0.3);
+  box-shadow: 0 18px 40px -24px rgba(42, 22, 56, 0.4);
+}
+.bento-card:hover::after { opacity: 1; }
+
+.bento-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  background: var(--accent-soft, #f1e7f8);
+  color: var(--brand-purple, #8542A8);
+}
+.bento-icon svg { width: 19px; height: 19px; }
+
+.bento-card h3 {
+  margin: 0 0 8px;
+  font-size: 17.5px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--text-primary);
+}
+.bento-card p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.68;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1040px) {
+  .flow { grid-template-columns: 1fr; gap: 36px; }
+  .bento-card,
+  .bento-card.bento-wide { grid-column: span 12; }
+}
+@media (max-width: 640px) {
+  .flow-block { padding-left: 20px; padding-top: 38px; }
+  .flow-block-tag { top: 14px; }
+  .section-head-center { margin-bottom: 36px; }
+}
+
+/* ---- Mobile overflow: grid items must be allowed to shrink ----
+   .hero-stage dan .flow-console adalah grid item tanpa min-width,
+   jadi default-nya min-width:auto dan menolak mengecil di bawah
+   lebar isinya (dash-frame dan baris <pre> yang nowrap). Itu yang
+   membuat scrollWidth 430 di viewport 390. Dashboard tidak dipaksa
+   menciut sampai tidak terbaca — di layar kecil ia digeser
+   horizontal di dalam panggungnya sendiri. */
+/* margin kiri/kanan `auto` membuat grid item berhenti stretch dan
+   menyusut ke lebar isinya — itu sebabnya panggung hanya 889px di
+   layar 1440px dan menciut di tablet. width:100% mengembalikannya,
+   max-width tetap menjaga batas atas. */
+.hero-stage { min-width: 0; width: 100%; max-width: min(1120px, 100%); }
+.flow-console { min-width: 0; max-width: 100%; }
+.flow-block pre { max-width: 100%; }
+
+/* Di bawah ~1100px dashboard tidak muat utuh. Daripada memaksanya
+   menciut sampai tidak terbaca, panggungnya yang digeser horizontal;
+   bentuk dan proporsi produk tetap jujur. */
+@media (max-width: 1100px) {
+  .hero-stage {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+  }
+  .hero-stage .dash-frame { min-width: 980px; }
+}
+
+@media (max-width: 860px) {
+  .hero-stage .dash-frame { min-width: 720px; }
+}
